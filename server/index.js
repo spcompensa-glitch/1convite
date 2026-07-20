@@ -417,7 +417,7 @@ app.post('/api/v1/admin/definir-plano', async (req, res) => {
 const distPath = join(__dirname, '../dist');
 app.use(express.static(distPath));
 
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(join(distPath, 'index.html'));
 });
 
