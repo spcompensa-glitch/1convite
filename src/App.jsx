@@ -355,6 +355,9 @@ function App() {
     return (
       <div className="pedagio-overlay">
         <div className="pedagio-container">
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '40px', objectFit: 'contain' }} />
+          </div>
           <div className="pedagio-header">
             <div className={`pedagio-badge ${isProposito ? 'badge-proposito' : 'badge-recompensa'}`}>
               {isProposito ? 'MATEUS 24:14 — PROPÓSITO' : 'APOCALIPSE 3:21 — RECOMPENSA'}
@@ -395,8 +398,8 @@ function App() {
     <>
       {/* Header Fixo */}
       <header className="app-header">
-        <div className="app-logo">
-          1<span>Convite</span>
+        <div className="app-logo" style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '28px', objectFit: 'contain' }} />
         </div>
         <div className="flex-between" style={{ gap: '10px' }}>
           {user && (
