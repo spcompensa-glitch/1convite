@@ -47,7 +47,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  const API_BASE = 'http://localhost:3001/api/v1';
+  const API_BASE = import.meta.env.PROD ? '/api/v1' : 'http://localhost:3001/api/v1';
 
   // Carrega dados iniciais
   const loadAppData = async () => {

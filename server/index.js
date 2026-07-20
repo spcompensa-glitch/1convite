@@ -413,7 +413,15 @@ app.post('/api/v1/admin/definir-plano', async (req, res) => {
   }
 });
 
+// Servir arquivos estáticos do React em produção
+const distPath = join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(join(distPath, 'index.html'));
+});
+
 // Inicia o Servidor
 app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
