@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0e1a" />
+    <title>Movimento 1Convite</title>
+    <!-- Previne erros do React Fast Refresh em compilações locais -->
+    <script>
+      if (!window.$RefreshReg$) window.$RefreshReg$ = () => {};
+      if (!window.$RefreshSig$) window.$RefreshSig$ = () => (type) => type;
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // Desregistra qualquer Service Worker ativo no localhost para não quebrar o Vite HMR
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+              for (let registration of registrations) {
+                registration.unregister().then(() => {
+                  console.log('Service Worker antigo desregistrado no localhost.');
+                  window.location.reload();
+                });
+              }
+            });
+          } else {
+            // Registra em produção
+            navigator.serviceWorker.register('/sw.js')
+              .then(reg => console.log('Service Worker registrado:', reg.scope))
+              .catch(err => console.error('Erro ao registrar Service Worker:', err));
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

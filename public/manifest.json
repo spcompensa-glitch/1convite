@@ -1,0 +1,18 @@
+{
+  "short_name": "1Convite",
+  "name": "Movimento 1Convite PWA",
+  "description": "Plataforma de Engajamento do Reino e Desfrute Sabático",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "display": "standalone",
+  "orientation": "portrait"
+}
