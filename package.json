@@ -11,7 +11,6 @@
     "start": "node server/index.js",
     "server": "node server/index.js",
     "build": "vite build",
-    "postinstall": "npm rebuild sqlite3",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -21,7 +20,7 @@
     "express": "^5.2.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "~5.1.7"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
