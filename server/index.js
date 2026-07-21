@@ -376,6 +376,64 @@ app.get('/api/v1/historico', async (req, res) => {
   }
 });
 
+// ---------------- BÍBLIA (NVI) ----------------
+
+// Obter todos os livros
+app.get('/api/v1/biblia/livros', async (req, res) => {
+  try {
+    const livros = await dbAll('SELECT DISTINCT livro_nome, livro_abrev FROM tb_biblia');
+    res.json(livros);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obter total de capítulos de um livro
+app.get('/api/v1/biblia/capitulos/:abrev', async (req, res) => {
+  try {
+    const { abrev } = req.params;
+    const row = await dbGet('SELECT MAX(capitulo) as total FROM tb_biblia WHERE livro_abrev = ?', [abrev]);
+    res.json({ total: row.total || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obter texto de um capítulo específico
+app.get('/api/v1/biblia/texto/:abrev/:capitulo', async (req, res) => {
+  try {
+    const { abrev, capitulo } = req.params;
+    const versiculos = await dbAll('SELECT * FROM tb_biblia WHERE livro_abrev = ? AND capitulo = ? ORDER BY versiculo ASC', [abrev, capitulo]);
+    res.json(versiculos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Buscar versículos por palavra (Busca Livre)
+app.get('/api/v1/biblia/busca', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 3) {
+      return res.status(400).json({ error: 'Termo de busca deve ter pelo menos 3 caracteres.' });
+    }
+    const versiculos = await dbAll('SELECT * FROM tb_biblia WHERE texto LIKE ? LIMIT 50', [`%${q}%`]);
+    res.json(versiculos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obter versículo aleatório
+app.get('/api/v1/biblia/aleatorio', async (req, res) => {
+  try {
+    const versiculo = await dbGet('SELECT * FROM tb_biblia ORDER BY RANDOM() LIMIT 1');
+    res.json(versiculo);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ---------------- INTEGRACAO MERCADO PAGO ----------------
 
 // Criação de Preferência de Pagamento

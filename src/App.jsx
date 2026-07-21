@@ -40,14 +40,67 @@ function App() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const carouselImages = ['/Imagens/1.png', '/Imagens/2.png', '/Imagens/3.png'];
 
+  // Estados da Bíblia
+  const [bibleSearchQuery, setBibleSearchQuery] = useState('');
+  const [bibleResults, setBibleResults] = useState([]);
+  const [bibleLoading, setBibleLoading] = useState(false);
+  const [bibleError, setBibleError] = useState('');
+
+  const API_BASE = import.meta.env.PROD ? '/api/v1' : 'http://localhost:3001/api/v1';
+
+  // Funções da Bíblia
+  const searchBible = async (e) => {
+    e.preventDefault();
+    if (!bibleSearchQuery || bibleSearchQuery.length < 3) {
+      setBibleError('Digite pelo menos 3 letras para buscar.');
+      return;
+    }
+    setBibleLoading(true);
+    setBibleError('');
+    try {
+      const res = await fetch(`${API_BASE}/biblia/busca?q=${encodeURIComponent(bibleSearchQuery)}`);
+      const data = await res.json();
+      if (res.ok) {
+        setBibleResults(data);
+        if (data.length === 0) setBibleError('Nenhum versículo encontrado.');
+      } else {
+        setBibleError(data.error);
+      }
+    } catch (err) {
+      setBibleError('Erro de conexão ao buscar na Bíblia.');
+    } finally {
+      setBibleLoading(false);
+    }
+  };
+
+  const getRandomVerse = async () => {
+    setBibleLoading(true);
+    setBibleError('');
+    try {
+      const res = await fetch(`${API_BASE}/biblia/aleatorio`);
+      const data = await res.json();
+      if (res.ok) {
+        setBibleResults([data]);
+        setBibleSearchQuery(''); // Limpa a busca pra ficar focado no aleatório
+      }
+    } catch (err) {
+      setBibleError('Erro ao puxar promessa.');
+    } finally {
+      setBibleLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Versículo copiado!');
+  };
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
     }, 4500);
     return () => clearInterval(timer);
   }, []);
-
-  const API_BASE = import.meta.env.PROD ? '/api/v1' : 'http://localhost:3001/api/v1';
 
   // Carrega dados iniciais
   const loadAppData = async () => {
@@ -665,6 +718,68 @@ function App() {
           </div>
         )}
 
+        {/* --- ABA BÍBLIA --- */}
+        {activeTab === 'biblia' && (
+          <div className="flex-column gap-md">
+            <h2 className="text-center" style={{ marginBottom: '10px' }}>A Palavra Viva</h2>
+            
+            <div className="glass-panel text-center" style={{ marginBottom: '10px' }}>
+              <p style={{ marginBottom: '15px' }}>Deixe Deus falar com você hoje ou encontre a passagem ideal para convidar um amigo.</p>
+              
+              <button className="btn-primary" onClick={getRandomVerse} disabled={bibleLoading}>
+                {bibleLoading ? 'Sorteando...' : '🎲 Puxar uma Promessa Aleatória'}
+              </button>
+            </div>
+
+            <div className="glass-panel">
+              <h3 style={{ marginBottom: '15px' }}>Buscador Inteligente</h3>
+              <form onSubmit={searchBible} style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Ex: ansiedade, amor, perdão..."
+                  value={bibleSearchQuery}
+                  onChange={(e) => setBibleSearchQuery(e.target.value)}
+                />
+                <button type="submit" className="btn-secondary" disabled={bibleLoading}>
+                  🔍 Buscar
+                </button>
+              </form>
+              {bibleError && <p style={{ color: '#ef4444', marginTop: '10px', fontSize: '0.9rem' }}>{bibleError}</p>}
+            </div>
+
+            {/* Resultados */}
+            <div className="flex-column gap-sm">
+              {bibleResults.map((v, idx) => (
+                <div key={idx} className="glass-panel" style={{ position: 'relative' }}>
+                  <span className="premium-status-badge" style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.1)' }}>
+                    {v.livro_nome} {v.capitulo}:{v.versiculo}
+                  </span>
+                  <p style={{ marginTop: '20px', fontStyle: 'italic' }}>"{v.texto}"</p>
+                  
+                  <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                    <button 
+                      className="btn-secondary" 
+                      style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                      onClick={() => copyToClipboard(`"${v.texto}" - ${v.livro_nome} ${v.capitulo}:${v.versiculo}`)}
+                    >
+                      📋 Copiar
+                    </button>
+                    <a 
+                      href={`https://wa.me/?text=${encodeURIComponent(`*"${v.texto}"*\n_${v.livro_nome} ${v.capitulo}:${v.versiculo}_\n\n👉 *Descubra o propósito no 1Convite:* https://1convite.com.br`)}`} 
+                      target="_blank" rel="noopener noreferrer"
+                      className="btn-primary"
+                      style={{ flex: 2, padding: '8px', fontSize: '0.8rem', textAlign: 'center', textDecoration: 'none' }}
+                    >
+                      📲 Enviar para Contato
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* --- ABA HISTÓRICO DE CÓDIGOS (EXCLUSIVO PREMIUM) --- */}
         {activeTab === 'historico' && (
           <div className="flex-column gap-md">
@@ -801,6 +916,16 @@ function App() {
           </button>
           
           <button
+            className={`tab-item ${activeTab === 'biblia' ? 'active' : ''}`}
+            onClick={() => setActiveTab('biblia')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            Bíblia
+          </button>
+          
+          <button
             className={`tab-item ${activeTab === 'contatos' ? 'active' : ''}`}
             onClick={() => setActiveTab('contatos')}
           >
@@ -815,7 +940,7 @@ function App() {
             onClick={() => setActiveTab('historico')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Histórico
           </button>
