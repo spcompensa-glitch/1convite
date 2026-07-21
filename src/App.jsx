@@ -77,6 +77,13 @@ function App() {
   const [loginMethod, setLoginMethod] = useState('google'); // 'google' ou 'email'
   const [loginError, setLoginError] = useState('');
 
+  // Estados do Motor de Animação do Canvas por Scroll
+  const [scrollPercent, setScrollPercent] = useState(0);
+  const [framesLoaded, setFramesLoaded] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const canvasRef = useRef(null);
+  const imagesRef = useRef([]);
+
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     if (!loginEmail || !loginNome) {
@@ -122,6 +129,100 @@ function App() {
       return null;
     }
   };
+
+  useEffect(() => {
+    if (profileEmail !== 'membro@1convite.com') return;
+
+    const frameCount = 120;
+    const isMobileDevice = window.innerWidth < 768;
+    const folder = isMobileDevice ? 'mobile' : 'desktop';
+    let loadedCount = 0;
+    const imagesArray = [];
+
+    // Pré-carregamento dos frames
+    for (let i = 1; i <= frameCount; i++) {
+      const img = new Image();
+      const numStr = String(i).padStart(4, '0');
+      img.src = `/intro_scroll/${folder}/frame-${numStr}.webp`;
+      img.onload = () => {
+        loadedCount++;
+        setLoadProgress(Math.round((loadedCount / frameCount) * 100));
+        if (loadedCount === frameCount) {
+          setFramesLoaded(true);
+        }
+      };
+      img.onerror = () => {
+        loadedCount++;
+        if (loadedCount === frameCount) setFramesLoaded(true);
+      };
+      imagesArray.push(img);
+    }
+    imagesRef.current = imagesArray;
+
+    // Loop do canvas e scroll
+    let currentFrame = 0;
+    let targetFrame = 0;
+    let animId;
+
+    const render = () => {
+      const canvas = canvasRef.current;
+      if (canvas && imagesRef.current.length > 0) {
+        const ctx = canvas.getContext('2d');
+        // Suavização do scroll com LERP
+        currentFrame += (targetFrame - currentFrame) * 0.1;
+        const frameIndex = Math.min(frameCount - 1, Math.max(0, Math.round(currentFrame)));
+        const img = imagesRef.current[frameIndex];
+
+        if (img && img.complete) {
+          // Ajustar dimensões internas do canvas para a viewport
+          if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+          }
+
+          // Efeito cover no canvas
+          const imgRatio = img.width / img.height;
+          const canvasRatio = canvas.width / canvas.height;
+          let drawWidth, drawHeight, x, y;
+
+          if (canvasRatio > imgRatio) {
+            drawWidth = canvas.width;
+            drawHeight = canvas.width / imgRatio;
+            x = 0;
+            y = (canvas.height - drawHeight) / 2;
+          } else {
+            drawWidth = canvas.height * imgRatio;
+            drawHeight = canvas.height;
+            x = (canvas.width - drawWidth) / 2;
+            y = 0;
+          }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, x, y, drawWidth, drawHeight);
+        }
+      }
+      animId = requestAnimationFrame(render);
+    };
+
+    // Monitor do scroll
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const heroSectionHeight = windowHeight * 4; 
+      const progress = Math.max(0, Math.min(1, scrollY / (heroSectionHeight - windowHeight)));
+      
+      setScrollPercent(progress * 100);
+      targetFrame = Math.floor(progress * (frameCount - 1));
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    animId = requestAnimationFrame(render);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(animId);
+    };
+  }, [profileEmail]);
 
   useEffect(() => {
     localStorage.setItem('1convite_dark_mode', darkMode);
@@ -666,6 +767,25 @@ function App() {
   }
 
   if (profileEmail === 'membro@1convite.com') {
+    if (!framesLoaded) {
+      return (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: '#09090b', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', zIndex: 10000,
+          color: '#fafafa', fontFamily: "'Inter', sans-serif"
+        }}>
+          <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '36px', marginBottom: '24px', opacity: 0.9 }} />
+          <div style={{ width: '160px', height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative', overflow: 'hidden', marginBottom: '12px' }}>
+            <div style={{ width: `${loadProgress}%`, height: '100%', background: '#10B981', transition: 'width 0.1s ease', borderRadius: '3px' }}></div>
+          </div>
+          <span style={{ fontSize: '0.78rem', fontWeight: 'bold', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#10B981' }}>
+            Carregando Experiência {loadProgress}%
+          </span>
+        </div>
+      );
+    }
+
     return (
       <div className="lp-container">
         {/* ── HEADER DA LANDING PAGE ────────────────────────── */}
@@ -682,31 +802,97 @@ function App() {
           </div>
         </header>
 
-        {/* ── HERO SECTION ────────────────────────── */}
-        <section className="lp-hero">
-          <div className="lp-hero-text-block">
-            <span className="lp-badge">Jornada Espiritual Ativa</span>
-            <h1 className="lp-title">
-              Desacelere sua mente. <span>Conecte-se com Deus.</span>
-            </h1>
-            <p className="lp-description">
-              11 minutos diários de meditação cristã orientada, respiração controlada contra ansiedade e leitura da Bíblia narrada.
-            </p>
-            <button 
-              className="lp-hero-cta"
-              onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Começar Gratuitamente 🚀
-            </button>
-          </div>
+        {/* ── HERO SECTION COM CANVAS DE SCROLL ────────────────────────── */}
+        <section className="lp-hero-scroll-section">
+          {/* Container Sticky do Canvas */}
+          <div className="lp-canvas-sticky-container">
+            <canvas ref={canvasRef} className="lp-scroll-canvas" />
+            
+            {/* Moldura de Vidro Arredondada (Portal Estilo Harmont/Woodnest) */}
+            <div className="lp-portal-frame"></div>
+            
+            {/* Gradientes de escurecimento para legibilidade */}
+            <div className="lp-canvas-overlay-gradient"></div>
 
-          {/* Mockups de Demonstração Reais (Desktop & Mobile) */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%', margin: '40px 0 20px' }}>
-            <div style={{ position: 'relative', width: '100%', maxWidth: '440px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
-              <img src="/app_desktop_mockup.png" alt="1Convite Web Dashboard" style={{ width: '100%', display: 'block', borderRadius: '16px' }} />
-            </div>
-            <div style={{ position: 'relative', width: '60%', maxWidth: '240px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', marginTop: '-60px', border: '6px solid var(--slate)', zIndex: 5 }}>
-              <img src="/app_mobile_mockup.png" alt="1Convite App Mobile" style={{ width: '100%', display: 'block', borderRadius: '18px' }} />
+            {/* Overlays de Texto Dinâmicos que reagem ao Scroll */}
+            <div className="lp-scroll-text-overlay-wrapper">
+              
+              {/* Frase 1: Introdução */}
+              <div className={`lp-scroll-text-card ${scrollPercent < 22 ? 'visible' : ''}`}>
+                <span className="lp-badge">Jornada Espiritual Ativa</span>
+                <h1 className="lp-title" style={{ marginTop: '12px' }}>
+                  Desacelere sua mente. <span>Conecte-se com Deus.</span>
+                </h1>
+                <p className="lp-description" style={{ marginTop: '12px' }}>
+                  11 minutos diários de meditação cristã orientada, respiração controlada contra ansiedade e leitura da Bíblia narrada.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '18px' }}>
+                  <button 
+                    className="lp-hero-cta"
+                    onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    Começar Agora 🚀
+                  </button>
+                  <button 
+                    className="lp-hero-cta-outline"
+                    onClick={() => window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' })}
+                  >
+                    Ver Conceito 🖱️
+                  </button>
+                </div>
+              </div>
+
+              {/* Frase 2: Passado (10% Biblioteca) */}
+              <div className={`lp-scroll-text-card ${scrollPercent >= 22 && scrollPercent < 47 ? 'visible' : ''}`}>
+                <span className="lp-badge" style={{ background: 'rgba(255,255,255,0.08)', color: '#fafafa', borderColor: 'rgba(255,255,255,0.15)' }}>Passado 10%</span>
+                <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
+                  A Biblioteca da <span>Palavra</span>
+                </h1>
+                <p className="lp-description" style={{ marginTop: '12px' }}>
+                  O conhecimento acumulado ao longo da história cristã. 10% da nossa mente é moldada pelas lições e escrituras antigas que pavimentam o nosso caminho com verdade.
+                </p>
+              </div>
+
+              {/* Frase 3: Presente (70% O Eterno Agora) */}
+              <div className={`lp-scroll-text-card ${scrollPercent >= 47 && scrollPercent < 72 ? 'visible' : ''}`}>
+                <span className="lp-badge">Presente 70%</span>
+                <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
+                  O Eterno <span>Agora</span>
+                </h1>
+                <p className="lp-description" style={{ marginTop: '12px' }}>
+                  70% de nossa vida espiritual ativa acontece no dia de hoje. A quietude silenciosa para orar, meditar e sentir a presença do Criador no único tempo que realmente existe: o Agora.
+                </p>
+              </div>
+
+              {/* Frase 4: Futuro (20% A Bússola) */}
+              <div className={`lp-scroll-text-card ${scrollPercent >= 72 && scrollPercent < 90 ? 'visible' : ''}`}>
+                <span className="lp-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', borderColor: 'rgba(16, 185, 129, 0.2)' }}>Futuro 20%</span>
+                <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
+                  A Bússola da <span>Missão</span>
+                </h1>
+                <p className="lp-description" style={{ marginTop: '12px' }}>
+                  20% de nosso foco aponta para a frente, guiados pela bússola da esperança eterna. A certeza do cumprimento de nossa missão terrena com propósito divino.
+                </p>
+              </div>
+
+              {/* Frase 5: CTA de Login */}
+              <div className={`lp-scroll-text-card ${scrollPercent >= 90 ? 'visible' : ''}`}>
+                <span className="lp-badge">Mateus 24:14</span>
+                <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.3rem' }}>
+                  Sua Jornada <span>Começa Aqui</span>
+                </h1>
+                <p className="lp-description" style={{ marginTop: '12px' }}>
+                  Dê o seu primeiro passo na jornada de meditação diária. Role para baixo e acesse o aplicativo gratuitamente.
+                </p>
+                <button 
+                  className="lp-hero-cta"
+                  style={{ marginTop: '18px' }}
+                  onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Ir para o Login 🔑
+                </button>
+              </div>
+
             </div>
           </div>
         </section>

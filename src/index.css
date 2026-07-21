@@ -1423,35 +1423,143 @@ body.dark-mode .theme-toggle-btn {
   box-shadow: 0 4px 12px var(--orange-glow);
 }
 
-.lp-hero {
-  text-align: center;
-  padding: 60px 24px 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
+.lp-hero-scroll-section {
   position: relative;
-  max-width: 1200px;
-  margin: 0 auto;
   width: 100%;
+  height: 400vh; /* Altura do scroll mapeada pelo JS */
+  background: #000;
 }
 
-/* Duas colunas em telas Desktop */
-@media (min-width: 900px) {
-  .lp-hero {
-    display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    text-align: left;
-    align-items: center;
-    gap: 40px;
-    padding: 100px 24px 60px;
+.lp-canvas-sticky-container {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.lp-scroll-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Moldura de Vidro Arredondada (Portal Estilo Harmont/Woodnest) */
+.lp-portal-frame {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 32px;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.45);
+  transition: all 0.3s ease;
+}
+
+body.dark-mode .lp-portal-frame {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.lp-canvas-overlay-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to right, rgba(9, 9, 11, 0.72) 0%, rgba(9, 9, 11, 0.2) 60%, rgba(9, 9, 11, 0.5) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.lp-scroll-text-overlay-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.lp-scroll-text-card {
+  position: absolute;
+  top: 50%;
+  left: 8%;
+  transform: translateY(-50%) translateX(-40px);
+  max-width: 520px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(24, 24, 27, 0.5);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 44px;
+  border-radius: 30px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.lp-scroll-text-card.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* CTA Outline na Hero */
+.lp-hero-cta-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 16px 36px;
+  border-radius: 9999px;
+  text-decoration: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.lp-hero-cta-outline:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .lp-portal-frame {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    border-radius: 20px;
   }
 
-  .lp-hero-text-block {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
+  .lp-scroll-text-card {
+    left: 20px;
+    right: 20px;
+    max-width: none;
+    top: auto;
+    bottom: 40px;
+    transform: translateY(40px);
+    padding: 24px;
+    border-radius: 20px;
+    background: rgba(24, 24, 27, 0.72);
+  }
+
+  .lp-scroll-text-card.visible {
+    transform: translateY(0);
   }
 }
 
