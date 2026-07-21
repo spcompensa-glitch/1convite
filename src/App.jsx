@@ -235,6 +235,29 @@ function App() {
     }
   };
 
+  const handleGuestLogin = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: "Convidado Visitante",
+          email: "visitante@1convite.com",
+          avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Visitante"
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setProfileName(data.user.nome);
+        setProfileEmail(data.user.email);
+        setProfileAvatar(data.user.avatar);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleLogout = async () => {
     if (!confirm('Deseja realmente sair da conta?')) return;
     try {
@@ -729,6 +752,12 @@ function App() {
               </button>
             </form>
           )}
+
+          <div className="login-separator">ou</div>
+
+          <button className="btn-secondary" style={{ width: '100%' }} onClick={handleGuestLogin}>
+            🔓 Entrar sem Login (Modo Convidado)
+          </button>
         </div>
       </div>
     );
