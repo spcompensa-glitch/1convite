@@ -1,465 +1,402 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('sabado'); // default tab
+  const [activeTab, setActiveTab] = useState('sabado');
   const [user, setUser] = useState(null);
   const [codigoDia, setCodigoDia] = useState(null);
   const [contatos, setContatos] = useState([]);
   const [historico, setHistorico] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Timer pedagio
+
   const [countdown, setCountdown] = useState(12);
   const [isCountdownActive, setIsCountdownActive] = useState(false);
   const [pedagioErro, setPedagioErro] = useState('');
   const [pedagioIniciado, setPedagioIniciado] = useState(false);
 
-  // Form contatos
   const [showAddContato, setShowAddContato] = useState(false);
   const [newNome, setNewNome] = useState('');
   const [newRelacao, setNewRelacao] = useState('');
   const [newPrioritario, setNewPrioritario] = useState(false);
   const [contatoErro, setContatoErro] = useState('');
 
-  // Audio Player
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const audioRef = useRef(null);
 
-  // Micro-pausa Sabático
-  const [breathState, setBreathState] = useState('Clique para iniciar');
+  const [breathState, setBreathState] = useState('Toque para iniciar');
   const [breathTimer, setBreathTimer] = useState(0);
   const [isBreathing, setIsBreathing] = useState(false);
+  const [breathClass, setBreathClass] = useState('');
 
-  // Pagamento simulado
   const [paymentPreferenceId, setPaymentPreferenceId] = useState('');
   const [isPaying, setIsPaying] = useState(false);
 
-  // Estado do Carrossel de Imagens no topo
   const [carouselIndex, setCarouselIndex] = useState(0);
   const carouselImages = ['/Imagens/1.png', '/Imagens/2.png', '/Imagens/3.png'];
 
-  // Estados da Bíblia
-  const [bibleViewMode, setBibleViewMode] = useState('reading'); // 'reading', 'select-book', 'select-chapter'
+  // Bíblia
+  const [bibleViewMode, setBibleViewMode] = useState('reading');
   const [bibleBooks, setBibleBooks] = useState([]);
-  const [bibleSelectedBook, setBibleSelectedBook] = useState({ abbrev: 'gn', nome: 'Gênesis' });
+  const [bibleSelectedBook, setBibleSelectedBook] = useState({ livro_abrev: 'gn', livro_nome: 'Gênesis' });
   const [bibleChaptersCount, setBibleChaptersCount] = useState(50);
   const [bibleSelectedChapter, setBibleSelectedChapter] = useState(1);
   const [bibleVerses, setBibleVerses] = useState([]);
   const [bibleSelectedVerse, setBibleSelectedVerse] = useState(null);
-
   const [bibleSearchQuery, setBibleSearchQuery] = useState('');
   const [bibleResults, setBibleResults] = useState([]);
   const [bibleLoading, setBibleLoading] = useState(false);
   const [bibleError, setBibleError] = useState('');
 
+  // Dicionário Teológico
+  const [dicionario, setDicionario] = useState({});
+  const [selectedDicionarioTermo, setSelectedDicionarioTermo] = useState(null);
+
+  // Áudio da Bíblia
+  const [bibleAudioUrl, setBibleAudioUrl] = useState('');
+  const [bibleAudioPlaying, setBibleAudioPlaying] = useState(false);
+  const [bibleAudioDuration, setBibleAudioDuration] = useState(0);
+  const [bibleAudioCurrentTime, setBibleAudioCurrentTime] = useState(0);
+  const bibleAudioRef = useRef(null);
+
+  // Trilhas de Crescimento
+  const [trilhaAtiva, setTrilhaAtiva] = useState(null);
+  const [listaTrilhas, setListaTrilhas] = useState([]);
+  const [trilhaLoading, setTrilhaLoading] = useState(false);
+
   const API_BASE = import.meta.env.PROD ? '/api/v1' : 'http://localhost:3001/api/v1';
 
-  // Funções da Bíblia
+  // ── Bíblia ──────────────────────────────────────────────────
   const searchBible = async (e) => {
     e.preventDefault();
-    if (!bibleSearchQuery || bibleSearchQuery.length < 3) {
-      setBibleError('Digite pelo menos 3 letras para buscar.');
-      return;
-    }
-    setBibleLoading(true);
-    setBibleError('');
+    if (!bibleSearchQuery || bibleSearchQuery.length < 3) { setBibleError('Digite pelo menos 3 letras.'); return; }
+    setBibleLoading(true); setBibleError('');
     try {
       const res = await fetch(`${API_BASE}/biblia/busca?q=${encodeURIComponent(bibleSearchQuery)}`);
       const data = await res.json();
-      if (res.ok) {
-        setBibleResults(data);
-        if (data.length === 0) setBibleError('Nenhum versículo encontrado.');
-      } else {
-        setBibleError(data.error);
-      }
-    } catch (err) {
-      setBibleError('Erro de conexão ao buscar na Bíblia.');
-    } finally {
-      setBibleLoading(false);
-    }
+      if (res.ok) { setBibleResults(data); if (!data.length) setBibleError('Nenhum versículo encontrado.'); }
+      else setBibleError(data.error);
+    } catch { setBibleError('Erro de conexão.'); }
+    finally { setBibleLoading(false); }
   };
 
   const getRandomVerse = async () => {
-    setBibleLoading(true);
-    setBibleError('');
+    setBibleLoading(true); setBibleError('');
     try {
       const res = await fetch(`${API_BASE}/biblia/aleatorio`);
       const data = await res.json();
-      if (res.ok) {
-        setBibleResults([data]);
-        setBibleSearchQuery(''); // Limpa a busca pra ficar focado no aleatório
-      }
-    } catch (err) {
-      setBibleError('Erro ao puxar promessa.');
-    } finally {
-      setBibleLoading(false);
-    }
+      if (res.ok) { setBibleResults([data]); setBibleSearchQuery(''); }
+    } catch { setBibleError('Erro ao puxar versículo.'); }
+    finally { setBibleLoading(false); }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    alert('Versículo copiado!');
-  };
+  const copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert('Versículo copiado!'); };
 
+  // ── Carrossel ───────────────────────────────────────────────
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
-    }, 4500);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setCarouselIndex(p => (p + 1) % carouselImages.length), 8000);
+    return () => clearInterval(t);
   }, []);
 
-  // Carrega dados iniciais
+  // ── Dados iniciais ──────────────────────────────────────────
   const loadAppData = async () => {
     try {
-      const resUser = await fetch(`${API_BASE}/codigo-dia`);
-      if (resUser.ok) {
-        const data = await resUser.json();
-        setUser(data.user);
-        setCodigoDia(data.code);
-
-        // Se o checkpoint do dia não foi concluído, força a tela do pedágio
-        if (data.user && !data.user.checkpoint_completado) {
-          setActiveTab('pedagio');
-          if (!pedagioIniciado) {
-            iniciarPedagio();
-          }
-        } else {
-          setActiveTab('sabado'); // vai para a home default
+      const rU = await fetch(`${API_BASE}/codigo-dia`);
+      if (rU.ok) {
+        const d = await rU.json(); setUser(d.user); setCodigoDia(d.code);
+        if (d.user && !d.user.checkpoint_completado) { setActiveTab('pedagio'); if (!pedagioIniciado) iniciarPedagio(); }
+        else {
+          if (activeTab === 'pedagio') setActiveTab('sabado');
         }
       }
+      const rC = await fetch(`${API_BASE}/contatos`); if (rC.ok) setContatos(await rC.json());
+      const rH = await fetch(`${API_BASE}/historico`); if (rH.ok) { const dH = await rH.json(); setHistorico(dH.rows || []); }
       
-      // Carrega contatos
-      const resContatos = await fetch(`${API_BASE}/contatos`);
-      if (resContatos.ok) {
-        const dataContatos = await resContatos.json();
-        setContatos(dataContatos);
-      }
-
-      // Carrega histórico
-      const resHist = await fetch(`${API_BASE}/historico`);
-      if (resHist.ok) {
-        const dataHist = await resHist.json();
-        setHistorico(dataHist.rows || []);
-      }
-    } catch (err) {
-      console.error('Erro de conexão com o servidor backend:', err);
-    }
+      await loadTrilhaStatus();
+      await loadDicionario();
+    } catch (e) { console.error(e); }
   };
 
-  useEffect(() => {
-    loadAppData();
-    loadBibleBooks();
-  }, []);
+  const loadDicionario = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/dicionario/termos`);
+      if (res.ok) setDicionario(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  const loadTrilhaStatus = async () => {
+    try {
+      const rList = await fetch(`${API_BASE}/trilhas/lista`);
+      if (rList.ok) setListaTrilhas(await rList.json());
+      
+      const rAtiva = await fetch(`${API_BASE}/trilhas/ativa`);
+      if (rAtiva.ok) {
+        const data = await rAtiva.json();
+        setTrilhaAtiva(data.ativa ? data : null);
+      }
+    } catch (e) { console.error(e); }
+  };
 
   const loadBibleBooks = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/biblia/livros`);
-      if (res.ok) setBibleBooks(await res.json());
-    } catch (e) {
-      console.error(e);
-    }
+    try { const r = await fetch(`${API_BASE}/biblia/livros`); if (r.ok) setBibleBooks(await r.json()); }
+    catch (e) { console.error(e); }
   };
 
+  useEffect(() => { loadAppData(); loadBibleBooks(); }, []);
+
   useEffect(() => {
-    const loadChapter = async () => {
+    if (activeTab !== 'biblia') return;
+    const load = async () => {
       try {
         setBibleLoading(true);
-        const resCount = await fetch(`${API_BASE}/biblia/capitulos/${bibleSelectedBook.abbrev}`);
-        if (resCount.ok) {
-          const dataCount = await resCount.json();
-          setBibleChaptersCount(dataCount.total);
-        }
+        setBibleAudioPlaying(false);
+        setBibleAudioUrl('');
+        
+        const rc = await fetch(`${API_BASE}/biblia/capitulos/${bibleSelectedBook.livro_abrev}`);
+        if (rc.ok) { const dc = await rc.json(); setBibleChaptersCount(dc.total || 50); }
+        const rv = await fetch(`${API_BASE}/biblia/texto/${bibleSelectedBook.livro_abrev}/${bibleSelectedChapter}`);
+        if (rv.ok) setBibleVerses(await rv.json());
 
-        const res = await fetch(`${API_BASE}/biblia/texto/${bibleSelectedBook.abbrev}/${bibleSelectedChapter}`);
-        if (res.ok) {
-          setBibleVerses(await res.json());
+        // Carrega o áudio
+        const ra = await fetch(`${API_BASE}/biblia/audio/${bibleSelectedBook.livro_abrev}/${bibleSelectedChapter}`);
+        if (ra.ok) {
+          const dataAudio = await ra.json();
+          setBibleAudioUrl(dataAudio.url);
         }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setBibleLoading(false);
-      }
+      } catch (e) { console.error(e); } finally { setBibleLoading(false); }
     };
-    if (activeTab === 'biblia') {
-      loadChapter();
-    }
+    load();
   }, [bibleSelectedBook, bibleSelectedChapter, activeTab]);
 
-  // Iniciar Pedágio
+  // ── Pedágio ─────────────────────────────────────────────────
   const iniciarPedagio = async () => {
-    try {
-      setPedagioIniciado(true);
-      setCountdown(12);
-      setIsCountdownActive(true);
-      await fetch(`${API_BASE}/checkpoint/start`, { method: 'POST' });
-    } catch (err) {
-      console.error(err);
-    }
+    try { setPedagioIniciado(true); setCountdown(12); setIsCountdownActive(true); await fetch(`${API_BASE}/checkpoint/start`, { method: 'POST' }); }
+    catch (e) { console.error(e); }
   };
 
-  // Cronômetro do pedágio
   useEffect(() => {
-    let timer;
-    if (activeTab === 'pedagio' && isCountdownActive && countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(prev => prev - 1);
-      }, 1000);
-    } else if (countdown === 0) {
-      setIsCountdownActive(false);
-    }
-    return () => clearTimeout(timer);
+    let t;
+    if (activeTab === 'pedagio' && isCountdownActive && countdown > 0) t = setTimeout(() => setCountdown(p => p - 1), 1000);
+    else if (countdown === 0) setIsCountdownActive(false);
+    return () => clearTimeout(t);
   }, [countdown, activeTab, isCountdownActive]);
 
-  // Completar Pedágio
   const destravarAgora = async () => {
     try {
       const res = await fetch(`${API_BASE}/sync-checkpoint`, { method: 'POST' });
       const data = await res.json();
-      if (res.ok) {
-        setPedagioIniciado(false);
-        setPedagioErro('');
-        loadAppData(); // recarrega o estado atualizado
-      } else {
-        setPedagioErro(data.error || 'Erro ao destravar o Agora');
-      }
-    } catch (err) {
-      setPedagioErro('Erro de comunicação com o servidor.');
-    }
+      if (res.ok) { setPedagioIniciado(false); setPedagioErro(''); loadAppData(); }
+      else setPedagioErro(data.error || 'Erro ao destravar');
+    } catch { setPedagioErro('Erro de comunicação.'); }
   };
 
-  // Gerenciamento de Contatos
+  // ── Contatos ────────────────────────────────────────────────
   const handleAddContato = async (e) => {
-    e.preventDefault();
-    setContatoErro('');
-    if (!newNome || !newRelacao) {
-      setContatoErro('Preencha todos os campos obrigatórios.');
-      return;
-    }
+    e.preventDefault(); setContatoErro('');
+    if (!newNome || !newRelacao) { setContatoErro('Preencha todos os campos.'); return; }
     try {
-      const res = await fetch(`${API_BASE}/contatos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome: newNome,
-          relacao: newRelacao,
-          prioritario: newPrioritario
-        })
-      });
+      const res = await fetch(`${API_BASE}/contatos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: newNome, relacao: newRelacao, prioritario: newPrioritario }) });
       const data = await res.json();
-      if (res.ok) {
-        setNewNome('');
-        setNewRelacao('');
-        setNewPrioritario(false);
-        setShowAddContato(false);
-        loadAppData();
-      } else {
-        setContatoErro(data.error || 'Erro ao cadastrar contato.');
-      }
-    } catch (err) {
-      setContatoErro('Falha de conexão com o servidor.');
-    }
+      if (res.ok) { setNewNome(''); setNewRelacao(''); setNewPrioritario(false); setShowAddContato(false); loadAppData(); }
+      else setContatoErro(data.error || 'Erro ao cadastrar.');
+    } catch { setContatoErro('Falha de conexão.'); }
   };
 
   const deletarContato = async (id) => {
-    if (!confirm('Deseja realmente remover este contato?')) return;
-    try {
-      await fetch(`${API_BASE}/contatos/${id}`, { method: 'DELETE' });
-      loadAppData();
-    } catch (err) {
-      console.error(err);
-    }
+    if (!confirm('Remover este contato?')) return;
+    try { await fetch(`${API_BASE}/contatos/${id}`, { method: 'DELETE' }); loadAppData(); } catch (e) { console.error(e); }
   };
 
   const registrarAcao = async (id, tipoAcao) => {
-    try {
-      await fetch(`${API_BASE}/contatos/${id}/acao`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipoAcao })
-      });
-      loadAppData();
-    } catch (err) {
-      console.error(err);
-    }
+    try { await fetch(`${API_BASE}/contatos/${id}/acao`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipoAcao }) }); loadAppData(); }
+    catch (e) { console.error(e); }
   };
 
-  // Lógica de Meditação Sabática (Respiração de 3 segundos por fase)
+  const verificarAlerta48h = (c) => {
+    if (!c.prioritario) return false;
+    if (c.ultimo_convite_timestamp === 0) return true;
+    return (Date.now() - c.ultimo_convite_timestamp) / 3600000 >= 48;
+  };
+
+  // ── Respiração ──────────────────────────────────────────────
   const iniciarRespiracao = () => {
     if (isBreathing) return;
-    setIsBreathing(true);
-    let step = 0;
-    const states = [
-      { text: 'Inspire...', class: 'inhaling', duration: 3 },
-      { text: 'Segure...', class: 'holding', duration: 3 },
-      { text: 'Expire...', class: 'exhaling', duration: 3 }
+    setIsBreathing(true); let step = 0;
+    const phases = [
+      { text: 'Inspire...', cls: 'inhaling', d: 4 },
+      { text: 'Segure...', cls: 'holding', d: 4 },
+      { text: 'Expire...', cls: 'exhaling', d: 4 }
     ];
-
-    const runSequence = () => {
-      if (step >= states.length) {
-        setBreathState('Desfrute Completo!');
-        setIsBreathing(false);
-        return;
-      }
-      const current = states[step];
-      setBreathState(current.text);
-      setBreathTimer(current.duration);
-
-      let countdownVal = current.duration;
-      const interval = setInterval(() => {
-        countdownVal -= 1;
-        setBreathTimer(countdownVal);
-        if (countdownVal <= 0) {
-          clearInterval(interval);
-          step += 1;
-          runSequence();
-        }
-      }, 1000);
+    const run = () => {
+      if (step >= phases.length) { setBreathState('Desfrute Completo! ✨'); setBreathClass(''); setIsBreathing(false); return; }
+      const ph = phases[step]; setBreathState(ph.text); setBreathClass(ph.cls); setBreathTimer(ph.d);
+      let cv = ph.d;
+      const iv = setInterval(() => { cv--; setBreathTimer(cv); if (cv <= 0) { clearInterval(iv); step++; run(); } }, 1000);
     };
-
-    runSequence();
+    run();
   };
 
-  // Player de Áudio
+  // ── Áudio Sabático ──────────────────────────────────────────
   useEffect(() => {
-    if (audioRef.current) {
-      if (audioPlaying) {
-        audioRef.current.play().catch(() => setAudioPlaying(false));
-      } else {
-        audioRef.current.pause();
-      }
-    }
+    if (!audioRef.current) return;
+    if (audioPlaying) audioRef.current.play().catch(() => setAudioPlaying(false));
+    else audioRef.current.pause();
   }, [audioPlaying]);
 
-  const onAudioTimeUpdate = () => {
-    if (audioRef.current) {
-      setAudioCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const onAudioLoadedMetadata = () => {
-    if (audioRef.current) {
-      setAudioDuration(audioRef.current.duration);
-    }
-  };
-
-  const formatTime = (secs) => {
-    if (isNaN(secs)) return '0:00';
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
+  const onAudioTimeUpdate = () => { if (audioRef.current) setAudioCurrentTime(audioRef.current.currentTime); };
+  const onAudioLoadedMetadata = () => { if (audioRef.current) setAudioDuration(audioRef.current.duration); };
+  const formatTime = (s) => { if (isNaN(s)) return '0:00'; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; };
   const handleProgressBarClick = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const width = rect.width;
-    const newPercentage = clickX / width;
-    if (audioRef.current) {
-      audioRef.current.currentTime = newPercentage * audioDuration;
-      setAudioCurrentTime(audioRef.current.currentTime);
+    const r = e.currentTarget.getBoundingClientRect();
+    if (audioRef.current) { audioRef.current.currentTime = ((e.clientX - r.left) / r.width) * audioDuration; setAudioCurrentTime(audioRef.current.currentTime); }
+  };
+
+  // ── Áudio da Bíblia ─────────────────────────────────────────
+  useEffect(() => {
+    if (!bibleAudioRef.current) return;
+    if (bibleAudioPlaying) {
+      setAudioPlaying(false);
+      bibleAudioRef.current.play().catch(() => setBibleAudioPlaying(false));
+    } else {
+      bibleAudioRef.current.pause();
+    }
+  }, [bibleAudioPlaying]);
+
+  const onBibleAudioTimeUpdate = () => { if (bibleAudioRef.current) setBibleAudioCurrentTime(bibleAudioRef.current.currentTime); };
+  const onBibleAudioLoadedMetadata = () => { if (bibleAudioRef.current) setBibleAudioDuration(bibleAudioRef.current.duration); };
+  const handleBibleAudioProgressBarClick = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    if (bibleAudioRef.current) {
+      bibleAudioRef.current.currentTime = ((e.clientX - r.left) / r.width) * bibleAudioDuration;
+      setBibleAudioCurrentTime(bibleAudioRef.current.currentTime);
     }
   };
 
-  // Fluxo de Pagamento com Mercado Pago
-  const iniciarCheckoutMercadoPago = async () => {
+  // ── Trilhas de Crescimento ──────────────────────────────────
+  const iniciarTrilha = async (tema) => {
     try {
-      setIsPaying(true);
-      const res = await fetch(`${API_BASE}/pagamentos/criar-preferencia`, { method: 'POST' });
-      const data = await res.json();
+      setTrilhaLoading(true);
+      const res = await fetch(`${API_BASE}/trilhas/iniciar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tema })
+      });
       if (res.ok) {
-        setPaymentPreferenceId(data.preferenceId);
-        setActiveTab('simular-pagamento');
+        alert(`Trilha de ${tema} iniciada com sucesso!`);
+        await loadTrilhaStatus();
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
     } finally {
-      setIsPaying(false);
+      setTrilhaLoading(false);
     }
+  };
+
+  const completarDiaTrilha = async () => {
+    try {
+      setTrilhaLoading(true);
+      const res = await fetch(`${API_BASE}/trilhas/completar-dia`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.concluida) {
+          alert('Parabéns! Você concluiu os 30 dias desta Trilha de Crescimento! 🏆');
+        } else {
+          alert('Devocional de hoje concluído! Avançando na trilha.');
+        }
+        await loadTrilhaStatus();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTrilhaLoading(false);
+    }
+  };
+
+  const cancelarTrilha = async () => {
+    if (!confirm('Deseja realmente cancelar a trilha ativa? Seu progresso será perdido.')) return;
+    try {
+      setTrilhaLoading(true);
+      const res = await fetch(`${API_BASE}/trilhas/cancelar`, { method: 'POST' });
+      if (res.ok) {
+        await loadTrilhaStatus();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTrilhaLoading(false);
+    }
+  };
+
+  // ── Dicionário Teológico ─────────────────────────────────────
+  const formatVerseText = (text) => {
+    if (!dicionario || Object.keys(dicionario).length === 0) return text;
+    
+    const termos = Object.keys(dicionario).sort((a, b) => b.length - a.length);
+    const pattern = termos.map(t => t.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|');
+    if (!pattern) return text;
+    
+    const regex = new RegExp(`\\b(${pattern})\\b`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, i) => {
+      const lowerPart = part.toLowerCase();
+      if (dicionario[lowerPart]) {
+        return (
+          <span 
+            key={i} 
+            className="dict-term" 
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedDicionarioTermo({ termo: part, significado: dicionario[lowerPart] });
+            }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  // ── Pagamento ───────────────────────────────────────────────
+  const iniciarCheckoutMercadoPago = async () => {
+    try { setIsPaying(true); const res = await fetch(`${API_BASE}/pagamentos/criar-preferencia`, { method: 'POST' }); const d = await res.json(); if (res.ok) { setPaymentPreferenceId(d.preferenceId); setActiveTab('simular-pagamento'); } }
+    catch (e) { console.error(e); } finally { setIsPaying(false); }
   };
 
   const finalizarPagamentoSimulado = async () => {
     try {
-      const res = await fetch(`${API_BASE}/pagamentos/webhook`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'payment.created',
-          pref_id: paymentPreferenceId
-        })
-      });
-      if (res.ok) {
-        alert('Pagamento aprovado pelo Mercado Pago! Plano Premium ativado.');
-        loadAppData();
-        setActiveTab('sabado');
-      }
-    } catch (err) {
-      console.error(err);
-    }
+      const res = await fetch(`${API_BASE}/pagamentos/webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'payment.created', pref_id: paymentPreferenceId }) });
+      if (res.ok) { alert('Pagamento aprovado! Plano Premium ativado.'); loadAppData(); setActiveTab('sabado'); }
+    } catch (e) { console.error(e); }
   };
 
-  // Funções administrativas/teste
-  const avancarDia = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/avancar-dia`, { method: 'POST' });
-      if (res.ok) {
-        loadAppData();
-        alert('Avançou para o próximo dia com sucesso!');
-      } else {
-        alert('Erro ao avançar dia. Verifique se o Pedágio foi concluído.');
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // ── Admin ───────────────────────────────────────────────────
+  const avancarDia = async () => { try { const r = await fetch(`${API_BASE}/avancar-dia`, { method: 'POST' }); if (r.ok) { loadAppData(); alert('Dia avançado!'); } else alert('Erro ao avançar.'); } catch (e) { console.error(e); } };
+  const reiniciarJornada = async () => { if (!confirm('Reiniciar ao Dia 1?')) return; try { await fetch(`${API_BASE}/reiniciar-jornada`, { method: 'POST' }); loadAppData(); } catch (e) { console.error(e); } };
+  const alterarPlanoAdmin = async (p) => { try { await fetch(`${API_BASE}/admin/definir-plano`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plano: p }) }); loadAppData(); } catch (e) { console.error(e); } };
 
-  const reiniciarJornada = async () => {
-    if (!confirm('Deseja reiniciar ao Dia 1?')) return;
-    try {
-      await fetch(`${API_BASE}/reiniciar-jornada`, { method: 'POST' });
-      loadAppData();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const alterarPlanoAdmin = async (plano) => {
-    try {
-      await fetch(`${API_BASE}/admin/definir-plano`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plano })
-      });
-      loadAppData();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Verifica Alerta de 48 horas sem convite
-  const verificarAlerta48h = (contato) => {
-    if (!contato.prioritario) return false;
-    if (contato.ultimo_convite_timestamp === 0) return true; // nunca convidado
-    const diffHours = (Date.now() - contato.ultimo_convite_timestamp) / (1000 * 60 * 60);
-    return diffHours >= 48;
-  };
-
-  // Renderização condicional das abas
+  // ═══════════════════════════════════════════════════════════
+  //  TELA PEDÁGIO
+  // ═══════════════════════════════════════════════════════════
   if (activeTab === 'pedagio' && codigoDia) {
     const isProposito = codigoDia.pilar_origem === 'PROPÓSITO_M2414';
     return (
       <div className="pedagio-overlay">
+        <div style={{ position: 'fixed', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)', top: -80, right: -60, filter: 'blur(50px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'fixed', width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(51,65,85,0.10) 0%, transparent 70%)', bottom: 80, left: -60, filter: 'blur(50px)', pointerEvents: 'none' }} />
+
         <div className="pedagio-container">
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '40px', objectFit: 'contain' }} />
+          <div style={{ textAlign: 'center' }}>
+            <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '38px', objectFit: 'contain' }} />
           </div>
-          <div className="pedagio-header">
+
+          <div style={{ textAlign: 'center' }}>
             <div className={`pedagio-badge ${isProposito ? 'badge-proposito' : 'badge-recompensa'}`}>
-              {isProposito ? 'MATEUS 24:14 — PROPÓSITO' : 'APOCALIPSE 3:21 — RECOMPENSA'}
+              {isProposito ? 'Mateus 24:14 — Propósito' : 'Apocalipse 3:21 — Recompensa'}
             </div>
-            <h1>Dia {codigoDia.dia_id} da Jornada</h1>
-            <p style={{ color: 'var(--text-secondary)' }}>Alinhamento mental no Agora de Deus</p>
+            <h1 style={{ fontSize: '1.4rem', marginTop: '8px' }}>Dia {codigoDia.dia_id} da Jornada</h1>
+            <p style={{ color: '#78716C', marginTop: '4px' }}>Alinhamento mental no Agora de Deus</p>
           </div>
 
           <div className="pedagio-card">
@@ -468,21 +405,11 @@ function App() {
             <div className="pedagio-reflexao">{codigoDia.texto_reflexao}</div>
           </div>
 
-          <div style={{ textSelf: 'center', width: '100%' }}>
-            {countdown > 0 ? (
-              <div className="timer-circle">
-                <span>{countdown}</span>
-              </div>
-            ) : null}
-
-            {pedagioErro && <p style={{ color: '#ef4444', textAlign: 'center', marginBottom: '10px' }}>{pedagioErro}</p>}
-
-            <button
-              className="btn-primary"
-              onClick={destravarAgora}
-              disabled={countdown > 0}
-            >
-              {countdown > 0 ? 'Medite no Texto para Destravar' : 'Destravar o Agora'}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+            {countdown > 0 && <div className="timer-circle"><span style={{ animation: 'none' }}>{countdown}</span></div>}
+            {pedagioErro && <p style={{ color: '#ef4444', textAlign: 'center' }}>{pedagioErro}</p>}
+            <button className="btn-primary" onClick={destravarAgora} disabled={countdown > 0} style={{ maxWidth: 360 }}>
+              {countdown > 0 ? `⏳ Medite... (${countdown}s)` : '🔓 Destravar o Agora'}
             </button>
           </div>
         </div>
@@ -492,33 +419,28 @@ function App() {
 
   return (
     <>
-      {/* Header Fixo e Dinâmico */}
+      {/* ── HEADER ────────────────────────────── */}
       <header className="app-header">
         {activeTab === 'biblia' ? (
-          <div className="bible-header-nav" style={{ width: '100%', marginBottom: 0 }}>
-            <button 
-              className="bible-select-btn" 
+          <div className="bible-header-nav" style={{ width: '100%' }}>
+            <button
+              className="bible-select-btn"
               onClick={() => setBibleViewMode(bibleViewMode === 'select-book' ? 'reading' : 'select-book')}
             >
-              {bibleSelectedBook.nome} {bibleSelectedChapter} ▼
+              <span>{bibleSelectedBook.livro_nome}</span>
+              <span style={{ opacity: 0.6 }}>Cap. {bibleSelectedChapter} ▼</span>
             </button>
-            <button className="bible-select-btn" style={{ flex: 0.3, justifyContent: 'center' }}>
+            <button className="bible-select-btn" style={{ flex: '0 0 72px', justifyContent: 'center', gap: '4px' }}>
               NVI ▼
             </button>
           </div>
         ) : (
           <>
-            <div className="app-logo" style={{ display: 'flex', alignItems: 'center' }}>
-              <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '28px', objectFit: 'contain' }} />
-            </div>
-            <div className="flex-between" style={{ gap: '10px' }}>
+            <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '28px', objectFit: 'contain' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {user && <span className="premium-status-badge">Plano {user.status_plano}</span>}
               {user && (
-                <span className={`premium-status-badge ${user.status_plano === 'FREE' ? 'btn-secondary' : ''}`} style={{ fontSize: '0.7rem' }}>
-                  Plano {user.status_plano}
-                </span>
-              )}
-              {user && (
-                <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: '700', color: '#334155', background: '#F1F5F9', padding: '4px 10px', borderRadius: '9999px' }}>
                   Dia {user.dia_atual}
                 </span>
               )}
@@ -527,238 +449,441 @@ function App() {
         )}
       </header>
 
-      {/* Conteúdo Principal */}
+      {/* ── MODAIS BÍBLIA ─────────────────────── */}
+      {activeTab === 'biblia' && bibleViewMode === 'select-book' && (
+        <div className="bible-modal-overlay">
+          <div className="bible-modal-header">
+            <h3 style={{ margin: 0, fontSize: '1.05rem' }}>📖 Selecione o Livro</h3>
+            <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.9rem' }} onClick={() => setBibleViewMode('reading')}>✕</button>
+          </div>
+          <div className="bible-modal-content">
+            <div className="bible-testament-title">✦ Antigo Testamento</div>
+            {bibleBooks.filter((_, i) => i < 39).map((bk, idx) => (
+              <div key={idx} className="bible-book-item" onClick={() => { setBibleSelectedBook(bk); setBibleViewMode('select-chapter'); }}>
+                {bk.livro_nome}
+              </div>
+            ))}
+            <div className="bible-testament-title">✦ Novo Testamento</div>
+            {bibleBooks.filter((_, i) => i >= 39).map((bk, idx) => (
+              <div key={idx} className="bible-book-item" onClick={() => { setBibleSelectedBook(bk); setBibleViewMode('select-chapter'); }}>
+                {bk.livro_nome}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'biblia' && bibleViewMode === 'select-chapter' && (
+        <div className="bible-modal-overlay">
+          <div className="bible-modal-header">
+            <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }} onClick={() => setBibleViewMode('select-book')}>← Livros</button>
+            <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{bibleSelectedBook.livro_nome}</h3>
+            <div style={{ width: '72px' }} />
+          </div>
+          <div className="bible-modal-content">
+            <div className="bible-chapter-grid">
+              {Array.from({ length: bibleChaptersCount }).map((_, i) => (
+                <div key={i} className="bible-chapter-btn" onClick={() => { setBibleSelectedChapter(i + 1); setBibleViewMode('reading'); }}>
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL DICIONÁRIO TEOLÓGICO ────────── */}
+      {selectedDicionarioTermo && (
+        <div className="dict-modal">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <h3 style={{ color: 'var(--orange)', fontSize: '1.1rem', textTransform: 'capitalize' }}>📚 {selectedDicionarioTermo.termo}</h3>
+            <button className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={() => setSelectedDicionarioTermo(null)}>✕ Fechar</button>
+          </div>
+          <p style={{ fontSize: '0.92rem', lineHeight: '1.6', color: 'var(--text-primary)' }}>{selectedDicionarioTermo.significado}</p>
+        </div>
+      )}
+
+      {/* ── MAIN ──────────────────────────────── */}
       <main className="main-content">
 
-        {/* --- ABA SABADO (PLAYER DO DESFRUTE E MEDITAÇÃO) --- */}
-        {activeTab === 'sabado' && codigoDia && (
-          <div className="flex-column gap-md">
-            {/* Carrossel de Imagens no Topo */}
-            <div className="carousel-container">
-              <div className="carousel-wrapper" style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
-                {carouselImages.map((src, idx) => (
-                  <img key={idx} src={src} alt={`Banner ${idx + 1}`} className="carousel-image" />
-                ))}
-              </div>
-              <div className="carousel-dots">
-                {carouselImages.map((_, idx) => (
-                  <button
-                    key={idx}
-                    className={`carousel-dot ${idx === carouselIndex ? 'active' : ''}`}
-                    onClick={() => setCarouselIndex(idx)}
-                    style={{ border: 'none', background: 'none' }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="glass-panel text-center">
-              <div className={`pedagio-badge ${codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'badge-proposito' : 'badge-recompensa'}`} style={{ marginBottom: '10px' }}>
-                CÓDIGO DE HOJE
-              </div>
-              <h2 style={{ marginBottom: '10px', fontSize: '1.4rem' }}>{codigoDia.codigo_verbal}</h2>
-              <p style={{ fontStyle: 'italic', marginBottom: '15px' }}>{codigoDia.versiculo_chave}</p>
-              <p>{codigoDia.texto_reflexao}</p>
-            </div>
-
-            <div className="glass-panel">
-              <h3 className="text-center" style={{ marginBottom: '15px' }}>
-                Meditação Guiada
-                {user?.status_plano === 'FREE' && <span className="premium-status-badge" style={{ marginLeft: '8px', fontSize: '0.6rem' }}>Premium</span>}
-              </h3>
-              
-              {user?.status_plano === 'FREE' ? (
-                <div className="text-center" style={{ padding: '10px' }}>
-                  <p style={{ marginBottom: '15px' }}>Os áudios das meditações diárias são exclusivos para assinantes do plano Premium.</p>
-                  <button className="btn-primary" onClick={() => setActiveTab('upgrade')}>
-                    Destravar Meditações Guiadas
-                  </button>
+        {/* ════════════ ABA SABÁTICO ════════════ */}
+        {activeTab === 'sabado' && (
+          <div className="page-enter">
+            {/* Carrossel no topo com margens e efeito flutuante */}
+            <div style={{ padding: '16px 16px 8px 16px' }}>
+              <div className="carousel-container">
+                <div className="carousel-wrapper" style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
+                  {carouselImages.map((src, idx) => (
+                    <img key={idx} src={src} alt={`Banner ${idx + 1}`} className="carousel-image" style={{ height: '180px' }} />
+                  ))}
                 </div>
-              ) : (
-                <div className="player-container">
-                  {codigoDia.url_audio_meditacao && (
-                    <audio
-                      ref={audioRef}
-                      src={codigoDia.url_audio_meditacao}
-                      onTimeUpdate={onAudioTimeUpdate}
-                      onLoadedMetadata={onAudioLoadedMetadata}
-                    />
-                  )}
-                  <p style={{ fontSize: '0.9rem', color: 'var(--accent-gold)', fontWeight: '600' }}>
-                    Áudio de Alinhamento - Dia {codigoDia.dia_id}
-                  </p>
-                  <div className="progress-bar-container" onClick={handleProgressBarClick}>
-                    <div
-                      className="progress-bar-fill"
-                      style={{ width: `${(audioCurrentTime / (audioDuration || 1)) * 100}%` }}
-                    />
-                  </div>
-                  <div className="flex-between" style={{ width: '100%', fontSize: '0.8rem', marginTop: '6px' }}>
-                    <span>{formatTime(audioCurrentTime)}</span>
-                    <span>{formatTime(audioDuration)}</span>
+                <div className="carousel-dots">
+                  {carouselImages.map((_, idx) => (
+                    <button key={idx} className={`carousel-dot${idx === carouselIndex ? ' active' : ''}`} onClick={() => setCarouselIndex(idx)} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Hero */}
+            <div className="page-hero hero-sabado">
+              <div className="hero-orb" style={{ width: 200, height: 200, top: -60, right: -40 }} />
+              <div className="hero-orb" style={{ width: 120, height: 120, bottom: 20, left: -20, opacity: 0.5 }} />
+              <div className="hero-content">
+                {codigoDia && (
+                  <>
+                    <div className={`pedagio-badge ${codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'badge-proposito' : 'badge-recompensa'}`} style={{ background: 'rgba(255,255,255,0.20)', color: '#fff', border: '1px solid rgba(255,255,255,0.35)', marginBottom: '12px' }}>
+                      {codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'Mateus 24:14' : 'Apocalipse 3:21'} — Código de Hoje
+                    </div>
+                    <div className="hero-title">"{codigoDia.codigo_verbal}"</div>
+                    <div className="hero-sub">{codigoDia.versiculo_chave}</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="page-content" style={{ paddingTop: '4px' }}>
+              
+              {codigoDia && (
+                <>
+                  {/* Reflexão */}
+                  <div className="glass-panel orange-card">
+                    <h3 style={{ marginBottom: '10px', color: '#C2550A' }}>💡 Reflexão do Dia</h3>
+                    <p style={{ lineHeight: '1.75' }}>{codigoDia.texto_reflexao}</p>
                   </div>
 
-                  <div className="player-controls">
-                    <button className="btn-play-pause" onClick={() => setAudioPlaying(!audioPlaying)}>
-                      {audioPlaying ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" style={{ marginLeft: '4px' }}>
-                          <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
-                        </svg>
+                  {/* Player */}
+                  <div className="glass-panel">
+                    <h3 style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      🎧 Meditação Guiada
+                      {user?.status_plano === 'FREE' && <span className="section-chip" style={{ fontSize: '0.62rem' }}>Premium</span>}
+                    </h3>
+                    {user?.status_plano === 'FREE' ? (
+                      <div className="premium-lock-card">
+                        <div className="premium-lock-icon">🔒</div>
+                        <h4 style={{ margin: '8px 0 4px 0', fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Conteúdo Exclusivo Premium</h4>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: '1.4' }}>Assine o Plano Premium para destravar os áudios diários de meditação e elevar a sua conexão espiritual.</p>
+                        <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', width: 'auto' }} onClick={() => setActiveTab('upgrade')}>🔓 Destravar Agora</button>
+                      </div>
+                    ) : (
+                      <div className="player-container">
+                        {codigoDia.url_audio_meditacao && (
+                          <audio ref={audioRef} src={codigoDia.url_audio_meditacao} onTimeUpdate={onAudioTimeUpdate} onLoadedMetadata={onAudioLoadedMetadata} />
+                        )}
+                        <div style={{ width: '100%' }}>
+                          <div className="progress-bar-container" onClick={handleProgressBarClick}>
+                            <div className="progress-bar-fill" style={{ width: `${(audioCurrentTime / (audioDuration || 1)) * 100}%` }} />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#78716C', marginTop: '6px' }}>
+                            <span>{formatTime(audioCurrentTime)}</span>
+                            <span>{formatTime(audioDuration)}</span>
+                          </div>
+                        </div>
+                        <button className="play-btn" onClick={() => setAudioPlaying(!audioPlaying)}>
+                          {audioPlaying
+                            ? <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" /></svg>
+                            : <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16" style={{ marginLeft: '3px' }}><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" /></svg>
+                          }
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Respiração */}
+                  <div className="glass-panel" style={{ textAlign: 'center' }}>
+                    <h3 style={{ marginBottom: '6px' }}>🌬️ O Botão do Descanso</h3>
+                    <p style={{ fontSize: '0.88rem', marginBottom: '20px', color: '#78716C' }}>Micro-pausa de respiração guiada — 4 segundos por phase.</p>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <button
+                        className={`breath-circle ${breathClass}`}
+                        onClick={iniciarRespiracao}
+                        disabled={isBreathing}
+                        style={{ border: 'none', cursor: isBreathing ? 'default' : 'pointer' }}
+                      >
+                        <span style={{ fontSize: '0.95rem', fontWeight: '600', color: '#334155' }}>{breathState}</span>
+                        {isBreathing && <span style={{ fontSize: '1.4rem', fontWeight: '800', color: '#F97316', marginTop: '6px' }}>{breathTimer}</span>}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* TRILHA ATIVA (SE HOUVER) */}
+                  {trilhaAtiva && (
+                    <div className="trilha-active-panel" style={{ marginTop: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span className="section-chip">Trilha: {trilhaAtiva.tema}</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Dia {trilhaAtiva.dia_progresso}/30</span>
+                      </div>
+                      {trilhaAtiva.conteudo && (
+                        <>
+                          <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>{trilhaAtiva.conteudo.titulo}</h3>
+                          <p style={{ fontStyle: 'italic', marginBottom: '10px', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>"{trilhaAtiva.conteudo.versiculo}"</p>
+                          <p style={{ marginBottom: '14px', fontSize: '0.92rem' }}>{trilhaAtiva.conteudo.reflexao}</p>
+                          <div className="glass-panel orange-card" style={{ padding: '12px 14px', marginBottom: '14px' }}>
+                            <strong style={{ fontSize: '0.85rem', color: 'var(--orange-dark)', display: 'block', marginBottom: '4px' }}>🎯 AÇÃO PRÁTICA DO DIA:</strong>
+                            <p style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{trilhaAtiva.conteudo.acao_pratica}</p>
+                          </div>
+                        </>
                       )}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn-primary" style={{ padding: '10px' }} onClick={completarDiaTrilha}>
+                          ✓ Concluir Ação de Hoje
+                        </button>
+                        <button className="btn-secondary" style={{ padding: '10px', background: '#FEE2E2', color: '#EF4444', border: '1px solid #FCA5A5' }} onClick={cancelarTrilha}>
+                          Abandonar
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
-            <div className="glass-panel text-center">
-              <h3 style={{ marginBottom: '10px' }}>O Botão do Descanso</h3>
-              <p style={{ marginBottom: '15px', fontSize: '0.9rem' }}>Micro-pausa de 3 segundos baseada na respiração e ancoragem no Agora de Deus.</p>
-              
-              <div className="breath-button-container">
-                <button
-                  className={`breath-circle ${isBreathing ? 'inhaling' : ''}`}
-                  onClick={iniciarRespiracao}
-                  disabled={isBreathing}
-                >
-                  <span style={{ fontSize: '0.95rem' }}>{breathState}</span>
-                  {isBreathing && <span style={{ fontSize: '1.2rem', marginTop: '5px' }}>{breathTimer}s</span>}
-                </button>
-              </div>
-            </div>
-            
-            {/* Seção Administrativa de Teste */}
-            <div className="glass-panel" style={{ border: '1px dashed rgba(229, 169, 59, 0.4)' }}>
-              <h4 style={{ color: 'var(--accent-gold)', marginBottom: '10px', fontSize: '0.9rem' }}>Ferramentas de Simulação (Desenvolvedor)</h4>
-              <div className="flex-column gap-sm">
-                <button className="btn-secondary" style={{ padding: '8px', fontSize: '0.8rem' }} onClick={avancarDia}>
-                  Simular Avanço de Dia (Avançar do Dia {user?.dia_atual} para {user?.dia_atual + 1})
-                </button>
-                <div className="flex-between gap-sm">
-                  <button className="btn-secondary" style={{ padding: '8px', fontSize: '0.8rem', flex: 1 }} onClick={() => alterarPlanoAdmin('FREE')}>
-                    Mudar para Plano FREE
-                  </button>
-                  <button className="btn-secondary" style={{ padding: '8px', fontSize: '0.8rem', flex: 1 }} onClick={() => alterarPlanoAdmin('PREMIUM')}>
-                    Mudar para PREMIUM
-                  </button>
-                </div>
-                <button className="btn-secondary" style={{ padding: '8px', fontSize: '0.8rem', color: '#ef4444' }} onClick={reiniciarJornada}>
-                  Reiniciar ao Dia 1
-                </button>
-              </div>
+                  {/* SELEÇÃO DE TRILHAS (SE NÃO HOUVER ATIVA) */}
+                  {!trilhaAtiva && listaTrilhas.length > 0 && (
+                    <div className="glass-panel">
+                      <h3 style={{ marginBottom: '12px' }}>🌱 Trilhas de Crescimento (30 Dias)</h3>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>Escolha um tema e faça um devocional focado diário.</p>
+                      {listaTrilhas.map(tema => (
+                        <div key={tema} className="trilha-theme-card" onClick={() => iniciarTrilha(tema)}>
+                          <div>
+                            <strong>Trilha de {tema}</strong>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Desafio diário de 30 dias</div>
+                          </div>
+                          <span style={{ color: 'var(--orange)', fontWeight: 'bold', fontSize: '1.1rem' }}>→</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Admin */}
+                  <div className="glass-panel" style={{ border: '1.5px dashed rgba(0,0,0,0.10)', background: 'rgba(255,255,255,0.40)' }}>
+                    <p style={{ fontSize: '0.72rem', fontWeight: '800', color: '#A8A29E', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>🔧 Simulação (Dev)</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <button className="btn-secondary" style={{ padding: '9px', fontSize: '0.82rem' }} onClick={avancarDia}>
+                        Avançar: Dia {user?.dia_atual} → {(user?.dia_atual ?? 0) + 1}
+                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn-secondary" style={{ flex: 1, padding: '9px', fontSize: '0.82rem' }} onClick={() => alterarPlanoAdmin('FREE')}>FREE</button>
+                        <button className="btn-secondary" style={{ flex: 1, padding: '9px', fontSize: '0.82rem' }} onClick={() => alterarPlanoAdmin('PREMIUM')}>PREMIUM</button>
+                      </div>
+                      <button className="btn-secondary" style={{ padding: '9px', fontSize: '0.82rem', color: '#ef4444' }} onClick={reiniciarJornada}>Reiniciar ao Dia 1</button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
 
-        {/* --- ABA CONTATOS (MATEUS 24:14 - AÇÃO PRÁTICA) --- */}
-        {activeTab === 'contatos' && (
-          <div className="flex-column gap-md">
-            <div className="flex-between">
-              <h2>Lista de Contatos</h2>
-              <button className="btn-primary" style={{ width: 'auto', padding: '8px 16px', fontSize: '0.9rem' }} onClick={() => setShowAddContato(!showAddContato)}>
-                {showAddContato ? 'Fechar' : 'Novo Contato'}
-              </button>
+        {/* ════════════ ABA BÍBLIA ════════════ */}
+        {activeTab === 'biblia' && bibleViewMode === 'reading' && (
+          <div className="bible-reader page-enter">
+            {/* Hero da Bíblia */}
+            <div className="page-hero hero-biblia" style={{ paddingBottom: '44px' }}>
+              <div className="hero-orb" style={{ width: 220, height: 220, top: -50, right: -60, background: 'rgba(249,115,22,0.20)' }} />
+              <div className="hero-content">
+                <div className="hero-label">📖 Bíblia Sagrada</div>
+                <div className="hero-title">{bibleSelectedBook.livro_nome}</div>
+                <div className="hero-sub">Capítulo {bibleSelectedChapter}</div>
+              </div>
             </div>
 
-            {/* Alertas Automáticos de Distanciamento */}
-            {contatos.filter(verificarAlerta48h).map(c => (
-              <div key={`alert-${c.id}`} className="glass-panel alert-warning" style={{ padding: '12px 16px', marginBottom: '0px' }}>
-                <p style={{ color: '#ef4444', fontWeight: '600', fontSize: '0.9rem' }}>
-                  ⚠️ Alerta de Distanciamento: Você tem notado a(o) <strong>{c.nome}</strong> ({c.relacao}) no Agora? Faça 1Convite de conexão hoje.
-                </p>
+            {/* Player de Áudio da Bíblia */}
+            {bibleAudioUrl && (
+              <div style={{ padding: '0 20px 10px 20px', marginTop: '-18px', position: 'relative', zIndex: 5 }}>
+                <div className="player-container" style={{ padding: '12px 16px', flexDirection: 'row', gap: '12px', background: 'rgba(255, 255, 255, 0.7)' }}>
+                  <audio ref={bibleAudioRef} src={bibleAudioUrl} onTimeUpdate={onBibleAudioTimeUpdate} onLoadedMetadata={onBibleAudioLoadedMetadata} />
+                  <button className="play-btn" style={{ width: '40px', height: '40px', flexShrink: 0 }} onClick={() => setBibleAudioPlaying(!bibleAudioPlaying)}>
+                    {bibleAudioPlaying
+                      ? <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" /></svg>
+                      : <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style={{ marginLeft: '2px' }}><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" /></svg>
+                    }
+                  </button>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div className="progress-bar-container" onClick={handleBibleAudioProgressBarClick} style={{ height: '4px' }}>
+                      <div className="progress-bar-fill" style={{ width: `${(bibleAudioCurrentTime / (bibleAudioDuration || 1)) * 100}%` }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#78716C' }}>
+                      <span>{formatTime(bibleAudioCurrentTime)}</span>
+                      <span>{formatTime(bibleAudioDuration)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-
-            {showAddContato && (
-              <form onSubmit={handleAddContato} className="glass-panel">
-                <h3 style={{ marginBottom: '15px' }}>Adicionar Próximo</h3>
-                {contatoErro && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '10px' }}>{contatoErro}</p>}
-                
-                <div className="form-group">
-                  <label>Nome Completo</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={newNome}
-                    onChange={e => setNewNome(e.target.value)}
-                    placeholder="Ex: Maria (Esposa), João (Filho)"
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>Relação / Vínculo</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={newRelacao}
-                    onChange={e => setNewRelacao(e.target.value)}
-                    placeholder="Ex: Família, Vizinho, Trabalho"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={newPrioritario}
-                      onChange={e => setNewPrioritario(e.target.checked)}
-                    />
-                    Contato Prioritário (Exige atenção a cada 48h)
-                  </label>
-                </div>
-
-                <button type="submit" className="btn-primary">Salvar no Reino</button>
-              </form>
             )}
 
-            <div>
-              {contatos.length === 0 ? (
-                <p className="text-center" style={{ padding: '40px 0' }}>Nenhum contato cadastrado. Adicione pessoas do seu convívio diário para começar a notá-las ativamente.</p>
+            {bibleResults.length > 0 ? (
+              <div style={{ padding: '16px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3>Resultados ({bibleResults.length})</h3>
+                  <button className="btn-secondary" style={{ padding: '5px 12px', fontSize: '0.82rem' }} onClick={() => { setBibleResults([]); setBibleSearchQuery(''); }}>Limpar</button>
+                </div>
+                {bibleResults.map((v, idx) => (
+                  <div key={idx} className="glass-panel" style={{ position: 'relative', paddingTop: '42px' }}>
+                    <span className="section-chip" style={{ position: 'absolute', top: '14px', right: '14px', fontSize: '0.62rem' }}>
+                      {v.livro_nome} {v.capitulo}:{v.versiculo}
+                    </span>
+                    <p style={{ fontStyle: 'italic', lineHeight: '1.80', fontSize: '1rem' }}>"{formatVerseText(v.texto)}"</p>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+                      <button className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.85rem' }} onClick={() => copyToClipboard(`"${v.texto}" - ${v.livro_nome} ${v.capitulo}:${v.versiculo}`)}>
+                        📋 Copiar
+                      </button>
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(`*"${v.texto}"*\n_${v.livro_nome} ${v.capitulo}:${v.versiculo}_\n\n👉 *1Convite:* https://1convite.com.br`)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="btn-primary"
+                        style={{ flex: 2, padding: '10px', textAlign: 'center', textDecoration: 'none' }}
+                      >
+                        📲 Enviar
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {bibleLoading ? (
+                  <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px', animation: 'spin 1.5s linear infinite', display: 'inline-block' }}>📖</div>
+                    <p style={{ color: '#A8A29E' }}>Carregando versículos...</p>
+                  </div>
+                ) : (
+                  <div style={{ padding: '16px 20px 0' }}>
+                    {bibleVerses.map(v => (
+                      <div
+                        key={v.id}
+                        className={`bible-verse-row${bibleSelectedVerse?.id === v.id ? ' selected' : ''}`}
+                        onClick={() => setBibleSelectedVerse(bibleSelectedVerse?.id === v.id ? null : v)}
+                      >
+                        <span className="bible-verse-num">{v.versiculo}</span>
+                        <span style={{ lineHeight: '1.75', fontSize: '1rem' }}>{formatVerseText(v.texto)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!bibleSelectedVerse && (
+                  <div style={{ padding: '28px 20px', marginTop: '20px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                    <form onSubmit={searchBible} style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                      <input type="text" className="input-field" placeholder="Buscar versículo (ex: amor, fé)..." value={bibleSearchQuery} onChange={e => setBibleSearchQuery(e.target.value)} />
+                      <button type="submit" className="btn-secondary" disabled={bibleLoading} style={{ flexShrink: 0, padding: '0 16px' }}>🔍</button>
+                    </form>
+                    {bibleError && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '12px' }}>{bibleError}</p>}
+                    <button className="btn-orange-outline" onClick={getRandomVerse}>🎲 Versículo Aleatório</button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Menu flutuante de versículo selecionado */}
+            {bibleSelectedVerse && bibleResults.length === 0 && (
+              <div className="bible-action-menu">
+                <button
+                  className="btn-secondary"
+                  style={{ flex: 1, padding: '12px' }}
+                  onClick={() => { copyToClipboard(`"${bibleSelectedVerse.texto}" - ${bibleSelectedBook.livro_nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}`); setBibleSelectedVerse(null); }}
+                >
+                  📋 Copiar
+                </button>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`*"${bibleSelectedVerse.texto}"*\n_${bibleSelectedBook.livro_nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}_\n\n👉 *1Convite:* https://1convite.com.br`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="btn-primary"
+                  style={{ flex: 2, padding: '12px', textAlign: 'center', textDecoration: 'none' }}
+                  onClick={() => setBibleSelectedVerse(null)}
+                >
+                  📲 Compartilhar
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════════════ ABA CONTATOS ════════════ */}
+        {activeTab === 'contatos' && (
+          <div className="page-enter">
+            {/* Hero */}
+            <div className="page-hero hero-contatos">
+              <div className="hero-orb" style={{ width: 200, height: 200, top: -40, left: -40, background: 'rgba(249,115,22,0.15)' }} />
+              <div className="hero-content">
+                <div className="hero-label">👥 Mateus 24:14</div>
+                <div className="hero-title">Meus Próximos</div>
+                <div className="hero-sub">{contatos.length} {contatos.length === 1 ? 'pessoa' : 'pessoas'} no seu círculo de influência</div>
+              </div>
+            </div>
+
+            <div className="page-content" style={{ paddingTop: '4px' }}>
+              {/* Alertas */}
+              {contatos.filter(verificarAlerta48h).map(c => (
+                <div key={`alert-${c.id}`} className="glass-panel" style={{ padding: '14px 18px', marginBottom: '12px', borderColor: 'rgba(239,68,68,0.25)', background: 'rgba(254,242,242,0.80)' }}>
+                  <p style={{ color: '#dc2626', fontWeight: '600', fontSize: '0.9rem' }}>
+                    ⚠️ Alerta: Você tem notado <strong>{c.nome}</strong> ({c.relacao})? Já se passaram 48h.
+                  </p>
+                </div>
+              ))}
+
+              {/* Botão adicionar */}
+              <button
+                className={showAddContato ? 'btn-secondary' : 'btn-primary'}
+                style={{ marginBottom: '16px' }}
+                onClick={() => setShowAddContato(!showAddContato)}
+              >
+                {showAddContato ? '✕ Fechar Formulário' : '+ Adicionar Próximo'}
+              </button>
+
+              {/* Form */}
+              {showAddContato && (
+                <form onSubmit={handleAddContato} className="glass-panel" style={{ marginBottom: '16px' }}>
+                  <h3 style={{ marginBottom: '16px' }}>🆕 Novo Contato</h3>
+                  {contatoErro && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '12px' }}>{contatoErro}</p>}
+                  <div className="input-group">
+                    <label>Nome Completo</label>
+                    <input type="text" className="input-field" value={newNome} onChange={e => setNewNome(e.target.value)} placeholder="Ex: Maria da Silva" required />
+                  </div>
+                  <div className="input-group">
+                    <label>Relação / Vínculo</label>
+                    <input type="text" className="input-field" value={newRelacao} onChange={e => setNewRelacao(e.target.value)} placeholder="Ex: Família, Vizinho, Trabalho" required />
+                  </div>
+                  <div className="input-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" checked={newPrioritario} onChange={e => setNewPrioritario(e.target.checked)} />
+                      <span>Contato Prioritário <span style={{ color: '#A8A29E', fontSize: '0.85rem' }}>(alerta a cada 48h)</span></span>
+                    </label>
+                  </div>
+                  <button type="submit" className="btn-primary" style={{ marginTop: '4px' }}>✅ Salvar no Reino</button>
+                </form>
+              )}
+
+              {/* Lista */}
+              {contatos.length === 0 && !showAddContato ? (
+                <div className="glass-panel" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🤝</div>
+                  <h3 style={{ marginBottom: '8px' }}>Nenhum Próximo ainda</h3>
+                  <p>Adicione pessoas do seu convívio diário para começar a notá-las com intenção.</p>
+                </div>
               ) : (
                 contatos.map(c => (
-                  <div key={c.id} className="contact-item flex-column gap-sm">
-                    <div className="flex-between" style={{ width: '100%' }}>
-                      <div className="contact-info">
-                        <div className="contact-name">
-                          {c.nome}
-                          {c.prioritario && <span className="priority-tag">Prioritário</span>}
+                  <div key={c.id} className="glass-panel" style={{ marginBottom: '12px', padding: '18px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #F97316, #FB923C)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '1.1rem', color: '#fff', flexShrink: 0 }}>
+                          {c.nome.charAt(0).toUpperCase()}
                         </div>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Vínculo: {c.relacao}</span>
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {c.nome}
+                            {c.prioritario && <span className="section-chip" style={{ fontSize: '0.60rem' }}>⭐ Prior.</span>}
+                          </div>
+                          <div style={{ fontSize: '0.82rem', color: '#78716C', marginTop: '2px' }}>{c.relacao}</div>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => deletarContato(c.id)}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                      <button onClick={() => deletarContato(c.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '1.1rem', padding: '4px' }}>🗑</button>
                     </div>
-
-                    <div className="flex-between" style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px', marginTop: '5px' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        Último convite:{' '}
-                        {c.ultimo_convite_timestamp > 0
-                          ? new Date(c.ultimo_convite_timestamp).toLocaleDateString('pt-BR')
-                          : 'Nunca'}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#A8A29E' }}>
+                        Último: {c.ultimo_convite_timestamp > 0 ? new Date(c.ultimo_convite_timestamp).toLocaleDateString('pt-BR') : 'Nunca'}
                       </span>
-                      
-                      <div className="flex-between" style={{ gap: '6px' }}>
-                        <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '6px' }} onClick={() => registrarAcao(c.id, 'mensagem')}>
-                          💬 Mensagem
-                        </button>
-                        <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '6px' }} onClick={() => registrarAcao(c.id, 'cafe')}>
-                          ☕ Café
-                        </button>
-                        <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '6px' }} onClick={() => registrarAcao(c.id, 'casa_igreja')}>
-                          🏠 Conectar
-                        </button>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.78rem', borderRadius: '10px' }} onClick={() => registrarAcao(c.id, 'mensagem')}>💬</button>
+                        <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.78rem', borderRadius: '10px' }} onClick={() => registrarAcao(c.id, 'cafe')}>☕</button>
+                        <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.78rem', borderRadius: '10px' }} onClick={() => registrarAcao(c.id, 'casa_igreja')}>🏠</button>
                       </div>
                     </div>
                   </div>
@@ -766,361 +891,159 @@ function App() {
               )}
 
               {user?.status_plano === 'FREE' && contatos.length >= 3 && (
-                <div className="glass-panel text-center" style={{ borderColor: 'var(--accent-gold)', marginTop: '20px' }}>
-                  <p style={{ marginBottom: '10px' }}>Você atingiu o limite máximo de 3 contatos salvos na Camada Gratuita.</p>
-                  <button className="btn-primary" onClick={() => setActiveTab('upgrade')}>
-                    Desbloquear Contatos Ilimitados
-                  </button>
+                <div className="glass-panel orange-card" style={{ textAlign: 'center', marginTop: '8px' }}>
+                  <p style={{ marginBottom: '14px', fontWeight: '500' }}>Limite de 3 contatos no plano gratuito.</p>
+                  <button className="btn-primary" onClick={() => setActiveTab('upgrade')}>🔓 Desbloquear Ilimitados</button>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* --- ABA BÍBLIA --- */}
-        {activeTab === 'biblia' && (
-          <div className="flex-column">
-            
-            {/* VIEW: SELECIONAR LIVRO */}
-            {bibleViewMode === 'select-book' && (
-              <div className="bible-modal-overlay">
-                <div className="bible-modal-header">
-                  <h3 style={{ margin: 0 }}>Selecione o Livro</h3>
-                  <button className="btn-secondary" style={{ padding: '6px 12px', border: 'none' }} onClick={() => setBibleViewMode('reading')}>
-                    ✕ Fechar
-                  </button>
-                </div>
-                <div className="bible-modal-content">
-                  <div className="bible-book-list">
-                    {bibleBooks.map((bk, idx) => (
-                      <div 
-                        key={idx} 
-                        className="bible-book-item"
-                        onClick={() => {
-                          setBibleSelectedBook(bk);
-                          setBibleViewMode('select-chapter');
-                        }}
-                      >
-                        {bk.livro_nome}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* VIEW: SELECIONAR CAPÍTULO */}
-            {bibleViewMode === 'select-chapter' && (
-              <div className="bible-modal-overlay">
-                <div className="bible-modal-header">
-                  <h3 style={{ margin: 0 }}>{bibleSelectedBook.nome}</h3>
-                  <button className="btn-secondary" style={{ padding: '6px 12px', border: 'none' }} onClick={() => setBibleViewMode('select-book')}>
-                    ← Voltar
-                  </button>
-                </div>
-                <div className="bible-modal-content">
-                  <div className="bible-chapter-grid">
-                    {Array.from({ length: bibleChaptersCount }).map((_, i) => (
-                      <div 
-                        key={i} 
-                        className="bible-chapter-btn"
-                        onClick={() => {
-                          setBibleSelectedChapter(i + 1);
-                          setBibleViewMode('reading');
-                        }}
-                      >
-                        {i + 1}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* VIEW: LEITURA E RESULTADOS */}
-            {bibleViewMode === 'reading' && (
-              <div className="bible-reader">
-                
-                {/* Se estiver buscando algo, mostra os resultados */}
-                {bibleResults.length > 0 ? (
-                  <div className="flex-column gap-sm" style={{ padding: '20px' }}>
-                    <div className="flex-between">
-                      <h3 style={{ marginBottom: '15px' }}>Resultados da Busca</h3>
-                      <button className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={() => { setBibleResults([]); setBibleSearchQuery(''); }}>Limpar</button>
-                    </div>
-                    {bibleResults.map((v, idx) => (
-                      <div key={idx} className="glass-panel" style={{ position: 'relative' }}>
-                        <span className="premium-status-badge" style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                          {v.livro_nome} {v.capitulo}:{v.versiculo}
-                        </span>
-                        <p style={{ marginTop: '20px', fontStyle: 'italic', color: 'var(--text-primary)' }}>"{v.texto}"</p>
-                        
-                        <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                          <button 
-                            className="btn-secondary" 
-                            style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
-                            onClick={() => copyToClipboard(`"${v.texto}" - ${v.livro_nome} ${v.capitulo}:${v.versiculo}`)}
-                          >
-                            📋 Copiar
-                          </button>
-                          <a 
-                            href={`https://wa.me/?text=${encodeURIComponent(`*"${v.texto}"*\n_${v.livro_nome} ${v.capitulo}:${v.versiculo}_\n\n👉 *Descubra o propósito no 1Convite:* https://1convite.com.br`)}`} 
-                            target="_blank" rel="noopener noreferrer"
-                            className="btn-primary"
-                            style={{ flex: 2, padding: '8px', fontSize: '0.8rem', textAlign: 'center', textDecoration: 'none' }}
-                          >
-                            📲 Enviar (WhatsApp)
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    {/* Leitura do Capítulo */}
-                    {bibleLoading ? (
-                      <p style={{ textAlign: 'center', marginTop: '50px' }}>Carregando...</p>
-                    ) : (
-                      <div style={{ padding: '0 20px' }}>
-                        {bibleVerses.map(v => (
-                          <div 
-                            key={v.id} 
-                            className={`bible-verse-row ${bibleSelectedVerse?.id === v.id ? 'selected' : ''}`}
-                            onClick={() => setBibleSelectedVerse(bibleSelectedVerse?.id === v.id ? null : v)}
-                          >
-                            <span className="bible-verse-num">{v.versiculo}</span>
-                            <span>{v.texto}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Menu de Ação Flutuante (Aparece ao clicar num versículo) */}
-                {bibleSelectedVerse && bibleResults.length === 0 && (
-                  <div className="bible-action-menu">
-                    <button 
-                      className="btn-secondary" 
-                      style={{ flex: 1, padding: '10px' }}
-                      onClick={() => {
-                        copyToClipboard(`"${bibleSelectedVerse.texto}" - ${bibleSelectedBook.nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}`);
-                        setBibleSelectedVerse(null);
-                      }}
-                    >
-                      📋 Copiar
-                    </button>
-                    <a 
-                      href={`https://wa.me/?text=${encodeURIComponent(`*"${bibleSelectedVerse.texto}"*\n_${bibleSelectedBook.nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}_\n\n👉 *Descubra o propósito no 1Convite:* https://1convite.com.br`)}`} 
-                      target="_blank" rel="noopener noreferrer"
-                      className="btn-primary"
-                      style={{ flex: 2, padding: '10px', textAlign: 'center', textDecoration: 'none' }}
-                      onClick={() => setBibleSelectedVerse(null)}
-                    >
-                      📲 Enviar
-                    </a>
-                  </div>
-                )}
-                
-                {/* Barra de Busca rápida no final da leitura */}
-                {!bibleSelectedVerse && bibleResults.length === 0 && (
-                  <div style={{ padding: '20px', marginTop: '40px', borderTop: '1px solid var(--border-color)' }}>
-                    <form onSubmit={searchBible} style={{ display: 'flex', gap: '10px' }}>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="Buscar (ex: amor)..."
-                        value={bibleSearchQuery}
-                        onChange={(e) => setBibleSearchQuery(e.target.value)}
-                      />
-                      <button type="submit" className="btn-secondary" disabled={bibleLoading}>
-                        🔍
-                      </button>
-                    </form>
-                    <button className="btn-secondary" style={{ width: '100%', marginTop: '10px' }} onClick={getRandomVerse}>
-                      🎲 Puxar Versículo Aleatório
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* --- ABA HISTÓRICO DE CÓDIGOS (EXCLUSIVO PREMIUM) --- */}
+        {/* ════════════ ABA HISTÓRICO ════════════ */}
         {activeTab === 'historico' && (
-          <div className="flex-column gap-md">
-            <h2>Histórico de Códigos</h2>
-            
-            {user?.status_plano === 'FREE' ? (
-              <div className="glass-panel text-center" style={{ padding: '30px 20px' }}>
-                <div className="timer-circle" style={{ borderColor: 'var(--accent-gold)' }}>🔒</div>
-                <h3 style={{ margin: '15px 0' }}>Funcionalidade Premium</h3>
-                <p style={{ marginBottom: '20px' }}>Tenha acesso ao mural completo de códigos destravados, buscas rápidas e devocionais passadas.</p>
-                <button className="btn-primary" onClick={() => setActiveTab('upgrade')}>
-                  Destravar Histórico e Busca
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 1A5 5 0 1 1 8 3a5 5 0 0 1 0 10z"/>
-                  </svg>
-                </button>
+          <div className="page-enter">
+            <div className="page-hero hero-contatos" style={{ background: 'linear-gradient(135deg, #475569 0%, #64748B 100%)' }}>
+              <div className="hero-content">
+                <div className="hero-label">📚 Jornada</div>
+                <div className="hero-title">Histórico de Códigos</div>
+                <div className="hero-sub">Mural de revelações da sua caminhada</div>
               </div>
-            ) : (
-              <>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="🔍 Pesquisar código, versículo ou palavra-chave..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
-                </div>
+            </div>
 
-                <div className="flex-column gap-sm">
+            <div className="page-content" style={{ paddingTop: '4px' }}>
+              {user?.status_plano === 'FREE' ? (
+                <div className="premium-lock-card" style={{ padding: '36px 24px' }}>
+                  <div className="premium-lock-icon">🔒</div>
+                  <h4 style={{ margin: '8px 0 4px 0', fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Mural Completo de Códigos</h4>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>Acesse a linha do tempo completa de todas as suas revelações e códigos diários destravados.</p>
+                  <button className="btn-primary" style={{ padding: '10px 20px', fontSize: '0.9rem', width: 'auto' }} onClick={() => setActiveTab('upgrade')}>🔓 Destravar Histórico</button>
+                </div>
+              ) : (
+                <>
+                  <input type="text" className="input-field" placeholder="🔍 Pesquisar código, versículo..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ marginBottom: '16px' }} />
                   {historico
-                    .filter(item => 
-                      item.codigo_verbal.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      item.versiculo_chave.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      item.texto_reflexao.toLowerCase().includes(searchQuery.toLowerCase())
-                    )
+                    .filter(item => item.codigo_verbal.toLowerCase().includes(searchQuery.toLowerCase()) || item.versiculo_chave.toLowerCase().includes(searchQuery.toLowerCase()))
                     .map(item => (
-                      <div key={item.dia_id} className="glass-panel" style={{ padding: '16px' }}>
-                        <div className="flex-between" style={{ marginBottom: '8px' }}>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--accent-gold)', fontWeight: '600' }}>
-                            DIA {item.dia_id} — {item.pilar_origem.replace('_', ' ')}
-                          </span>
+                      <div key={item.dia_id} className="glass-panel">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span className="section-chip" style={{ fontSize: '0.68rem' }}>Dia {item.dia_id}</span>
+                          <span style={{ fontSize: '0.72rem', color: '#A8A29E', fontWeight: '600' }}>{item.pilar_origem?.replace('_', ' ')}</span>
                         </div>
-                        <h3 style={{ fontSize: '1rem', marginBottom: '8px' }}>{item.codigo_verbal}</h3>
-                        <p style={{ fontStyle: 'italic', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-muted)' }}>{item.versiculo_chave}</p>
-                        <p style={{ fontSize: '0.9rem' }}>{item.texto_reflexao}</p>
+                        <h3 style={{ fontSize: '1rem', marginBottom: '6px' }}>{item.codigo_verbal}</h3>
+                        <p style={{ fontStyle: 'italic', fontSize: '0.85rem', color: '#78716C' }}>{item.versiculo_chave}</p>
                       </div>
                     ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* --- ABA UPGRADE (MERCADO PAGO) --- */}
-        {activeTab === 'upgrade' && (
-          <div className="flex-column gap-md">
-            <div className="glass-panel text-center">
-              <h2 style={{ fontSize: '1.6rem', color: 'var(--accent-gold)' }}>Ative o Plano Premium</h2>
-              <p style={{ margin: '10px 0 20px' }}>Entre no governo do Reino e desfrute plenamente das ferramentas de transformação.</p>
-              
-              <div className="flex-column gap-sm" style={{ textAlign: 'left', marginBottom: '20px' }}>
-                <div className="flex-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span>🎧 Meditações Guiadas (365 áudios)</span>
-                  <span style={{ color: 'var(--accent-teal)', fontWeight: '600' }}>Liberado</span>
-                </div>
-                <div className="flex-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span>👥 Contatos do Ide (Mateus 24:14)</span>
-                  <span style={{ color: 'var(--accent-teal)', fontWeight: '600' }}>Ilimitados</span>
-                </div>
-                <div className="flex-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span>⚠️ Alertas de Conexão (48h)</span>
-                  <span style={{ color: 'var(--accent-teal)', fontWeight: '600' }}>Automáticos</span>
-                </div>
-                <div className="flex-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span>📖 Mural de Códigos e Pesquisa Histórica</span>
-                  <span style={{ color: 'var(--accent-teal)', fontWeight: '600' }}>Liberado</span>
-                </div>
-              </div>
-
-              <div style={{ margin: '20px 0' }}>
-                <span style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--text-primary)' }}>R$ 19,90</span>
-                <span style={{ color: 'var(--text-secondary)' }}> / mensal</span>
-              </div>
-
-              <button className="btn-primary" onClick={iniciarCheckoutMercadoPago} disabled={isPaying}>
-                {isPaying ? 'Gerando Preferência...' : 'Assinar com Mercado Pago'}
-              </button>
+                  {historico.length === 0 && (
+                    <div className="glass-panel" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                      <div style={{ fontSize: '2rem', marginBottom: '10px' }}>📅</div>
+                      <p>Nenhum código registrado ainda. Complete mais dias!</p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}
 
-        {/* --- TELA MOCK MERCADO PAGO --- */}
+        {/* ════════════ ABA UPGRADE ════════════ */}
+        {activeTab === 'upgrade' && (
+          <div className="page-enter">
+            <div className="page-hero hero-premium">
+              <div className="hero-orb" style={{ width: 250, height: 250, top: -60, right: -50, background: 'rgba(249,115,22,0.25)' }} />
+              <div className="hero-content">
+                <div className="hero-label">⭐ Plano Premium</div>
+                <div className="hero-title">Entre no Governo do Reino</div>
+                <div className="hero-sub">Ferramentas completas de transformação espiritual</div>
+              </div>
+            </div>
+
+            <div className="page-content" style={{ paddingTop: '4px' }}>
+              <div className="glass-panel dark-card" style={{ marginBottom: '16px' }}>
+                {[
+                  { icon: '🎧', feat: 'Meditações Guiadas', val: '365 áudios', desc: 'Um áudio por dia de alinhamento' },
+                  { icon: '👥', feat: 'Contatos Ilimitados', val: 'Sem limites', desc: 'Todo o seu círculo de influência' },
+                  { icon: '⚠️', feat: 'Alertas de Conexão', val: 'Automáticos', desc: 'Notificação a cada 48h por prioritário' },
+                  { icon: '📖', feat: 'Histórico Completo', val: 'Liberado', desc: 'Mural de todos os códigos' },
+                ].map(({ icon, feat, val, desc }) => (
+                  <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>{icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#fff' }}>{feat}</div>
+                      <div style={{ fontSize: '0.80rem', color: 'rgba(255,255,255,0.60)' }}>{desc}</div>
+                    </div>
+                    <span style={{ fontWeight: '700', color: '#FCD34D', fontSize: '0.85rem', flexShrink: 0 }}>{val}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="glass-panel orange-card" style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.85rem', color: '#78716C', marginBottom: '4px', fontWeight: '600' }}>PLANO MENSAL</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '4px', marginBottom: '20px' }}>
+                  <span style={{ fontSize: '1.1rem', color: '#78716C' }}>R$</span>
+                  <span style={{ fontSize: '3rem', fontWeight: '900', color: '#C2550A', lineHeight: 1 }}>19</span>
+                  <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#C2550A' }}>,90</span>
+                  <span style={{ fontSize: '0.85rem', color: '#A8A29E', alignSelf: 'flex-end', marginBottom: '6px' }}>/mês</span>
+                </div>
+                <button className="btn-primary" onClick={iniciarCheckoutMercadoPago} disabled={isPaying}>
+                  {isPaying ? '⏳ Gerando...' : '🚀 Assinar com Mercado Pago'}
+                </button>
+                <p style={{ fontSize: '0.78rem', color: '#A8A29E', marginTop: '12px' }}>Cancele quando quiser • Pagamento seguro</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════════════ TELA PAGAMENTO ════════════ */}
         {activeTab === 'simular-pagamento' && (
-          <div className="flex-column gap-md">
-            <div className="glass-panel" style={{ borderTop: '4px solid #009ee3' }}>
-              <div className="flex-between" style={{ marginBottom: '15px' }}>
-                <span style={{ color: '#009ee3', fontWeight: '700', fontSize: '1.2rem' }}>mercado pago</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>SANDBOX</span>
+          <div className="page-enter" style={{ padding: '20px', paddingBottom: '40px' }}>
+            <div className="glass-panel" style={{ borderTop: '4px solid #009ee3', marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <span style={{ color: '#009ee3', fontWeight: '800', fontSize: '1.2rem' }}>mercado pago</span>
+                <span style={{ fontSize: '0.75rem', color: '#A8A29E', fontWeight: '700', border: '1px solid #E5E7EB', padding: '2px 8px', borderRadius: '4px' }}>SANDBOX</span>
               </div>
-              <h3 style={{ marginBottom: '15px' }}>Resumo da Assinatura</h3>
-              <div className="flex-between" style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', marginBottom: '20px' }}>
-                <span>1Convite Premium - Plano Recorrente</span>
-                <strong>R$ 19,90</strong>
+              <h3 style={{ marginBottom: '14px' }}>Resumo da Assinatura</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', background: '#F8FAFC', padding: '12px 16px', borderRadius: '10px', marginBottom: '18px', border: '1px solid #E2E8F0' }}>
+                <span style={{ fontWeight: '500' }}>1Convite Premium — Mensal</span>
+                <strong style={{ color: '#1C1917' }}>R$ 19,90</strong>
               </div>
-
-              <p style={{ fontSize: '0.85rem', marginBottom: '20px' }}>
-                Você está no ambiente de checkout seguro do Mercado Pago. Clique no botão abaixo para simular a aprovação e retorno instantâneo do pagamento via Pix/Cartão.
+              <p style={{ fontSize: '0.88rem', marginBottom: '20px', color: '#78716C', lineHeight: '1.65' }}>
+                Ambiente de checkout seguro. Clique no botão abaixo para simular a aprovação instantânea do pagamento.
               </p>
-
-              <button className="btn-primary" style={{ background: '#009ee3', color: '#fff' }} onClick={finalizarPagamentoSimulado}>
+              <button className="btn-primary" style={{ background: 'linear-gradient(135deg, #009ee3, #0088CC)' }} onClick={finalizarPagamentoSimulado}>
                 ⚡ Confirmar e Simular Aprovação
               </button>
-              
-              <button className="btn-secondary" style={{ marginTop: '10px', width: '100%' }} onClick={() => setActiveTab('upgrade')}>
-                Cancelar
-              </button>
+              <button className="btn-secondary" style={{ marginTop: '10px', width: '100%' }} onClick={() => setActiveTab('upgrade')}>Cancelar</button>
             </div>
           </div>
         )}
+
       </main>
 
-      {/* Navegação por Abas inferior */}
+      {/* ── BOTTOM NAV ────────────────────────── */}
       {activeTab !== 'pedagio' && activeTab !== 'simular-pagamento' && (
         <nav className="nav-tabs">
-          <button
-            className={`tab-item ${activeTab === 'sabado' ? 'active' : ''}`}
-            onClick={() => setActiveTab('sabado')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
-            Sabático
-          </button>
-          
-          <button
-            className={`tab-item ${activeTab === 'biblia' ? 'active' : ''}`}
-            onClick={() => setActiveTab('biblia')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            Bíblia
-          </button>
-          
-          <button
-            className={`tab-item ${activeTab === 'contatos' ? 'active' : ''}`}
-            onClick={() => setActiveTab('contatos')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            Contatos
-          </button>
-          
-          <button
-            className={`tab-item ${activeTab === 'historico' ? 'active' : ''}`}
-            onClick={() => setActiveTab('historico')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Histórico
-          </button>
-
-          <button
-            className={`tab-item ${activeTab === 'upgrade' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upgrade')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
-            Premium
-          </button>
+          {[
+            { id: 'sabado', label: 'Sabático', path: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' },
+            { id: 'biblia', label: 'Bíblia', path: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+            { id: 'contatos', label: 'Contatos', path: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+            { id: 'historico', label: 'Histórico', path: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+            { id: 'upgrade', label: 'Premium', path: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              className={`tab-item${activeTab === tab.id ? ' active' : ''}`}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (tab.id === 'biblia') { setBibleViewMode('reading'); setBibleSelectedVerse(null); }
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={activeTab === tab.id ? 2.2 : 1.8} d={tab.path} />
+              </svg>
+              {tab.label}
+            </button>
+          ))}
         </nav>
       )}
     </>

@@ -186,6 +186,103 @@ async function initDb() {
     }
     console.log('Matriz diária populada com sucesso!');
   }
+
+  // Criar tabela de dicionário
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS tb_dicionario (
+      termo TEXT PRIMARY KEY,
+      significado TEXT NOT NULL
+    )
+  `);
+
+  // Popular dicionário se vazio
+  const dicCount = await dbGet('SELECT COUNT(*) as count FROM tb_dicionario');
+  if (dicCount.count === 0) {
+    console.log('Populando dicionário teológico...');
+    const termos = [
+      { termo: 'graça', significado: 'Favor imerecido concedido por Deus ao homem. O amor ativo que resgata sem exigir méritos.' },
+      { termo: 'fé', significado: 'Firme fundamento das coisas que se esperam, e a prova das coisas que se não veem (Hebreus 11:1).' },
+      { termo: 'reino', significado: 'O governo e a soberania de Deus estabelecidos no coração do homem e manifestados na sociedade.' },
+      { termo: 'propósito', significado: 'A intenção divina para a qual cada ser foi criado; o alinhamento com a vontade do Criador.' },
+      { termo: 'amor', significado: 'Do grego "Agape", o amor incondicional, sacrificial e baseado em decisão, não em sentimentos.' },
+      { termo: 'sabático', significado: 'Repouso ordenado por Deus, não apenas físico, mas espiritual, descansando na suficiência divina.' },
+      { termo: 'evangelho', significado: 'As "Boas Novas" da salvação, restauração e reconciliação da criação com Deus através de Cristo.' },
+      { termo: 'justiça', significado: 'Retidão moral e conformidade com a vontade de Deus. Estar em posição correta perante o Criador.' }
+    ];
+    for (const t of termos) {
+      await dbRun('INSERT INTO tb_dicionario (termo, significado) VALUES (?, ?)', [t.termo, t.significado]);
+    }
+  }
+
+  // Criar tabela de trilhas de crescimento
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS tb_trilhas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tema TEXT NOT NULL,
+      dia_trilha INTEGER NOT NULL,
+      titulo TEXT NOT NULL,
+      versiculo TEXT NOT NULL,
+      reflexao TEXT NOT NULL,
+      acao_pratica TEXT NOT NULL
+    )
+  `);
+
+  // Criar tabela de progresso de trilhas do usuário
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS tb_usuario_trilha_progresso (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trilha_ativa TEXT DEFAULT NULL,
+      dia_progresso INTEGER DEFAULT 1,
+      atualizado_em INTEGER DEFAULT 0
+    )
+  `);
+
+  // Adicionar registro inicial de progresso se vazio
+  const trProg = await dbGet('SELECT * FROM tb_usuario_trilha_progresso LIMIT 1');
+  if (!trProg) {
+    await dbRun('INSERT INTO tb_usuario_trilha_progresso (trilha_ativa, dia_progresso, atualizado_em) VALUES (NULL, 1, 0)');
+  }
+
+  // Popular trilhas de 30 dias se vazio
+  const trilhaCount = await dbGet('SELECT COUNT(*) as count FROM tb_trilhas');
+  if (trilhaCount.count === 0) {
+    console.log('Populando Trilhas de Crescimento (30 dias para cada tema)...');
+    const temas = ['Ansiedade', 'Família', 'Finanças', 'Propósito'];
+    
+    // Gerar 30 dias para cada tema
+    for (const tema of temas) {
+      for (let dia = 1; dia <= 30; dia++) {
+        let titulo, versiculo, reflexao, acao_pratica;
+        
+        if (tema === 'Ansiedade') {
+          titulo = `Dia ${dia}: Entregando o Controle`;
+          versiculo = 'Não andeis ansiosos por coisa alguma... - Filipenses 4:6';
+          reflexao = `A ansiedade surge quando tentamos carregar um fardo de amanhã com a força de hoje. No dia ${dia} dessa jornada de paz, lembre-se de que Deus governa o tempo e o agora.`;
+          acao_pratica = 'Pare o que está fazendo por 2 minutos, respire fundo e declare: Eu confio no Teu governo.';
+        } else if (tema === 'Família') {
+          titulo = `Dia ${dia}: Fortalecendo Laços`;
+          versiculo = 'Eu e a minha casa serviremos ao Senhor. - Josué 24:15';
+          reflexao = `A família é o primeiro laboratório do Reino de Deus na terra. No dia ${dia}, veja o valor sagrado de cultivar relacionamentos saudáveis dentro do seu lar.`;
+          acao_pratica = 'Faça um elogio sincero para alguém da sua família hoje ou mande uma mensagem de carinho.';
+        } else if (tema === 'Finanças') {
+          titulo = `Dia ${dia}: Princípio da Mordomia`;
+          versiculo = 'Ao Senhor pertence a terra e tudo o que nela há. - Salmo 24:1';
+          reflexao = `Não somos donos, mas mordomos dos recursos que Deus confiou a nós. No dia ${dia}, compreenda que a generosidade é a vacina contra a avareza e o medo da escassez.`;
+          acao_pratica = 'Separe um valor ou prepare algo para abençoar alguém que está passando por necessidade.';
+        } else {
+          titulo = `Dia ${dia}: Descobrindo o Chamado`;
+          versiculo = 'Pois Dele, por Ele e para Ele são todas as coisas. - Romanos 11:36';
+          reflexao = `Propósito não é o que você faz para Deus, mas o que Deus faz através de você. No dia ${dia}, sintonize seu coração com os planos eternos do Pai.`;
+          acao_pratica = 'Escreva em um papel três talentos que você tem e como pode usá-los para servir ao próximo.';
+        }
+
+        await dbRun(
+          'INSERT INTO tb_trilhas (tema, dia_trilha, titulo, versiculo, reflexao, acao_pratica) VALUES (?, ?, ?, ?, ?, ?)',
+          [tema, dia, titulo, versiculo, reflexao, acao_pratica]
+        );
+      }
+    }
+  }
 }
 
 // Inicializa Tabelas
@@ -429,6 +526,147 @@ app.get('/api/v1/biblia/aleatorio', async (req, res) => {
   try {
     const versiculo = await dbGet('SELECT * FROM tb_biblia ORDER BY RANDOM() LIMIT 1');
     res.json(versiculo);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obter URL do áudio de um capítulo da Bíblia (WordProject MP3 CDN)
+app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
+  try {
+    const { abrev, capitulo } = req.params;
+    
+    const ordemLivros = [
+      'gn', 'ex', 'lv', 'nm', 'dt', 'js', 'jz', 'rt', '1sm', '2sm', 
+      '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'jo', 'sl', 'pv', 
+      'ec', 'ct', 'is', 'jr', 'lm', 'ez', 'dn', 'os', 'jl', 'am', 
+      'ob', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml', 'mt', 'mc', 
+      'lc', 'jo', 'at', 'rm', '1co', '2co', 'gl', 'ef', 'fp', 'cl', 
+      '1ts', '2ts', '1tm', '2tm', 'tt', 'fm', 'hb', 'tg', '1pe', '2pe', 
+      '1jo', '2jo', '3jo', 'jd', 'ap'
+    ];
+    
+    const englishBooks = [
+      "genesis", "exodus", "leviticus", "numbers", "deuteronomy", "joshua", "judges", "ruth",
+      "1samuel", "2samuel", "1kings", "2kings", "1chronicles", "2chronicles", "ezra", "nehemiah",
+      "esther", "job", "psalms", "proverbs", "ecclesiastes", "songofsolomon", "isaiah", "jeremiah",
+      "lamentations", "ezekiel", "daniel", "hosea", "joel", "amos", "obadiah", "jonah", "micah",
+      "nahum", "habakkuk", "zephaniah", "haggai", "zechariah", "malachi", "matthew", "mark",
+      "luke", "john", "acts", "romans", "1corinthians", "2corinthians", "galatians", "ephesians",
+      "philippians", "colossians", "1thessalonians", "2thessalonians", "1timothy", "2timothy",
+      "titus", "philemon", "hebrews", "james", "1peter", "2peter", "1john", "2john", "3john",
+      "jude", "revelation"
+    ];
+    
+    let index = ordemLivros.indexOf(abrev.toLowerCase());
+    if (index === -1) {
+      if (abrev.toLowerCase() === 'jn') index = 17; // Jó
+      else return res.status(404).json({ error: 'Livro não suportado para áudio' });
+    }
+    
+    const bookName = englishBooks[index];
+    const capNumero = String(capitulo).padStart(3, '0');
+    const audioUrl = `https://beblia.bible:81/BibleAudio/portuguese/${bookName}/${capNumero}.mp3`;
+    
+    res.json({ url: audioUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obter termos e significados do dicionário teológico
+app.get('/api/v1/dicionario/termos', async (req, res) => {
+  try {
+    const termos = await dbAll('SELECT * FROM tb_dicionario');
+    // Retorna como objeto chave-valor para facilitar o parse no frontend
+    const dicMap = {};
+    termos.forEach(t => {
+      dicMap[t.termo.toLowerCase()] = t.significado;
+    });
+    res.json(dicMap);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Listar todas as trilhas temáticas disponíveis
+app.get('/api/v1/trilhas/lista', async (req, res) => {
+  try {
+    const trilhas = await dbAll('SELECT DISTINCT tema FROM tb_trilhas');
+    res.json(trilhas.map(t => t.tema));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Iniciar uma trilha de crescimento
+app.post('/api/v1/trilhas/iniciar', async (req, res) => {
+  try {
+    const { tema } = req.body;
+    if (!tema) return res.status(400).json({ error: 'Tema da trilha é obrigatório' });
+    
+    await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = ?, dia_progresso = 1, atualizado_em = ?', [tema, Date.now()]);
+    res.json({ success: true, tema, dia_progresso: 1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Cancelar/Finalizar a trilha ativa
+app.post('/api/v1/trilhas/cancelar', async (req, res) => {
+  try {
+    await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = NULL, dia_progresso = 1');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obter dados da trilha ativa e conteúdo do dia atual dela
+app.get('/api/v1/trilhas/ativa', async (req, res) => {
+  try {
+    const progresso = await dbGet('SELECT * FROM tb_usuario_trilha_progresso LIMIT 1');
+    if (!progresso || !progresso.trilha_ativa) {
+      return res.json({ ativa: false });
+    }
+    
+    const conteudo = await dbGet(
+      'SELECT * FROM tb_trilhas WHERE tema = ? AND dia_trilha = ?', 
+      [progresso.trilha_ativa, progresso.dia_progresso]
+    );
+    
+    res.json({
+      ativa: true,
+      tema: progresso.trilha_ativa,
+      dia_progresso: progresso.dia_progresso,
+      conteudo
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Completar dia da trilha e avançar
+app.post('/api/v1/trilhas/completar-dia', async (req, res) => {
+  try {
+    const progresso = await dbGet('SELECT * FROM tb_usuario_trilha_progresso LIMIT 1');
+    if (!progresso || !progresso.trilha_ativa) {
+      return res.status(400).json({ error: 'Nenhuma trilha ativa no momento' });
+    }
+    
+    const novoDia = progresso.dia_progresso + 1;
+    
+    if (novoDia > 30) {
+      // Concluiu a trilha inteira!
+      await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = NULL, dia_progresso = 1');
+      res.json({ success: true, concluida: true });
+    } else {
+      await dbRun(
+        'UPDATE tb_usuario_trilha_progresso SET dia_progresso = ?, atualizado_em = ?', 
+        [novoDia, Date.now()]
+      );
+      res.json({ success: true, concluida: false, novoDia });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
