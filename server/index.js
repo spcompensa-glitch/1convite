@@ -536,12 +536,13 @@ app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
   try {
     const { abrev, capitulo } = req.params;
     
+    // Os 66 livros da Bíblia na ordem exata (1 a 66)
     const ordemLivros = [
       'gn', 'ex', 'lv', 'nm', 'dt', 'js', 'jz', 'rt', '1sm', '2sm', 
-      '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'jo', 'sl', 'pv', 
+      '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'jó', 'sl', 'pv', 
       'ec', 'ct', 'is', 'jr', 'lm', 'ez', 'dn', 'os', 'jl', 'am', 
-      'ob', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml', 'mt', 'mc', 
-      'lc', 'jo', 'at', 'rm', '1co', '2co', 'gl', 'ef', 'fp', 'cl', 
+      'ob', 'jn', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml', 'mt', 'mc', 
+      'lc', 'jo', 'atos', 'rm', '1co', '2co', 'gl', 'ef', 'fp', 'cl', 
       '1ts', '2ts', '1tm', '2tm', 'tt', 'fm', 'hb', 'tg', '1pe', '2pe', 
       '1jo', '2jo', '3jo', 'jd', 'ap'
     ];
@@ -558,10 +559,13 @@ app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
       "jude", "revelation"
     ];
     
-    let index = ordemLivros.indexOf(abrev.toLowerCase());
+    let searchAbrev = abrev.toLowerCase();
+    if (searchAbrev === 'job') searchAbrev = 'jó';
+    if (searchAbrev === 'at') searchAbrev = 'atos';
+    
+    let index = ordemLivros.indexOf(searchAbrev);
     if (index === -1) {
-      if (abrev.toLowerCase() === 'jn') index = 17; // Jó
-      else return res.status(404).json({ error: 'Livro não suportado para áudio' });
+      return res.status(404).json({ error: 'Livro não suportado para áudio' });
     }
     
     const bookName = englishBooks[index];

@@ -23,11 +23,11 @@ const dbRun = (query, params = []) => {
   });
 };
 
-const BIBLE_URL = 'https://raw.githubusercontent.com/thiagobodruk/bible/master/json/pt_nvi.json';
+const BIBLE_URL = 'https://raw.githubusercontent.com/thiagobodruk/bible/master/json/pt_acf.json';
 
 const downloadBible = () => {
   return new Promise((resolve, reject) => {
-    console.log('Baixando JSON da Bíblia (NVI)...');
+    console.log('Baixando JSON da Bíblia (Almeida Corrigida Fiel - ACF)...');
     https.get(BIBLE_URL, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
