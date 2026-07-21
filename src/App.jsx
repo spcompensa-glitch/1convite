@@ -71,6 +71,43 @@ function App() {
   const [profileAvatar, setProfileAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80');
   const [profileSavedMsg, setProfileSavedMsg] = useState('');
 
+  // Login Dedicado
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginNome, setLoginNome] = useState('');
+  const [loginMethod, setLoginMethod] = useState('google'); // 'google' ou 'email'
+  const [loginError, setLoginError] = useState('');
+
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    if (!loginEmail || !loginNome) {
+      setLoginError('Por favor, preencha todos os campos.');
+      return;
+    }
+    const avatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(loginNome)}`;
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: loginNome, email: loginEmail, avatar })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setProfileName(data.user.nome);
+        setProfileEmail(data.user.email);
+        setProfileAvatar(data.user.avatar);
+        setLoginEmail('');
+        setLoginNome('');
+        setLoginError('');
+      } else {
+        setLoginError('Erro ao fazer o login.');
+      }
+    } catch {
+      setLoginError('Erro de conexão ao servidor.');
+    }
+  };
+
   // Auxiliar para decodificar JWT do Google no Frontend
   const parseJwt = (token) => {
     try {
@@ -224,23 +261,26 @@ function App() {
 
   // Efeito para inicializar o botão do Google Identity Services
   useEffect(() => {
-    if (activeTab === 'conta' && window.google) {
+    if (window.google) {
       setTimeout(() => {
-        try {
-          window.google.accounts.id.initialize({
-            client_id: "777777777777-dummygoogleclientid.apps.googleusercontent.com", // Substituir por ID real em prod se desejado
-            callback: handleGoogleLoginResponse
-          });
-          window.google.accounts.id.renderButton(
-            document.getElementById("google-signin-btn-container"),
-            { theme: "outline", size: "large", width: "100%" }
-          );
-        } catch (err) {
-          console.warn('Erro ao inicializar botão do Google:', err);
+        const container = document.getElementById("google-signin-btn-container") || document.getElementById("google-login-screen-container");
+        if (container) {
+          try {
+            window.google.accounts.id.initialize({
+              client_id: "777777777777-dummygoogleclientid.apps.googleusercontent.com", // Substituir por ID real em prod se desejado
+              callback: handleGoogleLoginResponse
+            });
+            window.google.accounts.id.renderButton(
+              container,
+              { theme: "outline", size: "large", width: "100%" }
+            );
+          } catch (err) {
+            console.warn('Erro ao inicializar botão do Google:', err);
+          }
         }
-      }, 300);
+      }, 400);
     }
-  }, [activeTab]);
+  }, [activeTab, profileEmail, loginMethod]);
 
   const API_BASE = import.meta.env.PROD ? '/api/v1' : 'http://localhost:3001/api/v1';
 
@@ -597,6 +637,98 @@ function App() {
               {countdown > 0 ? `⏳ Medite... (${countdown}s)` : '🔓 Destravar o Agora'}
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileEmail === 'membro@1convite.com') {
+    return (
+      <div className="login-overlay">
+        <div className="login-card">
+          <img src="/LOGOMARCA.png" alt="1Convite Logo" className="login-logo" style={{ objectFit: 'contain', width: 'auto', maxHeight: '54px', margin: '0 auto 18px' }} />
+          <h1 className="login-title">Acesse o 1Convite</h1>
+          <p className="login-subtitle">
+            Conecte-se para iniciar sua jornada diária de meditação, respiração e leitura bíblica estruturada.
+          </p>
+
+          <div style={{ display: 'flex', borderRadius: '10px', background: 'var(--slate-light)', padding: '4px', marginBottom: '20px' }}>
+            <button
+              onClick={() => { setLoginMethod('google'); setLoginError(''); }}
+              style={{
+                flex: 1,
+                background: loginMethod === 'google' ? 'var(--orange)' : 'transparent',
+                color: loginMethod === 'google' ? '#fff' : 'var(--text-secondary)',
+                border: 'none', borderRadius: '8px', padding: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >
+              Google Sign-In
+            </button>
+            <button
+              onClick={() => { setLoginMethod('email'); setLoginError(''); }}
+              style={{
+                flex: 1,
+                background: loginMethod === 'email' ? 'var(--orange)' : 'transparent',
+                color: loginMethod === 'email' ? '#fff' : 'var(--text-secondary)',
+                border: 'none', borderRadius: '8px', padding: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >
+              E-mail Comum
+            </button>
+          </div>
+
+          {loginMethod === 'google' ? (
+            <div className="flex-column gap-sm">
+              {/* Container para o GIS real do Google */}
+              <div id="google-login-screen-container" style={{ width: '100%', minHeight: '44px', display: 'flex', justifyContent: 'center' }}></div>
+
+              {/* Botão simulado para testes rápidos locais */}
+              <button className="btn-google-signin" onClick={handleSimularLoginGoogle} style={{ marginTop: '4px' }}>
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                  <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                  <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
+                  <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
+                  <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
+                </svg>
+                Testar/Simular Login Google
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleEmailLogin} className="flex-column gap-sm" style={{ textAlign: 'left' }}>
+              <div className="input-group">
+                <label>Seu Nome</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={loginNome}
+                  onChange={(e) => setLoginNome(e.target.value)}
+                  placeholder="Nome de Exibição"
+                  required
+                />
+              </div>
+              <div className="input-group">
+                <label>Seu E-mail</label>
+                <input
+                  type="email"
+                  className="input-field"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="seu.email@exemplo.com"
+                  required
+                />
+              </div>
+
+              {loginError && (
+                <div style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 'bold', margin: '4px 0' }}>
+                  {loginError}
+                </div>
+              )}
+
+              <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '8px' }}>
+                🚀 Acessar com E-mail
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );
