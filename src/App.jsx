@@ -41,6 +41,14 @@ function App() {
   const carouselImages = ['/Imagens/1.png', '/Imagens/2.png', '/Imagens/3.png'];
 
   // Estados da Bíblia
+  const [bibleViewMode, setBibleViewMode] = useState('reading'); // 'reading', 'select-book', 'select-chapter'
+  const [bibleBooks, setBibleBooks] = useState([]);
+  const [bibleSelectedBook, setBibleSelectedBook] = useState({ abbrev: 'gn', nome: 'Gênesis' });
+  const [bibleChaptersCount, setBibleChaptersCount] = useState(50);
+  const [bibleSelectedChapter, setBibleSelectedChapter] = useState(1);
+  const [bibleVerses, setBibleVerses] = useState([]);
+  const [bibleSelectedVerse, setBibleSelectedVerse] = useState(null);
+
   const [bibleSearchQuery, setBibleSearchQuery] = useState('');
   const [bibleResults, setBibleResults] = useState([]);
   const [bibleLoading, setBibleLoading] = useState(false);
@@ -142,7 +150,42 @@ function App() {
 
   useEffect(() => {
     loadAppData();
+    loadBibleBooks();
   }, []);
+
+  const loadBibleBooks = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/biblia/livros`);
+      if (res.ok) setBibleBooks(await res.json());
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    const loadChapter = async () => {
+      try {
+        setBibleLoading(true);
+        const resCount = await fetch(`${API_BASE}/biblia/capitulos/${bibleSelectedBook.abbrev}`);
+        if (resCount.ok) {
+          const dataCount = await resCount.json();
+          setBibleChaptersCount(dataCount.total);
+        }
+
+        const res = await fetch(`${API_BASE}/biblia/texto/${bibleSelectedBook.abbrev}/${bibleSelectedChapter}`);
+        if (res.ok) {
+          setBibleVerses(await res.json());
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setBibleLoading(false);
+      }
+    };
+    if (activeTab === 'biblia') {
+      loadChapter();
+    }
+  }, [bibleSelectedBook, bibleSelectedChapter, activeTab]);
 
   // Iniciar Pedágio
   const iniciarPedagio = async () => {
@@ -449,23 +492,39 @@ function App() {
 
   return (
     <>
-      {/* Header Fixo */}
+      {/* Header Fixo e Dinâmico */}
       <header className="app-header">
-        <div className="app-logo" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '28px', objectFit: 'contain' }} />
-        </div>
-        <div className="flex-between" style={{ gap: '10px' }}>
-          {user && (
-            <span className={`premium-status-badge ${user.status_plano === 'FREE' ? 'btn-secondary' : ''}`} style={{ fontSize: '0.7rem' }}>
-              Plano {user.status_plano}
-            </span>
-          )}
-          {user && (
-            <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>
-              Dia {user.dia_atual}
-            </span>
-          )}
-        </div>
+        {activeTab === 'biblia' ? (
+          <div className="bible-header-nav" style={{ width: '100%', marginBottom: 0 }}>
+            <button 
+              className="bible-select-btn" 
+              onClick={() => setBibleViewMode(bibleViewMode === 'select-book' ? 'reading' : 'select-book')}
+            >
+              {bibleSelectedBook.nome} {bibleSelectedChapter} ▼
+            </button>
+            <button className="bible-select-btn" style={{ flex: 0.3, justifyContent: 'center' }}>
+              NVI ▼
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="app-logo" style={{ display: 'flex', alignItems: 'center' }}>
+              <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '28px', objectFit: 'contain' }} />
+            </div>
+            <div className="flex-between" style={{ gap: '10px' }}>
+              {user && (
+                <span className={`premium-status-badge ${user.status_plano === 'FREE' ? 'btn-secondary' : ''}`} style={{ fontSize: '0.7rem' }}>
+                  Plano {user.status_plano}
+                </span>
+              )}
+              {user && (
+                <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+                  Dia {user.dia_atual}
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </header>
 
       {/* Conteúdo Principal */}
@@ -720,63 +779,171 @@ function App() {
 
         {/* --- ABA BÍBLIA --- */}
         {activeTab === 'biblia' && (
-          <div className="flex-column gap-md">
-            <h2 className="text-center" style={{ marginBottom: '10px' }}>A Palavra Viva</h2>
+          <div className="flex-column">
             
-            <div className="glass-panel text-center" style={{ marginBottom: '10px' }}>
-              <p style={{ marginBottom: '15px' }}>Deixe Deus falar com você hoje ou encontre a passagem ideal para convidar um amigo.</p>
-              
-              <button className="btn-primary" onClick={getRandomVerse} disabled={bibleLoading}>
-                {bibleLoading ? 'Sorteando...' : '🎲 Puxar uma Promessa Aleatória'}
-              </button>
-            </div>
+            {/* VIEW: SELECIONAR LIVRO */}
+            {bibleViewMode === 'select-book' && (
+              <div className="bible-modal-overlay">
+                <div className="bible-modal-header">
+                  <h3 style={{ margin: 0 }}>Selecione o Livro</h3>
+                  <button className="btn-secondary" style={{ padding: '6px 12px', border: 'none' }} onClick={() => setBibleViewMode('reading')}>
+                    ✕ Fechar
+                  </button>
+                </div>
+                <div className="bible-modal-content">
+                  <div className="bible-book-list">
+                    {bibleBooks.map((bk, idx) => (
+                      <div 
+                        key={idx} 
+                        className="bible-book-item"
+                        onClick={() => {
+                          setBibleSelectedBook(bk);
+                          setBibleViewMode('select-chapter');
+                        }}
+                      >
+                        {bk.livro_nome}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
-            <div className="glass-panel">
-              <h3 style={{ marginBottom: '15px' }}>Buscador Inteligente</h3>
-              <form onSubmit={searchBible} style={{ display: 'flex', gap: '10px' }}>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="Ex: ansiedade, amor, perdão..."
-                  value={bibleSearchQuery}
-                  onChange={(e) => setBibleSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="btn-secondary" disabled={bibleLoading}>
-                  🔍 Buscar
-                </button>
-              </form>
-              {bibleError && <p style={{ color: '#ef4444', marginTop: '10px', fontSize: '0.9rem' }}>{bibleError}</p>}
-            </div>
+            {/* VIEW: SELECIONAR CAPÍTULO */}
+            {bibleViewMode === 'select-chapter' && (
+              <div className="bible-modal-overlay">
+                <div className="bible-modal-header">
+                  <h3 style={{ margin: 0 }}>{bibleSelectedBook.nome}</h3>
+                  <button className="btn-secondary" style={{ padding: '6px 12px', border: 'none' }} onClick={() => setBibleViewMode('select-book')}>
+                    ← Voltar
+                  </button>
+                </div>
+                <div className="bible-modal-content">
+                  <div className="bible-chapter-grid">
+                    {Array.from({ length: bibleChaptersCount }).map((_, i) => (
+                      <div 
+                        key={i} 
+                        className="bible-chapter-btn"
+                        onClick={() => {
+                          setBibleSelectedChapter(i + 1);
+                          setBibleViewMode('reading');
+                        }}
+                      >
+                        {i + 1}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {/* Resultados */}
-            <div className="flex-column gap-sm">
-              {bibleResults.map((v, idx) => (
-                <div key={idx} className="glass-panel" style={{ position: 'relative' }}>
-                  <span className="premium-status-badge" style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.1)' }}>
-                    {v.livro_nome} {v.capitulo}:{v.versiculo}
-                  </span>
-                  <p style={{ marginTop: '20px', fontStyle: 'italic' }}>"{v.texto}"</p>
-                  
-                  <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+            {/* VIEW: LEITURA E RESULTADOS */}
+            {bibleViewMode === 'reading' && (
+              <div className="bible-reader">
+                
+                {/* Se estiver buscando algo, mostra os resultados */}
+                {bibleResults.length > 0 ? (
+                  <div className="flex-column gap-sm" style={{ padding: '20px' }}>
+                    <div className="flex-between">
+                      <h3 style={{ marginBottom: '15px' }}>Resultados da Busca</h3>
+                      <button className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={() => { setBibleResults([]); setBibleSearchQuery(''); }}>Limpar</button>
+                    </div>
+                    {bibleResults.map((v, idx) => (
+                      <div key={idx} className="glass-panel" style={{ position: 'relative' }}>
+                        <span className="premium-status-badge" style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                          {v.livro_nome} {v.capitulo}:{v.versiculo}
+                        </span>
+                        <p style={{ marginTop: '20px', fontStyle: 'italic', color: 'var(--text-primary)' }}>"{v.texto}"</p>
+                        
+                        <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                          <button 
+                            className="btn-secondary" 
+                            style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                            onClick={() => copyToClipboard(`"${v.texto}" - ${v.livro_nome} ${v.capitulo}:${v.versiculo}`)}
+                          >
+                            📋 Copiar
+                          </button>
+                          <a 
+                            href={`https://wa.me/?text=${encodeURIComponent(`*"${v.texto}"*\n_${v.livro_nome} ${v.capitulo}:${v.versiculo}_\n\n👉 *Descubra o propósito no 1Convite:* https://1convite.com.br`)}`} 
+                            target="_blank" rel="noopener noreferrer"
+                            className="btn-primary"
+                            style={{ flex: 2, padding: '8px', fontSize: '0.8rem', textAlign: 'center', textDecoration: 'none' }}
+                          >
+                            📲 Enviar (WhatsApp)
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {/* Leitura do Capítulo */}
+                    {bibleLoading ? (
+                      <p style={{ textAlign: 'center', marginTop: '50px' }}>Carregando...</p>
+                    ) : (
+                      <div style={{ padding: '0 20px' }}>
+                        {bibleVerses.map(v => (
+                          <div 
+                            key={v.id} 
+                            className={`bible-verse-row ${bibleSelectedVerse?.id === v.id ? 'selected' : ''}`}
+                            onClick={() => setBibleSelectedVerse(bibleSelectedVerse?.id === v.id ? null : v)}
+                          >
+                            <span className="bible-verse-num">{v.versiculo}</span>
+                            <span>{v.texto}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Menu de Ação Flutuante (Aparece ao clicar num versículo) */}
+                {bibleSelectedVerse && bibleResults.length === 0 && (
+                  <div className="bible-action-menu">
                     <button 
                       className="btn-secondary" 
-                      style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
-                      onClick={() => copyToClipboard(`"${v.texto}" - ${v.livro_nome} ${v.capitulo}:${v.versiculo}`)}
+                      style={{ flex: 1, padding: '10px' }}
+                      onClick={() => {
+                        copyToClipboard(`"${bibleSelectedVerse.texto}" - ${bibleSelectedBook.nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}`);
+                        setBibleSelectedVerse(null);
+                      }}
                     >
                       📋 Copiar
                     </button>
                     <a 
-                      href={`https://wa.me/?text=${encodeURIComponent(`*"${v.texto}"*\n_${v.livro_nome} ${v.capitulo}:${v.versiculo}_\n\n👉 *Descubra o propósito no 1Convite:* https://1convite.com.br`)}`} 
+                      href={`https://wa.me/?text=${encodeURIComponent(`*"${bibleSelectedVerse.texto}"*\n_${bibleSelectedBook.nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}_\n\n👉 *Descubra o propósito no 1Convite:* https://1convite.com.br`)}`} 
                       target="_blank" rel="noopener noreferrer"
                       className="btn-primary"
-                      style={{ flex: 2, padding: '8px', fontSize: '0.8rem', textAlign: 'center', textDecoration: 'none' }}
+                      style={{ flex: 2, padding: '10px', textAlign: 'center', textDecoration: 'none' }}
+                      onClick={() => setBibleSelectedVerse(null)}
                     >
-                      📲 Enviar para Contato
+                      📲 Enviar
                     </a>
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+                
+                {/* Barra de Busca rápida no final da leitura */}
+                {!bibleSelectedVerse && bibleResults.length === 0 && (
+                  <div style={{ padding: '20px', marginTop: '40px', borderTop: '1px solid var(--border-color)' }}>
+                    <form onSubmit={searchBible} style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="Buscar (ex: amor)..."
+                        value={bibleSearchQuery}
+                        onChange={(e) => setBibleSearchQuery(e.target.value)}
+                      />
+                      <button type="submit" className="btn-secondary" disabled={bibleLoading}>
+                        🔍
+                      </button>
+                    </form>
+                    <button className="btn-secondary" style={{ width: '100%', marginTop: '10px' }} onClick={getRandomVerse}>
+                      🎲 Puxar Versículo Aleatório
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
