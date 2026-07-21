@@ -1563,6 +1563,135 @@ body.dark-mode .lp-portal-frame {
   }
 }
 
+/* Badges Flutuantes (Woodnest/Harmont Style) */
+.lp-floating-badge {
+  position: absolute;
+  background: rgba(24, 24, 27, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  z-index: 10;
+  pointer-events: none;
+  animation: float 4s ease-in-out infinite;
+}
+
+.lp-floating-badge-1 {
+  bottom: 12%;
+  right: 6%;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10B981;
+}
+
+.lp-floating-badge-2 {
+  top: 15%;
+  right: 12%;
+  animation-delay: 1.5s;
+}
+
+.lp-floating-badge-3 {
+  top: 42%;
+  right: 8%;
+  animation-delay: 3s;
+}
+
+/* Barra Dock Horizontal (Estilo Harmont) */
+.lp-dock-bar {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  padding: 10px 14px 10px 28px;
+  border-radius: 9999px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  max-width: 90%;
+  width: max-content;
+  pointer-events: auto;
+}
+
+body.dark-mode .lp-dock-bar {
+  background: rgba(24, 24, 27, 0.72) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.lp-dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.lp-dock-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+body.dark-mode .lp-dock-label {
+  color: #9ca3af !important;
+}
+
+.lp-dock-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.lp-dock-divider {
+  width: 1.5px;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+body.dark-mode .lp-dock-divider {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lp-dock-btn {
+  background: #10B981; /* Verde esmeralda */
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.lp-dock-btn:hover {
+  background: #059669;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+@media (max-width: 900px) {
+  .lp-dock-bar {
+    display: none; /* Esconde a barra dock no mobile, pois o espaço é muito reduzido */
+  }
+  .lp-floating-badge {
+    display: none;
+  }
+}
+
+
 .lp-badge {
   background: var(--orange-light);
   color: var(--orange);

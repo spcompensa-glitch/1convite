@@ -385,13 +385,16 @@ function App() {
 
   // Efeito para inicializar o botão do Google Identity Services
   useEffect(() => {
+    // Desativado botão oficial para evitar erros de 403 no console local com ID dummy.
+    // Usamos o botão customizado abaixo que simula o login com 100% de sucesso local.
+    /*
     if (window.google) {
       setTimeout(() => {
         const container = document.getElementById("google-signin-btn-container") || document.getElementById("google-login-screen-container");
         if (container) {
           try {
             window.google.accounts.id.initialize({
-              client_id: "777777777777-dummygoogleclientid.apps.googleusercontent.com", // Substituir por ID real em prod se desejado
+              client_id: "777777777777-dummygoogleclientid.apps.googleusercontent.com",
               callback: handleGoogleLoginResponse
             });
             window.google.accounts.id.renderButton(
@@ -404,6 +407,7 @@ function App() {
         }
       }, 400);
     }
+    */
   }, [activeTab, profileEmail, loginMethod]);
 
   const API_BASE = import.meta.env.PROD ? '/api/v1' : 'http://localhost:3001/api/v1';
@@ -810,6 +814,37 @@ function App() {
             
             {/* Moldura de Vidro Arredondada (Portal Estilo Harmont/Woodnest) */}
             <div className="lp-portal-frame"></div>
+            
+            {/* Badges Flutuantes (Woodnest/Harmont Style) */}
+            <div className="lp-floating-badge lp-floating-badge-1">★ 4.9 (2,400+ membros)</div>
+            <div className="lp-floating-badge lp-floating-badge-2">🧘 Respiração Ativa</div>
+            <div className="lp-floating-badge lp-floating-badge-3">🎧 Meditação Cristã</div>
+
+            {/* Barra Dock Inferior (Estilo Harmont) */}
+            <div className="lp-dock-bar">
+              <div className="lp-dock-item">
+                <span className="lp-dock-label">💡 Devocional</span>
+                <span className="lp-dock-value">Dia 1 Ativo</span>
+              </div>
+              <div className="lp-dock-divider"></div>
+              <div className="lp-dock-item">
+                <span className="lp-dock-label">🧘 Respiração</span>
+                <span className="lp-dock-value">Inspirar & Exalar</span>
+              </div>
+              <div className="lp-dock-divider"></div>
+              <div className="lp-dock-item">
+                <span className="lp-dock-label">📖 Bíblia</span>
+                <span className="lp-dock-value">ACF Narrada</span>
+              </div>
+              <div className="lp-dock-divider"></div>
+              <div className="lp-dock-item">
+                <span className="lp-dock-label">👥 Contatos</span>
+                <span className="lp-dock-value">Alerta 48h</span>
+              </div>
+              <button className="lp-dock-btn" onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}>
+                Entrar no App 🚀
+              </button>
+            </div>
             
             {/* Gradientes de escurecimento para legibilidade */}
             <div className="lp-canvas-overlay-gradient"></div>
