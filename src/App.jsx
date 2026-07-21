@@ -670,31 +670,35 @@ function App() {
       <div className="lp-container">
         {/* ── HEADER DA LANDING PAGE ────────────────────────── */}
         <header className="lp-header">
-          <img src="/LOGOMARCA.png" alt="1Convite Logo" className="lp-logo-img" />
-          <button 
-            className="theme-toggle-btn" 
-            onClick={() => setDarkMode(!darkMode)}
-            title="Alternar Tema Claro/Escuro"
-          >
-            {darkMode ? '☀️' : '🌙'}
-          </button>
+          <div className="lp-header-inner">
+            <img src="/LOGOMARCA.png" alt="1Convite Logo" className="lp-logo-img" />
+            <button 
+              className="theme-toggle-btn" 
+              onClick={() => setDarkMode(!darkMode)}
+              title="Alternar Tema Claro/Escuro"
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+          </div>
         </header>
 
         {/* ── HERO SECTION ────────────────────────── */}
         <section className="lp-hero">
-          <span className="lp-badge">Jornada Espiritual Ativa</span>
-          <h1 className="lp-title">
-            Desacelere sua mente. <span>Conecte-se com Deus.</span>
-          </h1>
-          <p className="lp-description">
-            11 minutos diários de meditação cristã orientada, respiração controlada contra ansiedade e leitura da Bíblia narrada.
-          </p>
-          <button 
-            className="lp-hero-cta"
-            onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            Começar Gratuitamente 🚀
-          </button>
+          <div className="lp-hero-text-block">
+            <span className="lp-badge">Jornada Espiritual Ativa</span>
+            <h1 className="lp-title">
+              Desacelere sua mente. <span>Conecte-se com Deus.</span>
+            </h1>
+            <p className="lp-description">
+              11 minutos diários de meditação cristã orientada, respiração controlada contra ansiedade e leitura da Bíblia narrada.
+            </p>
+            <button 
+              className="lp-hero-cta"
+              onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Começar Gratuitamente 🚀
+            </button>
+          </div>
 
           {/* Mockups de Demonstração Reais (Desktop & Mobile) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%', margin: '40px 0 20px' }}>
@@ -888,7 +892,7 @@ function App() {
   }
 
   return (
-    <>
+    <div className="app-container">
       {/* ── HEADER ────────────────────────────── */}
       <header className="app-header">
         {activeTab === 'biblia' ? (
@@ -1645,7 +1649,7 @@ function App() {
           ))}
         </nav>
       )}
-    </>
+    </div>
   );
 }
 
