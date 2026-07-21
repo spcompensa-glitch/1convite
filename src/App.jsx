@@ -66,10 +66,25 @@ function App() {
 
   // Modo Escuro & Perfil
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('1convite_dark_mode') === 'true');
-  const [profileName, setProfileName] = useState(() => localStorage.getItem('1convite_profile_name') || 'Membro Convidado');
-  const [profileEmail, setProfileEmail] = useState(() => localStorage.getItem('1convite_profile_email') || 'membro@1convite.com');
-  const [profileAvatar, setProfileAvatar] = useState(() => localStorage.getItem('1convite_profile_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80');
+  const [profileName, setProfileName] = useState('Membro Convidado');
+  const [profileEmail, setProfileEmail] = useState('membro@1convite.com');
+  const [profileAvatar, setProfileAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80');
   const [profileSavedMsg, setProfileSavedMsg] = useState('');
+
+  // Auxiliar para decodificar JWT do Google no Frontend
+  const parseJwt = (token) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error('Erro ao fazer parse do JWT', e);
+      return null;
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('1convite_dark_mode', darkMode);
@@ -80,25 +95,152 @@ function App() {
     }
   }, [darkMode]);
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileAvatar(reader.result);
-        localStorage.setItem('1convite_profile_avatar', reader.result);
+      reader.onloadend = async () => {
+        const base64Avatar = reader.result;
+        setProfileAvatar(base64Avatar);
+        
+        // Sincroniza com o servidor
+        try {
+          const res = await fetch(`${API_BASE}/usuario/perfil`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome: profileName, email: profileEmail, avatar: base64Avatar })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUser(data);
+          }
+        } catch (err) {
+          console.error(err);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    localStorage.setItem('1convite_profile_name', profileName);
-    localStorage.setItem('1convite_profile_email', profileEmail);
-    setProfileSavedMsg('Dados atualizados com sucesso!');
-    setTimeout(() => setProfileSavedMsg(''), 3000);
+    try {
+      const res = await fetch(`${API_BASE}/usuario/perfil`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: profileName, email: profileEmail, avatar: profileAvatar })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+        setProfileSavedMsg('Dados atualizados com sucesso!');
+        setTimeout(() => setProfileSavedMsg(''), 3000);
+      }
+    } catch (err) {
+      alert('Erro ao salvar no banco de dados.');
+    }
   };
+
+  // Google Login Callback
+  const handleGoogleLoginResponse = async (response) => {
+    const payload = parseJwt(response.credential);
+    if (!payload) return;
+    
+    const googleUser = {
+      nome: payload.name,
+      email: payload.email,
+      avatar: payload.picture
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(googleUser)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setProfileName(data.user.nome);
+        setProfileEmail(data.user.email);
+        setProfileAvatar(data.user.avatar);
+      }
+    } catch (err) {
+      console.error('Erro de rede ao logar com o Google:', err);
+    }
+  };
+
+  // Simular Login Google para desenvolvimento/testes locais imediatos
+  const handleSimularLoginGoogle = async () => {
+    const nome = prompt("Digite seu nome completo do Google:", "Jônatas Oliveira");
+    if (!nome) return;
+    const email = prompt("Digite seu e-mail do Google:", "jonatas.oliveira@gmail.com");
+    if (!email) return;
+    
+    // Avatar default dinâmico
+    const avatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(nome)}`;
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, avatar })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        setProfileName(data.user.nome);
+        setProfileEmail(data.user.email);
+        setProfileAvatar(data.user.avatar);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!confirm('Deseja realmente sair da conta?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/usuario/perfil`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: "Membro Convidado",
+          email: "membro@1convite.com",
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"
+        })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUser(updatedUser);
+        setProfileName(updatedUser.nome);
+        setProfileEmail(updatedUser.email);
+        setProfileAvatar(updatedUser.avatar);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Efeito para inicializar o botão do Google Identity Services
+  useEffect(() => {
+    if (activeTab === 'conta' && window.google) {
+      setTimeout(() => {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: "777777777777-dummygoogleclientid.apps.googleusercontent.com", // Substituir por ID real em prod se desejado
+            callback: handleGoogleLoginResponse
+          });
+          window.google.accounts.id.renderButton(
+            document.getElementById("google-signin-btn-container"),
+            { theme: "outline", size: "large", width: "100%" }
+          );
+        } catch (err) {
+          console.warn('Erro ao inicializar botão do Google:', err);
+        }
+      }, 300);
+    }
+  }, [activeTab]);
 
   const API_BASE = import.meta.env.PROD ? '/api/v1' : 'http://localhost:3001/api/v1';
 
@@ -139,7 +281,14 @@ function App() {
     try {
       const rU = await fetch(`${API_BASE}/codigo-dia`);
       if (rU.ok) {
-        const d = await rU.json(); setUser(d.user); setCodigoDia(d.code);
+        const d = await rU.json(); 
+        setUser(d.user); 
+        setCodigoDia(d.code);
+        if (d.user) {
+          setProfileName(d.user.nome || 'Membro Convidado');
+          setProfileEmail(d.user.email || 'membro@1convite.com');
+          setProfileAvatar(d.user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80');
+        }
         if (d.user && !d.user.checkpoint_completado) { setActiveTab('pedagio'); if (!pedagioIniciado) iniciarPedagio(); }
         else {
           if (activeTab === 'pedagio') setActiveTab('sabado');
@@ -1074,6 +1223,42 @@ function App() {
             </div>
 
             <div className="page-content" style={{ paddingTop: '10px' }}>
+              {/* Login com o Google */}
+              <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'center' }}>
+                <h3 style={{ marginBottom: '14px', fontSize: '1.05rem', textAlign: 'left' }}>🔑 Autenticação do Google</h3>
+                
+                {profileEmail !== 'membro@1convite.com' ? (
+                  <div className="flex-column gap-sm">
+                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                      Conectado como <strong>{profileEmail}</strong>
+                    </p>
+                    <button className="btn-secondary" style={{ width: '100%' }} onClick={handleLogout}>
+                      🚪 Sair da Conta (Logout)
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex-column gap-sm">
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.5' }}>
+                      Conecte sua conta do Google para preencher automaticamente sua foto de perfil, nome e garantir seu acesso.
+                    </p>
+                    
+                    {/* Container do Botão Real do Google */}
+                    <div id="google-signin-btn-container" style={{ width: '100%', marginBottom: '8px' }}></div>
+                    
+                    {/* Botão de Simulação de Login Google */}
+                    <button className="btn-google-signin" onClick={handleSimularLoginGoogle}>
+                      <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
+                      </svg>
+                      Testar/Simular Login Google
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Alternância de Tema */}
               <div className="glass-panel" style={{ marginBottom: '16px' }}>
                 <h3 style={{ marginBottom: '14px', fontSize: '1.05rem' }}>🎨 Aparência & Tema</h3>

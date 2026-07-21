@@ -1035,40 +1035,95 @@ p  { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.7; }
 }
 
 /* ═══════════════════════════════════════════════════
-   DARK MODE (TEMA ESCURO)
+   DARK MODE (TEMA ESCURO - MIDNIGHT AMOLED)
 ═══════════════════════════════════════════════════ */
-body.dark-mode, .app-container.dark-mode {
-  --bg-primary: #0f172a;
-  --bg-gradient: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%);
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --glass-bg: rgba(30, 41, 59, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  --slate: #cbd5e1;
-  --slate-light: rgba(255, 255, 255, 0.06);
-  --slate-border: rgba(255, 255, 255, 0.12);
-  background-color: #0f172a !important;
-  color: #f8fafc;
+body.dark-mode, .app-container.dark-mode, :root.dark-mode {
+  --bg-app:         #030712 !important; /* Midnight AMOLED */
+  --white:          #111827 !important; /* Dark Slate para cartões que usavam branco */
+  --glass-bg:       rgba(17, 24, 39, 0.85);
+  --glass-border:   rgba(255, 255, 255, 0.06);
+  --glass-shadow:   0 12px 40px rgba(0, 0, 0, 0.55);
+
+  /* Texto */
+  --text-primary:   #F9FAFB !important; /* Branco cristalino */
+  --text-secondary: #E5E7EB !important; /* Cinza suave */
+  --text-muted:     #9CA3AF !important; /* Cinza médio */
+
+  /* Laranja com glow neon */
+  --orange:         #FF822E;
+  --orange-light:   rgba(255, 130, 46, 0.1);
+  --orange-mid:     rgba(255, 130, 46, 0.22);
+  --orange-glow:    rgba(255, 130, 46, 0.5);
+
+  /* Ardósia (10%) no Dark Mode */
+  --slate:          #CBD5E1;
+  --slate-light:    rgba(255, 255, 255, 0.05);
+  --slate-border:   rgba(255, 255, 255, 0.12);
+
+  background-color: #030712 !important;
+  color: #F9FAFB !important;
+  color-scheme: dark;
 }
 
-body.dark-mode .nav-tabs, .dark-mode .nav-tabs {
-  background: rgba(15, 23, 42, 0.88) !important;
-  border-top-color: rgba(255, 255, 255, 0.08) !important;
+body.dark-mode {
+  background-color: #030712 !important;
 }
 
-body.dark-mode .input-field, .dark-mode .input-field {
-  background: rgba(30, 41, 59, 0.8) !important;
-  color: #f8fafc !important;
+/* Forçar fundo nos containers principais no Dark Mode */
+body.dark-mode .app-container {
+  background-color: #030712 !important;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+body.dark-mode .nav-tabs {
+  background: rgba(3, 7, 18, 0.90) !important;
+  border-top-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.5);
+}
+
+body.dark-mode .input-field {
+  background: rgba(17, 24, 39, 0.9) !important;
+  color: #F9FAFB !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-mode .btn-secondary {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #F9FAFB !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
+body.dark-mode .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
 
-body.dark-mode .premium-lock-card, .dark-mode .premium-lock-card {
-  background: rgba(30, 41, 59, 0.8) !important;
-  border-color: rgba(249, 115, 22, 0.3) !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+body.dark-mode .premium-lock-card {
+  background: rgba(17, 24, 39, 0.85) !important;
+  border-color: rgba(255, 130, 46, 0.3) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+body.dark-mode .pedagio-overlay {
+  background: radial-gradient(circle at 50% 50%, #0d1321 0%, #030712 100%) !important;
+}
+
+body.dark-mode .pedagio-card {
+  background: rgba(17, 24, 39, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+}
+
+body.dark-mode .orange-card {
+  background: rgba(255, 130, 46, 0.06) !important;
+  border: 1px solid rgba(255, 130, 46, 0.2) !important;
+}
+
+body.dark-mode .player-container {
+  background: linear-gradient(135deg, rgba(255, 130, 46, 0.08) 0%, rgba(17, 24, 39, 0.6) 100%) !important;
+  border-color: rgba(255, 130, 46, 0.18) !important;
+}
+
+body.dark-mode .carousel-container {
+  border-color: rgba(255, 130, 46, 0.25) !important;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1096,7 +1151,7 @@ body.dark-mode .premium-lock-card, .dark-mode .premium-lock-card {
   right: 0;
   background: var(--grad-orange);
   color: #fff;
-  border: 2px solid var(--bg-primary);
+  border: 2px solid var(--bg-app);
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -1164,5 +1219,29 @@ input:checked + .toggle-slider {
 
 input:checked + .toggle-slider:before {
   transform: translateX(24px);
+}
+
+/* Botão do Google */
+.btn-google-signin {
+  background: #ffffff;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.btn-google-signin:hover {
+  background: #f9fafb;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 

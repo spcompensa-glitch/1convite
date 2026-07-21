@@ -72,9 +72,17 @@ async function initDb() {
       dia_atual INTEGER DEFAULT 1,
       checkpoint_completado INTEGER DEFAULT 0,
       checkpoint_started_at INTEGER DEFAULT 0,
-      status_plano TEXT DEFAULT 'FREE'
+      status_plano TEXT DEFAULT 'FREE',
+      nome TEXT,
+      email TEXT,
+      avatar TEXT
     )
   `);
+
+  // Migrações dinâmicas para adicionar colunas se o banco já existia
+  try { await dbRun('ALTER TABLE tb_usuario_progresso ADD COLUMN nome TEXT'); } catch (_) {}
+  try { await dbRun('ALTER TABLE tb_usuario_progresso ADD COLUMN email TEXT'); } catch (_) {}
+  try { await dbRun('ALTER TABLE tb_usuario_progresso ADD COLUMN avatar TEXT'); } catch (_) {}
 
   await dbRun(`
     CREATE TABLE IF NOT EXISTS tb_contatos (
@@ -90,7 +98,7 @@ async function initDb() {
   // Insere o progresso inicial se não existir
   const user = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
   if (!user) {
-    await dbRun('INSERT INTO tb_usuario_progresso (dia_atual, checkpoint_completado, status_plano) VALUES (1, 0, "FREE")');
+    await dbRun('INSERT INTO tb_usuario_progresso (dia_atual, checkpoint_completado, status_plano, nome, email, avatar) VALUES (1, 0, "FREE", "Membro Convidado", "membro@1convite.com", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80")');
   }
 
   // Preenche a tabela tb_matriz_diaria se estiver vazia
@@ -295,6 +303,36 @@ app.get('/api/v1/usuario', async (req, res) => {
   try {
     const user = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
     res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+// Atualizar dados de perfil do usuário manualmente
+app.post('/api/v1/usuario/perfil', async (req, res) => {
+  try {
+    const { nome, email, avatar } = req.body;
+    await dbRun(
+      'UPDATE tb_usuario_progresso SET nome = ?, email = ?, avatar = ?',
+      [nome, email, avatar]
+    );
+    const updated = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Autenticação / Sincronização com o Google Sign-In
+app.post('/api/v1/auth/google', async (req, res) => {
+  try {
+    const { nome, email, avatar } = req.body;
+    
+    // Como há apenas 1 usuário local simulado por banco SQLite, atualizamos os dados dele.
+    await dbRun(
+      'UPDATE tb_usuario_progresso SET nome = ?, email = ?, avatar = ?',
+      [nome, email, avatar]
+    );
+    
+    const user = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
+    res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
