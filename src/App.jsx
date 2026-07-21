@@ -696,47 +696,13 @@ function App() {
             Começar Gratuitamente 🚀
           </button>
 
-          {/* Mockup Interativo em CSS */}
-          <div className="lp-mockup-wrapper">
-            <div className="lp-phone-frame">
-              <div className="lp-phone-notch"></div>
-              <div className="lp-phone-screen">
-                {/* Cabeçalho do App Simulado */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '24px 16px 8px', borderBottom: '1px solid rgba(249, 115, 22, 0.08)' }}>
-                  <img src="/LOGOMARCA.png" alt="Logo" style={{ height: '18px' }} />
-                  <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: 'var(--orange)' }}>Dia 1</span>
-                </div>
-                {/* Conteúdo Devocional Simulado */}
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'hidden', height: '100%' }}>
-                  <div style={{ background: 'var(--orange-light)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.15)' }}>
-                    <div style={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--orange)' }}>Matriz Diária</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginTop: '4px', lineHeight: '1.2' }}>"Não andeis ansiosos..."</div>
-                    <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>Filipenses 4:6</div>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.5)', padding: '12px', borderRadius: '12px', border: '1px solid var(--slate-border)' }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>🎧 Meditação Guiada</div>
-                    <div style={{ width: '100%', height: '4px', background: 'var(--slate-border)', borderRadius: '2px', marginTop: '10px', position: 'relative' }}>
-                      <div style={{ width: '45%', height: '100%', background: 'var(--orange)', borderRadius: '2px' }}></div>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.55rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      <span>01:45</span>
-                      <span>03:00</span>
-                    </div>
-                  </div>
-                  {/* Círculo de Respiração Guiada */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '10px 0' }}>
-                    <div style={{
-                      width: '60px', height: '60px', borderRadius: '50%', 
-                      border: '3px solid var(--orange)', background: 'var(--orange-light)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      animation: 'float 3s ease-in-out infinite'
-                    }}>
-                      🌀
-                    </div>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 'bold', marginTop: '6px' }}>Inspirar...</span>
-                  </div>
-                </div>
-              </div>
+          {/* Mockups de Demonstração Reais (Desktop & Mobile) */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%', margin: '40px 0 20px' }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '440px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
+              <img src="/app_desktop_mockup.png" alt="1Convite Web Dashboard" style={{ width: '100%', display: 'block', borderRadius: '16px' }} />
+            </div>
+            <div style={{ position: 'relative', width: '60%', maxWidth: '240px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', marginTop: '-60px', border: '6px solid var(--slate)', zIndex: 5 }}>
+              <img src="/app_mobile_mockup.png" alt="1Convite App Mobile" style={{ width: '100%', display: 'block', borderRadius: '18px' }} />
             </div>
           </div>
         </section>

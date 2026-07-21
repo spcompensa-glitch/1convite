@@ -11,40 +11,40 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 
-  /* Cores base com paleta warm off-white de alto contraste */
+  /* Cores base com paleta cinza minimalista e verde de alto contraste */
   --white:          #FFFFFF;
-  --bg-app:         #FDF8F5; /* Warm off-white */
+  --bg-app:         #FAFAFA; /* Cinza gelo limpo */
   --glass-bg:       rgba(255, 255, 255, 0.72);
   --glass-border:   rgba(255, 255, 255, 0.85);
-  --glass-shadow:   0 8px 32px rgba(249, 115, 22, 0.05);
+  --glass-shadow:   0 8px 32px rgba(16, 185, 129, 0.04);
 
   /* Texto */
-  --text-primary:   #1E293B; /* Slate 800 - muito legível */
-  --text-secondary: #475569; /* Slate 600 */
-  --text-muted:     #94A3B8; /* Slate 400 */
+  --text-primary:   #09090B; /* Zinco 950 - alto contraste */
+  --text-secondary: #4b5563; /* Cinza 600 */
+  --text-muted:     #9ca3af; /* Cinza 400 */
 
-  /* 30% — Laranja quentes e contrastantes */
-  --orange:         #F97316;
-  --orange-dark:    #EA580C;
-  --orange-light:   #FFF7ED;
-  --orange-mid:     #FFEDD5;
-  --orange-glow:    rgba(249, 115, 22, 0.25);
+  /* Destaques acionáveis em Verde Menta/Esmeralda */
+  --orange:         #10B981;
+  --orange-dark:    #059669;
+  --orange-light:   #ECFDF5;
+  --orange-mid:     #D1FAE5;
+  --orange-glow:    rgba(16, 185, 129, 0.20);
 
-  /* 10% — Ardósia */
-  --slate:          #334155;
-  --slate-light:    #F8FAFC;
-  --slate-border:   #E2E8F0;
+  /* Ardósia / Elementos secundários */
+  --slate:          #1f2937;
+  --slate-light:    #f3f4f6;
+  --slate-border:   #e5e7eb;
 
   /* Gradientes */
-  --grad-orange:    linear-gradient(135deg, #F97316 0%, #FB923C 100%);
-  --grad-slate:     linear-gradient(135deg, #1E293B 0%, #334155 100%);
-  --grad-hero-biblia: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  --grad-orange:    linear-gradient(135deg, #10B981 0%, #059669 100%);
+  --grad-slate:     linear-gradient(135deg, #111827 0%, #1F2937 100%);
+  --grad-hero-biblia: linear-gradient(135deg, #061F14 0%, #0B3F29 100%);
 
   /* Sombras */
   --shadow-sm:      0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md:      0 4px 20px rgba(249, 115, 22, 0.03), 0 2px 8px rgba(0,0,0,0.03);
-  --shadow-lg:      0 20px 40px rgba(0,0,0,0.06);
-  --shadow-orange:  0 8px 24px rgba(249, 115, 22, 0.20);
+  --shadow-md:      0 4px 20px rgba(16, 185, 129, 0.02), 0 2px 8px rgba(0,0,0,0.03);
+  --shadow-lg:      0 20px 40px rgba(0,0,0,0.04);
+  --shadow-orange:  0 8px 24px rgba(16, 185, 129, 0.15);
 
   color-scheme: light;
 }
@@ -1039,30 +1039,30 @@ p  { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.7; }
    DARK MODE (TEMA ESCURO - MIDNIGHT AMOLED)
 ═══════════════════════════════════════════════════ */
 body.dark-mode, .app-container.dark-mode, :root.dark-mode {
-  --bg-app:         #030712 !important; /* Midnight AMOLED */
-  --white:          #111827 !important; /* Dark Slate para cartões que usavam branco */
-  --glass-bg:       rgba(17, 24, 39, 0.85);
-  --glass-border:   rgba(255, 255, 255, 0.06);
-  --glass-shadow:   0 12px 40px rgba(0, 0, 0, 0.55);
+  --bg-app:         #09090b !important; /* Midnight AMOLED zinc-950 */
+  --white:          #18181b !important; /* Zinc 900 */
+  --glass-bg:       rgba(24, 24, 27, 0.85);
+  --glass-border:   rgba(255, 255, 255, 0.05);
+  --glass-shadow:   0 12px 40px rgba(0, 0, 0, 0.6);
 
   /* Texto */
-  --text-primary:   #F9FAFB !important; /* Branco cristalino */
-  --text-secondary: #E5E7EB !important; /* Cinza suave */
-  --text-muted:     #9CA3AF !important; /* Cinza médio */
+  --text-primary:   #fafafa !important; /* Zinc 50 */
+  --text-secondary: #d4d4d8 !important; /* Zinc 300 */
+  --text-muted:     #71717a !important; /* Zinc 500 */
 
-  /* Laranja com glow neon */
-  --orange:         #FF822E;
-  --orange-light:   rgba(255, 130, 46, 0.1);
-  --orange-mid:     rgba(255, 130, 46, 0.22);
-  --orange-glow:    rgba(255, 130, 46, 0.5);
+  /* Verde esmeralda com glow neon */
+  --orange:         #10B981;
+  --orange-light:   rgba(16, 185, 129, 0.08);
+  --orange-mid:     rgba(16, 185, 129, 0.22);
+  --orange-glow:    rgba(16, 185, 129, 0.45);
 
   /* Ardósia (10%) no Dark Mode */
-  --slate:          #CBD5E1;
-  --slate-light:    rgba(255, 255, 255, 0.05);
-  --slate-border:   rgba(255, 255, 255, 0.12);
+  --slate:          #e4e4e7;
+  --slate-light:    rgba(255, 255, 255, 0.04);
+  --slate-border:   rgba(255, 255, 255, 0.08);
 
-  background-color: #030712 !important;
-  color: #F9FAFB !important;
+  background-color: #09090b !important;
+  color: #fafafa !important;
   color-scheme: dark;
 }
 
@@ -1360,16 +1360,16 @@ body.dark-mode .login-card {
   padding: 20px 24px;
   position: sticky;
   top: 0;
-  background: rgba(253, 248, 245, 0.85);
+  background: rgba(250, 250, 250, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   z-index: 1000;
-  border-bottom: 1px solid rgba(249, 115, 22, 0.08);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.08);
   transition: all 0.3s;
 }
 
 body.dark-mode .lp-header {
-  background: rgba(3, 7, 18, 0.85) !important;
+  background: rgba(9, 9, 11, 0.85) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
