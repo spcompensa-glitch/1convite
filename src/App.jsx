@@ -272,7 +272,7 @@ function App() {
             });
             window.google.accounts.id.renderButton(
               container,
-              { theme: "outline", size: "large", width: "100%" }
+              { theme: "outline", size: "large", width: 320 }
             );
           } catch (err) {
             console.warn('Erro ao inicializar botão do Google:', err);
