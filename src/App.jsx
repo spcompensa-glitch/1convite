@@ -64,6 +64,42 @@ function App() {
   const [listaTrilhas, setListaTrilhas] = useState([]);
   const [trilhaLoading, setTrilhaLoading] = useState(false);
 
+  // Modo Escuro & Perfil
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('1convite_dark_mode') === 'true');
+  const [profileName, setProfileName] = useState(() => localStorage.getItem('1convite_profile_name') || 'Membro Convidado');
+  const [profileEmail, setProfileEmail] = useState(() => localStorage.getItem('1convite_profile_email') || 'membro@1convite.com');
+  const [profileAvatar, setProfileAvatar] = useState(() => localStorage.getItem('1convite_profile_avatar') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80');
+  const [profileSavedMsg, setProfileSavedMsg] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('1convite_dark_mode', darkMode);
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [darkMode]);
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileAvatar(reader.result);
+        localStorage.setItem('1convite_profile_avatar', reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+    localStorage.setItem('1convite_profile_name', profileName);
+    localStorage.setItem('1convite_profile_email', profileEmail);
+    setProfileSavedMsg('Dados atualizados com sucesso!');
+    setTimeout(() => setProfileSavedMsg(''), 3000);
+  };
+
   const API_BASE = import.meta.env.PROD ? '/api/v1' : 'http://localhost:3001/api/v1';
 
   // ── Bíblia ──────────────────────────────────────────────────
@@ -1018,6 +1054,98 @@ function App() {
           </div>
         )}
 
+        {/* ── ABA MINHA CONTA & PERFIL ────────────────────────── */}
+        {activeTab === 'conta' && (
+          <div className="page-enter flex-column gap-md">
+            <div className="page-hero hero-sabado" style={{ textAlign: 'center', padding: '30px 20px' }}>
+              <div className="hero-content">
+                <div className="profile-avatar-container">
+                  <img src={profileAvatar} alt="Foto de Perfil" className="profile-avatar-img" />
+                  <label className="profile-avatar-upload-btn" title="Alterar foto de perfil">
+                    📷
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
+                  </label>
+                </div>
+                <h2 className="hero-title" style={{ fontSize: '1.4rem', marginBottom: '4px' }}>{profileName}</h2>
+                <span className={`pedagio-badge ${user?.status_plano === 'PREMIUM' ? 'badge-proposito' : 'badge-recompensa'}`}>
+                  {user?.status_plano === 'PREMIUM' ? '⭐ Membro Premium' : '🌱 Plano Gratuito (FREE)'}
+                </span>
+              </div>
+            </div>
+
+            <div className="page-content" style={{ paddingTop: '10px' }}>
+              {/* Alternância de Tema */}
+              <div className="glass-panel" style={{ marginBottom: '16px' }}>
+                <h3 style={{ marginBottom: '14px', fontSize: '1.05rem' }}>🎨 Aparência & Tema</h3>
+                <div className="toggle-switch-container">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.2rem' }}>{darkMode ? '🌙' : '☀️'}</span>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.92rem' }}>Modo Escuro (Dark Mode)</strong>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Alternar tema de cores da interface</span>
+                    </div>
+                  </div>
+                  <label className="toggle-switch">
+                    <input type="checkbox" checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Informações da Conta */}
+              <div className="glass-panel" style={{ marginBottom: '16px' }}>
+                <h3 style={{ marginBottom: '16px', fontSize: '1.05rem' }}>👤 Informações Pessoais</h3>
+                <form onSubmit={handleSaveProfile} className="flex-column gap-sm">
+                  <div className="input-group">
+                    <label>Nome Completo</label>
+                    <input type="text" className="input-field" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Seu nome" />
+                  </div>
+                  <div className="input-group">
+                    <label>E-mail da Conta</label>
+                    <input type="email" className="input-field" value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} placeholder="seu.email@exemplo.com" />
+                  </div>
+
+                  {profileSavedMsg && (
+                    <div style={{ color: '#16a34a', fontSize: '0.85rem', fontWeight: 'bold', margin: '4px 0' }}>
+                      {profileSavedMsg}
+                    </div>
+                  )}
+
+                  <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
+                    💾 Salvar Alterações
+                  </button>
+                </form>
+              </div>
+
+              {/* Plano & Assinatura */}
+              <div className="glass-panel">
+                <h3 style={{ marginBottom: '12px', fontSize: '1.05rem' }}>💳 Plano & Assinatura</h3>
+                <div className="flex-between" style={{ background: 'var(--slate-light)', padding: '14px', borderRadius: '12px', marginBottom: '14px' }}>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.95rem' }}>1Convite Premium</strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {user?.status_plano === 'PREMIUM' ? 'Sua assinatura está ativa' : 'Acesso limitado ao plano gratuito'}
+                    </span>
+                  </div>
+                  <span style={{ fontWeight: 'bold', color: 'var(--orange)' }}>
+                    {user?.status_plano === 'PREMIUM' ? 'ATIVO' : 'R$ 19,90/mês'}
+                  </span>
+                </div>
+
+                {user?.status_plano === 'FREE' ? (
+                  <button className="btn-primary" style={{ width: '100%' }} onClick={() => setActiveTab('upgrade')}>
+                    ⚡ Fazer Upgrade para Premium
+                  </button>
+                ) : (
+                  <button className="btn-secondary" style={{ width: '100%' }} onClick={() => setActiveTab('sabado')}>
+                    Acessar Conteúdo Exclusivo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* ── BOTTOM NAV ────────────────────────── */}
@@ -1029,6 +1157,7 @@ function App() {
             { id: 'contatos', label: 'Contatos', path: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
             { id: 'historico', label: 'Histórico', path: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
             { id: 'upgrade', label: 'Premium', path: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' },
+            { id: 'conta', label: 'Conta', path: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
           ].map(tab => (
             <button
               key={tab.id}
