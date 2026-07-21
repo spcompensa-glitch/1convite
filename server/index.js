@@ -305,6 +305,8 @@ app.get('/api/v1/usuario', async (req, res) => {
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
 // Atualizar dados de perfil do usuário manualmente
 app.post('/api/v1/usuario/perfil', async (req, res) => {
   try {
