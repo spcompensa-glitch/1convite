@@ -667,98 +667,256 @@ function App() {
 
   if (profileEmail === 'membro@1convite.com') {
     return (
-      <div className="login-overlay">
-        <div className="login-card">
-          <img src="/LOGOMARCA.png" alt="1Convite Logo" className="login-logo" style={{ objectFit: 'contain', width: 'auto', maxHeight: '54px', margin: '0 auto 18px' }} />
-          <h1 className="login-title">Acesse o 1Convite</h1>
-          <p className="login-subtitle">
-            Conecte-se para iniciar sua jornada diária de meditação, respiração e leitura bíblica estruturada.
+      <div className="lp-container">
+        {/* ── HEADER DA LANDING PAGE ────────────────────────── */}
+        <header className="lp-header">
+          <img src="/LOGOMARCA.png" alt="1Convite Logo" className="lp-logo-img" />
+          <button 
+            className="theme-toggle-btn" 
+            onClick={() => setDarkMode(!darkMode)}
+            title="Alternar Tema Claro/Escuro"
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+        </header>
+
+        {/* ── HERO SECTION ────────────────────────── */}
+        <section className="lp-hero">
+          <span className="lp-badge">Jornada Espiritual Ativa</span>
+          <h1 className="lp-title">
+            Desacelere sua mente. <span>Conecte-se com Deus.</span>
+          </h1>
+          <p className="lp-description">
+            11 minutos diários de meditação cristã orientada, respiração controlada contra ansiedade e leitura da Bíblia narrada.
+          </p>
+          <button 
+            className="lp-hero-cta"
+            onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            Começar Gratuitamente 🚀
+          </button>
+
+          {/* Mockup Interativo em CSS */}
+          <div className="lp-mockup-wrapper">
+            <div className="lp-phone-frame">
+              <div className="lp-phone-notch"></div>
+              <div className="lp-phone-screen">
+                {/* Cabeçalho do App Simulado */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '24px 16px 8px', borderBottom: '1px solid rgba(249, 115, 22, 0.08)' }}>
+                  <img src="/LOGOMARCA.png" alt="Logo" style={{ height: '18px' }} />
+                  <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: 'var(--orange)' }}>Dia 1</span>
+                </div>
+                {/* Conteúdo Devocional Simulado */}
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'hidden', height: '100%' }}>
+                  <div style={{ background: 'var(--orange-light)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(249, 115, 22, 0.15)' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--orange)' }}>Matriz Diária</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginTop: '4px', lineHeight: '1.2' }}>"Não andeis ansiosos..."</div>
+                    <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>Filipenses 4:6</div>
+                  </div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.5)', padding: '12px', borderRadius: '12px', border: '1px solid var(--slate-border)' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>🎧 Meditação Guiada</div>
+                    <div style={{ width: '100%', height: '4px', background: 'var(--slate-border)', borderRadius: '2px', marginTop: '10px', position: 'relative' }}>
+                      <div style={{ width: '45%', height: '100%', background: 'var(--orange)', borderRadius: '2px' }}></div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.55rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                      <span>01:45</span>
+                      <span>03:00</span>
+                    </div>
+                  </div>
+                  {/* Círculo de Respiração Guiada */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '10px 0' }}>
+                    <div style={{
+                      width: '60px', height: '60px', borderRadius: '50%', 
+                      border: '3px solid var(--orange)', background: 'var(--orange-light)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      animation: 'float 3s ease-in-out infinite'
+                    }}>
+                      🌀
+                    </div>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 'bold', marginTop: '6px' }}>Inspirar...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── SEÇÃO DE RECURSOS (FEATURES) ────────────────────────── */}
+        <section className="lp-section">
+          <h2 className="lp-section-title">O que você vai encontrar no <span>1Convite</span></h2>
+          <div className="lp-features-grid">
+            <div className="lp-feature-card">
+              <span className="lp-feature-icon">🎧</span>
+              <h3 className="lp-feature-title">Meditação Cristã Guiada</h3>
+              <p className="lp-feature-desc">Áudios diários focados em alinhar sua mente com os ensinamentos de Jesus e acalmar as preocupações.</p>
+            </div>
+            <div className="lp-feature-card">
+              <span className="lp-feature-icon">🌀</span>
+              <h3 className="lp-feature-title">Exercício de Respiração Ativa</h3>
+              <p className="lp-feature-desc">Técnica clínica de relaxamento baseada na respiração guiada para aliviar estresse e ansiedade.</p>
+            </div>
+            <div className="lp-feature-card">
+              <span className="lp-feature-icon">📖</span>
+              <h3 className="lp-feature-title">Bíblia Narrada com Dicionário</h3>
+              <p className="lp-feature-desc">Leitura bíblica ACF com áudio narrado e explicações etimológicas instantâneas de palavras teológicas complexas.</p>
+            </div>
+            <div className="lp-feature-card">
+              <span className="lp-feature-icon">👥</span>
+              <h3 className="lp-feature-title">Cultivo de Relacionamentos</h3>
+              <p className="lp-feature-desc">Lembrete ativo com alertas de 48h para interagir com seus contatos prioritários (cafés, convites e mensagens).</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── SEÇÃO COMPARATIVA DE PREÇOS ────────────────────────── */}
+        <section className="lp-section">
+          <h2 className="lp-section-title">Escolha o seu <span>Plano</span></h2>
+          <div className="lp-pricing-table">
+            <div className="lp-pricing-header">
+              <span className="lp-badge" style={{ fontSize: '0.7rem' }}>Acesso Vitalício Livre</span>
+              <div className="lp-price">1Convite</div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Seja livre com o plano grátis ou expanda sua jornada com o Premium.
+              </p>
+            </div>
+            
+            <div className="lp-pricing-row" style={{ fontWeight: 'bold', background: 'var(--slate-light)' }}>
+              <span>Funcionalidade</span>
+              <span>Plano FREE</span>
+              <span style={{ color: 'var(--orange)' }}>Plano PREMIUM</span>
+            </div>
+            <div className="lp-pricing-row">
+              <span>Leitura Bíblica & Dicionário</span>
+              <span className="lp-check-icon">✓</span>
+              <span className="lp-check-icon">✓</span>
+            </div>
+            <div className="lp-pricing-row">
+              <span>Respiração Controlada</span>
+              <span className="lp-check-icon">✓</span>
+              <span className="lp-check-icon">✓</span>
+            </div>
+            <div className="lp-pricing-row">
+              <span>Cultivo de Contatos</span>
+              <span>Até 3 pessoas</span>
+              <span style={{ fontWeight: 'bold' }}>Ilimitados</span>
+            </div>
+            <div className="lp-pricing-row">
+              <span>Áudios de Meditação Guiada</span>
+              <span className="lp-cross-icon">✕</span>
+              <span className="lp-check-icon">✓</span>
+            </div>
+            <div className="lp-pricing-row">
+              <span>Histórico de Dias Anteriores</span>
+              <span className="lp-cross-icon">✕</span>
+              <span className="lp-check-icon">✓</span>
+            </div>
+            <div className="lp-pricing-row" style={{ borderBottom: 'none' }}>
+              <span>Valor Mensal</span>
+              <strong>R$ 0,00</strong>
+              <strong style={{ color: 'var(--orange)' }}>R$ 19,90</strong>
+            </div>
+          </div>
+        </section>
+
+        {/* ── SEÇÃO DE CTA & LOGIN INTEGRADO ────────────────────────── */}
+        <section id="login-section" className="lp-cta-block">
+          <h2 className="lp-cta-title">Comece sua Jornada Hoje</h2>
+          <p className="lp-cta-subtitle">
+            Crie sua conta ou entre gratuitamente no aplicativo para liberar o seu primeiro devocional diário.
           </p>
 
-          <div style={{ display: 'flex', borderRadius: '10px', background: 'var(--slate-light)', padding: '4px', marginBottom: '20px' }}>
-            <button
-              onClick={() => { setLoginMethod('google'); setLoginError(''); }}
-              style={{
-                flex: 1,
-                background: loginMethod === 'google' ? 'var(--orange)' : 'transparent',
-                color: loginMethod === 'google' ? '#fff' : 'var(--text-secondary)',
-                border: 'none', borderRadius: '8px', padding: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
-              }}
-            >
-              Google Sign-In
-            </button>
-            <button
-              onClick={() => { setLoginMethod('email'); setLoginError(''); }}
-              style={{
-                flex: 1,
-                background: loginMethod === 'email' ? 'var(--orange)' : 'transparent',
-                color: loginMethod === 'email' ? '#fff' : 'var(--text-secondary)',
-                border: 'none', borderRadius: '8px', padding: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
-              }}
-            >
-              E-mail Comum
-            </button>
-          </div>
-
-          {loginMethod === 'google' ? (
-            <div className="flex-column gap-sm">
-              {/* Container para o GIS real do Google */}
-              <div id="google-login-screen-container" style={{ width: '100%', minHeight: '44px', display: 'flex', justifyContent: 'center' }}></div>
-
-              {/* Botão simulado para testes rápidos locais */}
-              <button className="btn-google-signin" onClick={handleSimularLoginGoogle} style={{ marginTop: '4px' }}>
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                  <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
-                  <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
-                  <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
-                  <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
-                </svg>
-                Testar/Simular Login Google
+          <div className="login-card" style={{ margin: '0 auto', background: 'var(--white)' }}>
+            <h3 style={{ marginBottom: '14px', fontSize: '1.05rem', textAlign: 'center' }}>🔑 Acessar o Aplicativo</h3>
+            
+            <div style={{ display: 'flex', borderRadius: '10px', background: 'var(--slate-light)', padding: '4px', marginBottom: '20px' }}>
+              <button
+                onClick={() => { setLoginMethod('google'); setLoginError(''); }}
+                style={{
+                  flex: 1,
+                  background: loginMethod === 'google' ? 'var(--orange)' : 'transparent',
+                  color: loginMethod === 'google' ? '#fff' : 'var(--text-secondary)',
+                  border: 'none', borderRadius: '8px', padding: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                Google Sign-In
+              </button>
+              <button
+                onClick={() => { setLoginMethod('email'); setLoginError(''); }}
+                style={{
+                  flex: 1,
+                  background: loginMethod === 'email' ? 'var(--orange)' : 'transparent',
+                  color: loginMethod === 'email' ? '#fff' : 'var(--text-secondary)',
+                  border: 'none', borderRadius: '8px', padding: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                E-mail Comum
               </button>
             </div>
-          ) : (
-            <form onSubmit={handleEmailLogin} className="flex-column gap-sm" style={{ textAlign: 'left' }}>
-              <div className="input-group">
-                <label>Seu Nome</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={loginNome}
-                  onChange={(e) => setLoginNome(e.target.value)}
-                  placeholder="Nome de Exibição"
-                  required
-                />
-              </div>
-              <div className="input-group">
-                <label>Seu E-mail</label>
-                <input
-                  type="email"
-                  className="input-field"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="seu.email@exemplo.com"
-                  required
-                />
-              </div>
 
-              {loginError && (
-                <div style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 'bold', margin: '4px 0' }}>
-                  {loginError}
+            {loginMethod === 'google' ? (
+              <div className="flex-column gap-sm">
+                <div id="google-login-screen-container" style={{ width: '100%', minHeight: '44px', display: 'flex', justifyContent: 'center' }}></div>
+
+                <button className="btn-google-signin" onClick={handleSimularLoginGoogle} style={{ marginTop: '4px' }}>
+                  <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
+                    <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
+                  </svg>
+                  Testar/Simular Login Google
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleEmailLogin} className="flex-column gap-sm" style={{ textAlign: 'left' }}>
+                <div className="input-group">
+                  <label>Seu Nome</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={loginNome}
+                    onChange={(e) => setLoginNome(e.target.value)}
+                    placeholder="Nome de Exibição"
+                    required
+                  />
                 </div>
-              )}
+                <div className="input-group">
+                  <label>Seu E-mail</label>
+                  <input
+                    type="email"
+                    className="input-field"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="seu.email@exemplo.com"
+                    required
+                  />
+                </div>
 
-              <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '8px' }}>
-                🚀 Acessar com E-mail
-              </button>
-            </form>
-          )}
+                {loginError && (
+                  <div style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 'bold', margin: '4px 0' }}>
+                    {loginError}
+                  </div>
+                )}
 
-          <div className="login-separator">ou</div>
+                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '8px' }}>
+                  🚀 Acessar com E-mail
+                </button>
+              </form>
+            )}
 
-          <button className="btn-secondary" style={{ width: '100%' }} onClick={handleGuestLogin}>
-            🔓 Entrar sem Login (Modo Convidado)
-          </button>
-        </div>
+            <div className="login-separator">ou</div>
+
+            <button className="btn-secondary" style={{ width: '100%' }} onClick={handleGuestLogin}>
+              🔓 Entrar sem Login (Modo Convidado)
+            </button>
+          </div>
+        </section>
+
+        {/* ── FOOTER DA LP ────────────────────────── */}
+        <footer style={{ textAlign: 'center', padding: '40px 24px', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(249, 115, 22, 0.08)' }}>
+          <p>© {new Date().getFullYear()} Movimento 1Convite. Todos os direitos reservados.</p>
+          <p style={{ marginTop: '4px', opacity: 0.7 }}>Desenvolvido com foco no bem-estar espiritual cristão.</p>
+        </footer>
       </div>
     );
   }

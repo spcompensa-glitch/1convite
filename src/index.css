@@ -11,40 +11,40 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 
-  /* Cores base */
+  /* Cores base com paleta warm off-white de alto contraste */
   --white:          #FFFFFF;
-  --bg-app:         #F8F4F0;
-  --glass-bg:       rgba(255, 255, 255, 0.65);
-  --glass-border:   rgba(255, 255, 255, 0.80);
-  --glass-shadow:   0 8px 32px rgba(0, 0, 0, 0.08);
+  --bg-app:         #FDF8F5; /* Warm off-white */
+  --glass-bg:       rgba(255, 255, 255, 0.72);
+  --glass-border:   rgba(255, 255, 255, 0.85);
+  --glass-shadow:   0 8px 32px rgba(249, 115, 22, 0.05);
 
   /* Texto */
-  --text-primary:   #1C1917;
-  --text-secondary: #57534E;
-  --text-muted:     #A8A29E;
+  --text-primary:   #1E293B; /* Slate 800 - muito legível */
+  --text-secondary: #475569; /* Slate 600 */
+  --text-muted:     #94A3B8; /* Slate 400 */
 
-  /* 30% — Laranja */
+  /* 30% — Laranja quentes e contrastantes */
   --orange:         #F97316;
-  --orange-dark:    #C2550A;
+  --orange-dark:    #EA580C;
   --orange-light:   #FFF7ED;
-  --orange-mid:     #FED7AA;
-  --orange-glow:    rgba(249, 115, 22, 0.35);
+  --orange-mid:     #FFEDD5;
+  --orange-glow:    rgba(249, 115, 22, 0.25);
 
   /* 10% — Ardósia */
   --slate:          #334155;
-  --slate-light:    #F1F5F9;
-  --slate-border:   #CBD5E1;
+  --slate-light:    #F8FAFC;
+  --slate-border:   #E2E8F0;
 
   /* Gradientes */
-  --grad-orange:    linear-gradient(135deg, #F97316 0%, #FB923C 50%, #FDBA74 100%);
-  --grad-slate:     linear-gradient(135deg, #334155 0%, #475569 100%);
-  --grad-hero-biblia: linear-gradient(135deg, #1e293b 0%, #334155 40%, #1e3a5f 100%);
+  --grad-orange:    linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  --grad-slate:     linear-gradient(135deg, #1E293B 0%, #334155 100%);
+  --grad-hero-biblia: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
 
   /* Sombras */
-  --shadow-sm:      0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md:      0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-lg:      0 20px 40px rgba(0,0,0,0.12);
-  --shadow-orange:  0 8px 24px rgba(249, 115, 22, 0.40);
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:      0 4px 20px rgba(249, 115, 22, 0.03), 0 2px 8px rgba(0,0,0,0.03);
+  --shadow-lg:      0 20px 40px rgba(0,0,0,0.06);
+  --shadow-orange:  0 8px 24px rgba(249, 115, 22, 0.20);
 
   color-scheme: light;
 }
@@ -117,6 +117,7 @@ body {
 /* ═══════════════════════════════════════════════════
    TIPOGRAFIA
 ═══════════════════════════════════════════════════ */
+h1, h2, h3, .login-title, .hero-title { font-family: 'Outfit', sans-serif; }
 h1 { font-size: 1.8rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; line-height: 1.2; }
 h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
 h3 { font-size: 1rem;    font-weight: 600; color: var(--text-primary); }
@@ -1337,5 +1338,354 @@ body.dark-mode .login-card {
 
 .login-separator:not(:empty)::after {
   margin-left: 12px;
+}
+
+/* ═══════════════════════════════════════════════════
+   ESTILOS DA LANDING PAGE DE ALTA CONVERSÃO
+═══════════════════════════════════════════════════ */
+.lp-container {
+  width: 100%;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+.lp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  position: sticky;
+  top: 0;
+  background: rgba(253, 248, 245, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 1000;
+  border-bottom: 1px solid rgba(249, 115, 22, 0.08);
+  transition: all 0.3s;
+}
+
+body.dark-mode .lp-header {
+  background: rgba(3, 7, 18, 0.85) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.lp-logo-img {
+  height: 32px;
+  object-fit: contain;
+}
+
+.theme-toggle-btn {
+  background: var(--orange-light);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  color: var(--orange);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
+
+body.dark-mode .theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--orange) !important;
+}
+
+.theme-toggle-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px var(--orange-glow);
+}
+
+.lp-hero {
+  text-align: center;
+  padding: 60px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+}
+
+.lp-badge {
+  background: var(--orange-light);
+  color: var(--orange);
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1.5px solid rgba(249, 115, 22, 0.15);
+}
+
+body.dark-mode .lp-badge {
+  background: rgba(255, 130, 46, 0.1) !important;
+  border-color: rgba(255, 130, 46, 0.2) !important;
+}
+
+.lp-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.lp-title span {
+  background: var(--grad-orange);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.lp-description {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  max-width: 520px;
+  line-height: 1.65;
+  margin: 0 auto 10px;
+}
+
+.lp-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grad-orange);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 16px 36px;
+  border-radius: 9999px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-orange);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  margin-top: 10px;
+}
+
+.lp-hero-cta:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.35);
+}
+
+/* Mockup Celular no CSS */
+.lp-mockup-wrapper {
+  perspective: 1000px;
+  margin: 40px auto;
+  width: 100%;
+  max-width: 320px;
+}
+
+.lp-phone-frame {
+  width: 290px;
+  height: 580px;
+  border-radius: 40px;
+  background: #1e293b;
+  border: 10px solid #0f172a;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25), inset 0 2px 2px rgba(255,255,255,0.2);
+  position: relative;
+  overflow: hidden;
+  transform: rotateX(8deg) rotateY(-8deg) rotateZ(2deg);
+  transition: all 0.5s ease;
+}
+
+.lp-phone-frame:hover {
+  transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.lp-phone-screen {
+  width: 100%;
+  height: 100%;
+  background: #fdf8f5;
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+body.dark-mode .lp-phone-screen {
+  background: #030712;
+}
+
+.lp-phone-notch {
+  width: 110px;
+  height: 18px;
+  background: #0f172a;
+  border-radius: 0 0 12px 12px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+.lp-phone-content-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: scrollMockup 15s linear infinite;
+}
+
+@keyframes scrollMockup {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-40%); }
+}
+
+/* Sections */
+.lp-section {
+  padding: 60px 24px;
+  position: relative;
+  border-top: 1px solid rgba(249, 115, 22, 0.06);
+}
+
+body.dark-mode .lp-section {
+  border-top-color: rgba(255, 255, 255, 0.04);
+}
+
+.lp-section-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 34px;
+}
+
+.lp-section-title span {
+  color: var(--orange);
+}
+
+/* Grid de Features */
+.lp-features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.lp-feature-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s ease;
+}
+
+.lp-feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(249, 115, 22, 0.25);
+  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.06);
+}
+
+.lp-feature-icon {
+  font-size: 2.2rem;
+  margin-bottom: 14px;
+  display: inline-block;
+}
+
+.lp-feature-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.lp-feature-desc {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Tabela Comparativa de Planos */
+.lp-pricing-table {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 24px;
+}
+
+.lp-pricing-header {
+  padding: 30px 24px;
+  text-align: center;
+  background: var(--orange-light);
+  border-bottom: 1.5px solid rgba(249, 115, 22, 0.1);
+}
+
+body.dark-mode .lp-pricing-header {
+  background: rgba(255, 130, 46, 0.05) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.lp-price {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 10px 0;
+  letter-spacing: -0.02em;
+}
+
+.lp-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  font-size: 0.92rem;
+  border-bottom: 1px solid rgba(0,0,0,0.03);
+}
+
+body.dark-mode .lp-pricing-row {
+  border-bottom-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.lp-pricing-row:last-child {
+  border-bottom: none;
+}
+
+.lp-check-icon {
+  color: #16a34a;
+  font-weight: bold;
+}
+
+.lp-cross-icon {
+  color: #dc2626;
+  font-weight: bold;
+}
+
+/* CTA Block de Login */
+.lp-cta-block {
+  padding: 50px 24px;
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.02) 0%, rgba(249, 115, 22, 0.06) 100%);
+  border-radius: 30px;
+  margin: 30px 16px;
+  text-align: center;
+}
+
+body.dark-mode .lp-cta-block {
+  background: linear-gradient(180deg, rgba(255, 130, 46, 0.01) 0%, rgba(255, 130, 46, 0.05) 100%) !important;
+}
+
+.lp-cta-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.lp-cta-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 30px;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
