@@ -1250,291 +1250,99 @@ input:checked + .toggle-slider:before {
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.btn-google-signin:hover {
-  background: #f9fafb;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-}
-
-/* Header Escuro no Dark Mode */
-body.dark-mode .app-header {
-  background: rgba(17, 24, 39, 0.88) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-}
-
-/* ═══════════════════════════════════════════════════
-   TELA DE LOGIN DEDICADA
-═══════════════════════════════════════════════════ */
-.login-overlay {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 50%, #fafaf9 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 2000;
-  overflow-y: auto;
-}
-
-body.dark-mode .login-overlay {
-  background: radial-gradient(circle at 50% 50%, #0d1321 0%, #030712 100%) !important;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 400px;
-  background: rgba(255, 255, 255, 0.80);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1.5px solid rgba(249, 115, 22, 0.15);
-  border-radius: 24px;
-  padding: 34px 28px;
-  text-align: center;
-  box-shadow: 0 20px 40px rgba(249, 115, 22, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  animation: pageFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-body.dark-mode .login-card {
-  background: rgba(17, 24, 39, 0.85) !important;
-  border-color: rgba(255, 130, 46, 0.2) !important;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6) !important;
-}
-
-.login-logo {
-  width: 72px;
-  height: 72px;
-  margin-bottom: 18px;
-  filter: drop-shadow(0 4px 10px rgba(249, 115, 22, 0.25));
-}
-
-.login-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-  letter-spacing: -0.01em;
-}
-
-.login-subtitle {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  line-height: 1.55;
-  margin-bottom: 24px;
-}
-
-.login-separator {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  margin: 20px 0;
-}
-
-.login-separator::before,
-.login-separator::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.login-separator:not(:empty)::before {
-  margin-right: 12px;
-}
-
-.login-separator:not(:empty)::after {
-  margin-left: 12px;
-}
-
-/* ═══════════════════════════════════════════════════
-   ESTILOS DA LANDING PAGE DE ALTA CONVERSÃO
-═══════════════════════════════════════════════════ */
 .lp-container {
-  width: 100%;
-  background: var(--bg-app);
-  color: var(--text-primary);
+  background: transparent;
+  color: #fafafa;
+  min-height: 100vh;
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
   position: relative;
-  z-index: 10;
 }
 
-.lp-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  position: sticky;
-  top: 0;
-  background: rgba(250, 250, 250, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  z-index: 1000;
-  border-bottom: 1px solid rgba(16, 185, 129, 0.08);
-  transition: all 0.3s;
+/* Backglow - Iluminação neon de fundo */
+.lp-hero-backglow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80vw;
+  height: 80vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(circle, rgba(0, 240, 143, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+  z-index: 1;
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+.lp-hero-section {
+  position: relative;
   width: 100%;
-}
-
-.lp-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-body.dark-mode .lp-header {
-  background: rgba(9, 9, 11, 0.85) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-.lp-logo-img {
-  height: 32px;
-  object-fit: contain;
-}
-
-.theme-toggle-btn {
-  background: var(--orange-light);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  color: var(--orange);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  min-height: calc(100vh - 80px);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 1.2rem;
-  transition: all 0.2s ease;
+  padding: 40px 8%;
+  background: transparent;
+  z-index: 2;
+  box-sizing: border-box;
 }
 
-body.dark-mode .theme-toggle-btn {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: var(--orange) !important;
+@media (max-width: 1024px) {
+  .lp-hero-section {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+    gap: 40px;
+  }
 }
 
-.theme-toggle-btn:hover {
-  transform: scale(1.08);
-  box-shadow: 0 4px 12px var(--orange-glow);
-}
-
-.lp-hero-scroll-section {
-  position: relative;
-  width: 100%;
-  height: 400vh; /* Altura do scroll mapeada pelo JS */
-  background: #000;
-}
-
-.lp-canvas-sticky-container {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-}
-
-.lp-scroll-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* Moldura de Vidro Arredondada (Portal Estilo Harmont/Woodnest) */
+/* Moldura Curva estilo Harmont adaptada para Deep Black */
 .lp-portal-frame {
-  position: absolute;
+  position: fixed;
   top: 24px;
   left: 24px;
   right: 24px;
   bottom: 24px;
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(0, 240, 143, 0.1);
   border-radius: 32px;
+  z-index: 99;
+  pointer-events: none;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.85);
+  transition: all 0.5s ease;
+}
+
+/* Estrutura de Seção Descendente (Linear / Vertical) */
+.lp-section-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
   z-index: 10;
-  pointer-events: none;
-  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.45);
-  transition: all 0.3s ease;
-}
-
-body.dark-mode .lp-portal-frame {
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.lp-canvas-overlay-gradient {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to right, rgba(9, 9, 11, 0.72) 0%, rgba(9, 9, 11, 0.2) 60%, rgba(9, 9, 11, 0.5) 100%);
-  z-index: 2;
-  pointer-events: none;
-}
-
-.lp-scroll-text-overlay-wrapper {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 5;
-  pointer-events: none;
+  position: relative;
 }
 
 .lp-scroll-text-card {
-  position: absolute;
-  top: 50%;
-  left: 8%;
-  transform: translateY(-50%) translateX(-40px);
-  max-width: 520px;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  background: rgba(24, 24, 27, 0.5);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(10, 10, 12, 0.75);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(0, 240, 143, 0.15);
   padding: 44px;
   border-radius: 30px;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
-  pointer-events: auto;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 240, 143, 0.04);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
 }
 
-.lp-scroll-text-card.visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(-50%) translateX(0);
-}
-
-/* CTA Outline na Hero */
-.lp-hero-cta-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: 700;
-  padding: 16px 36px;
-  border-radius: 9999px;
-  text-decoration: none;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.lp-hero-cta-outline:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
+.lp-scroll-text-card.lp-card-wide {
+  max-width: 1000px;
 }
 
 @media (max-width: 768px) {
@@ -1555,19 +1363,13 @@ body.dark-mode .lp-portal-frame {
     transform: translateY(40px);
     padding: 24px;
     border-radius: 20px;
-    background: rgba(24, 24, 27, 0.72);
+    background: rgba(10, 10, 12, 0.85);
   }
 
   .lp-scroll-text-card.visible {
     transform: translateY(0);
   }
-}
 
-.lp-scroll-text-card.lp-card-wide {
-  max-width: 720px;
-}
-
-@media (max-width: 768px) {
   .lp-grid-mobile-single {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
@@ -1578,30 +1380,27 @@ body.dark-mode .lp-portal-frame {
   }
 }
 
-/* Badges Flutuantes (Woodnest/Harmont Style) */
+/* Badges Flutuantes */
 .lp-floating-badge {
   position: absolute;
-  background: rgba(24, 24, 27, 0.45);
+  background: rgba(10, 10, 12, 0.6);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #fff;
+  border: 1px solid rgba(0, 240, 143, 0.25);
+  color: #00f08f;
   padding: 8px 18px;
   border-radius: 9999px;
   font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
   z-index: 10;
   pointer-events: none;
   animation: float 4s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(0, 240, 143, 0.08);
 }
 
 .lp-floating-badge-1 {
   bottom: 12%;
   right: 6%;
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #10B981;
 }
 
 .lp-floating-badge-2 {
@@ -1616,7 +1415,7 @@ body.dark-mode .lp-portal-frame {
   animation-delay: 3s;
 }
 
-/* Barra Dock Horizontal (Estilo Harmont) */
+/* Barra Dock de Vidro Escuro */
 .lp-dock-bar {
   position: absolute;
   bottom: 60px;
@@ -1625,22 +1424,17 @@ body.dark-mode .lp-portal-frame {
   display: flex;
   align-items: center;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(10, 10, 12, 0.65);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border: 1.5px solid rgba(0, 240, 143, 0.2);
   padding: 10px 14px 10px 28px;
   border-radius: 9999px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 240, 143, 0.05);
   z-index: 20;
   max-width: 90%;
   width: max-content;
   pointer-events: auto;
-}
-
-body.dark-mode .lp-dock-bar {
-  background: rgba(24, 24, 27, 0.72) !important;
-  border-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .lp-dock-item {
@@ -1653,83 +1447,69 @@ body.dark-mode .lp-dock-bar {
 .lp-dock-label {
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-}
-
-body.dark-mode .lp-dock-label {
-  color: #9ca3af !important;
 }
 
 .lp-dock-value {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #fafafa;
 }
 
 .lp-dock-divider {
   width: 1.5px;
   height: 28px;
-  background: rgba(0, 0, 0, 0.06);
-}
-
-body.dark-mode .lp-dock-divider {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 240, 143, 0.15);
 }
 
 .lp-dock-btn {
-  background: #10B981; /* Verde esmeralda */
-  color: #fff;
+  background: #00f08f;
+  color: #030303;
   border: none;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 0.88rem;
   padding: 12px 24px;
   border-radius: 9999px;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 4px 15px rgba(0, 240, 143, 0.35);
 }
 
 .lp-dock-btn:hover {
-  background: #059669;
+  background: #00ffaa;
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 6px 22px rgba(0, 240, 143, 0.55);
 }
 
 @media (max-width: 900px) {
   .lp-dock-bar {
-    display: none; /* Esconde a barra dock no mobile, pois o espaço é muito reduzido */
+    display: none;
   }
   .lp-floating-badge {
     display: none;
   }
 }
 
-
 .lp-badge {
-  background: var(--orange-light);
-  color: var(--orange);
+  background: rgba(0, 240, 143, 0.1);
+  color: #00f08f;
   padding: 6px 16px;
   border-radius: 9999px;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  border: 1.5px solid rgba(16, 185, 129, 0.15);
+  border: 1.5px solid rgba(0, 240, 143, 0.25);
   display: inline-block;
-}
-
-body.dark-mode .lp-badge {
-  background: rgba(16, 185, 129, 0.1) !important;
-  border-color: rgba(16, 185, 129, 0.2) !important;
 }
 
 .lp-title {
   font-size: 2.2rem;
   font-weight: 800;
   line-height: 1.15;
-  color: var(--text-primary);
+  color: #ffffff;
   letter-spacing: -0.03em;
   max-width: 600px;
   margin: 0 auto;
@@ -1743,47 +1523,171 @@ body.dark-mode .lp-badge {
 }
 
 .lp-title span {
-  background: var(--grad-orange);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #00f08f;
+  text-shadow: 0 0 20px rgba(0, 240, 143, 0.25);
 }
 
 .lp-description {
   font-size: 1.05rem;
-  color: var(--text-secondary);
+  color: #a1a1aa;
   max-width: 520px;
   line-height: 1.65;
   margin: 0 auto 10px;
-}
-
-@media (min-width: 900px) {
-  .lp-description {
-    margin: 0;
-    font-size: 1.15rem;
-  }
 }
 
 .lp-hero-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--grad-orange);
-  color: #fff;
+  background: #00f08f;
+  color: #030303;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 16px 36px;
   border-radius: 9999px;
   text-decoration: none;
   border: none;
   cursor: pointer;
-  box-shadow: var(--shadow-orange);
+  box-shadow: 0 0 25px rgba(0, 240, 143, 0.35);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   margin-top: 10px;
 }
 
 .lp-hero-cta:hover {
   transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.35);
+  background: #00ffaa;
+  box-shadow: 0 12px 30px rgba(0, 240, 143, 0.55);
+}
+
+/* Grande Anel de Respiração/Foco no Centro (Thiago Finch Neon Style) */
+.lp-neon-breath-container {
+  position: absolute;
+  right: 15%;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+@media (max-width: 1024px) {
+  .lp-neon-breath-container {
+    display: none; /* Mantém apenas nas telas grandes para não sobrepor o texto */
+  }
+}
+
+.lp-neon-ring {
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  border: 4px solid #00f08f;
+  box-shadow: 0 0 40px rgba(0, 240, 143, 0.4), inset 0 0 40px rgba(0, 240, 143, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: breatheAnimation 8s ease-in-out infinite;
+}
+
+.lp-neon-inner-ring {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 2px dashed rgba(0, 240, 143, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: spinRing 20s linear infinite;
+}
+
+.lp-neon-center {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 240, 143, 0.25) 0%, rgba(10, 10, 12, 0.95) 75%);
+  border: 1px solid rgba(0, 240, 143, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 240, 143, 0.15);
+}
+
+.lp-neon-center-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #00f08f;
+}
+
+.lp-neon-center-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 4px;
+}
+
+@keyframes breatheAnimation {
+  0%, 100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 30px rgba(0, 240, 143, 0.25), inset 0 0 30px rgba(0, 240, 143, 0.1);
+    border-color: #00f08f;
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 60px rgba(0, 240, 143, 0.7), inset 0 0 60px rgba(0, 240, 143, 0.45);
+    border-color: #00ffaa;
+  }
+}
+
+@keyframes spinRing {
+  100% { transform: rotate(360deg); }
+}
+
+/* Gráfico de Consistência e Crescimento Neon */
+.lp-neon-graph-bar {
+  height: 16px;
+  background: rgba(0, 240, 143, 0.08);
+  border: 1px solid rgba(0, 240, 143, 0.15);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.lp-neon-graph-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #00f08f, #00ffaa);
+  box-shadow: 0 0 15px rgba(0, 240, 143, 0.8);
+  border-radius: 9999px;
+  transition: width 1s ease-in-out;
+}
+
+/* Texto Gigante de Fundo */
+.lp-giant-bg-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.015);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.0) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .lp-giant-bg-text {
+    font-size: 4rem;
+  }
 }
 
 /* Mockup Celular no CSS */
@@ -2015,3 +1919,146 @@ body.dark-mode .lp-cta-block {
   margin-right: auto;
 }
 
+/* Landing Page Estilo GSAP ScrollTrigger */
+.lp-section {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 40px 24px;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .lp-section {
+    padding: 80px 16px 40px;
+    height: auto;
+    min-height: 100vh;
+  }
+}
+
+
+
+/* ═══════════════════════════════════════════════════
+   AJUSTES DE RESPONSIVIDADE DA LANDING PAGE (VENDAS)
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .lp-section {
+    height: auto !important;
+    min-height: 100vh !important;
+    padding: 80px 16px 40px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 30px !important;
+    box-sizing: border-box !important;
+  }
+  
+  .lp-scroll-text-card {
+    padding: 24px 16px !important;
+    border-radius: 20px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .lp-title {
+    font-size: 1.85rem !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
+  }
+
+  .lp-title span {
+    display: inline !important;
+  }
+
+  .lp-description {
+    font-size: 0.9rem !important;
+    text-align: center !important;
+    line-height: 1.5 !important;
+    max-width: 100% !important;
+  }
+
+  .lp-hero-cta, .lp-hero-cta-outline {
+    padding: 12px 24px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .lp-neon-ring {
+    width: 260px !important;
+    height: 260px !important;
+  }
+  
+  .lp-neon-inner-ring {
+    width: 190px !important;
+    height: 190px !important;
+  }
+  
+  .lp-neon-center-title {
+    font-size: 0.75rem !important;
+  }
+  
+  .lp-neon-center-value {
+    font-size: 1.1rem !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   AJUSTES DE MODO ESCURO DO APP LOGADO (BÍBLIA)
+   ═══════════════════════════════════════════════════ */
+body.dark-mode .bible-modal-overlay {
+  background: rgba(9, 9, 11, 0.97) !important;
+  color: #fafafa !important;
+}
+
+body.dark-mode .bible-modal-header {
+  background: rgba(18, 18, 22, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #fafafa !important;
+}
+
+body.dark-mode .bible-modal-header h3 {
+  color: #fafafa !important;
+}
+
+body.dark-mode .bible-book-item {
+  color: #e4e4e7 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body.dark-mode .bible-book-item:hover {
+  background: rgba(249, 115, 22, 0.12) !important;
+  color: var(--orange) !important;
+}
+
+body.dark-mode .bible-chapter-btn {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #fafafa !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+}
+
+body.dark-mode .bible-chapter-btn:hover {
+  background: var(--grad-orange) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+body.dark-mode .bible-action-menu {
+  background: rgba(18, 18, 22, 0.96) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+body.dark-mode .bible-verse-row:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+body.dark-mode .bible-verse-row.selected {
+  background: rgba(249, 115, 22, 0.16) !important;
+}

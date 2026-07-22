@@ -133,95 +133,61 @@ function App() {
   useEffect(() => {
     if (profileEmail !== 'membro@1convite.com') return;
 
-    const frameCount = 120;
-    const isMobileDevice = window.innerWidth < 768;
-    const folder = isMobileDevice ? 'mobile' : 'desktop';
-    let loadedCount = 0;
-    const imagesArray = [];
-
-    // Pré-carregamento dos frames
-    for (let i = 1; i <= frameCount; i++) {
-      const img = new Image();
-      const numStr = String(i).padStart(4, '0');
-      img.src = `/intro_scroll/${folder}/frame-${numStr}.webp`;
-      img.onload = () => {
-        loadedCount++;
-        setLoadProgress(Math.round((loadedCount / frameCount) * 100));
-        if (loadedCount === frameCount) {
-          setFramesLoaded(true);
-        }
-      };
-      img.onerror = () => {
-        loadedCount++;
-        if (loadedCount === frameCount) setFramesLoaded(true);
-      };
-      imagesArray.push(img);
+    // Forçar fundo preto no body e transparente no root para o vídeo de background aparecer
+    const originalBodyBg = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = '#030303';
+    
+    const rootEl = document.getElementById('root');
+    let originalRootBg = '';
+    if (rootEl) {
+      originalRootBg = rootEl.style.backgroundColor;
+      rootEl.style.backgroundColor = 'transparent';
     }
-    imagesRef.current = imagesArray;
 
-    // Loop do canvas e scroll
-    let currentFrame = 0;
-    let targetFrame = 0;
-    let animId;
-
-    const render = () => {
-      const canvas = canvasRef.current;
-      if (canvas && imagesRef.current.length > 0) {
-        const ctx = canvas.getContext('2d');
-        // Suavização do scroll com LERP
-        currentFrame += (targetFrame - currentFrame) * 0.1;
-        const frameIndex = Math.min(frameCount - 1, Math.max(0, Math.round(currentFrame)));
-        const img = imagesRef.current[frameIndex];
-
-        if (img && img.complete) {
-          // Ajustar dimensões internas do canvas para a viewport
-          if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-          }
-
-          // Efeito cover no canvas
-          const imgRatio = img.width / img.height;
-          const canvasRatio = canvas.width / canvas.height;
-          let drawWidth, drawHeight, x, y;
-
-          if (canvasRatio > imgRatio) {
-            drawWidth = canvas.width;
-            drawHeight = canvas.width / imgRatio;
-            x = 0;
-            y = (canvas.height - drawHeight) / 2;
-          } else {
-            drawWidth = canvas.height * imgRatio;
-            drawHeight = canvas.height;
-            x = (canvas.width - drawWidth) / 2;
-            y = 0;
-          }
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, x, y, drawWidth, drawHeight);
-        }
-      }
-      animId = requestAnimationFrame(render);
-    };
-
-    // Monitor do scroll
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const heroSectionHeight = windowHeight * 7; 
-      const progress = Math.max(0, Math.min(1, scrollY / (heroSectionHeight - windowHeight)));
+    const video = document.getElementById("lp-bg-video");
+    if (video) {
+      video.load();
+      video.currentTime = 0.01;
       
-      setScrollPercent(progress * 100);
-      targetFrame = Math.floor(progress * (frameCount - 1));
-    };
+      const initScrollTrigger = () => {
+        if (window.gsap && window.ScrollTrigger) {
+          const gsap = window.gsap;
+          const ScrollTrigger = window.ScrollTrigger;
+          
+          gsap.registerPlugin(ScrollTrigger);
+          
+          ScrollTrigger.create({
+            trigger: ".lp-container",
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 1.5,
+            onUpdate: (self) => {
+              if (video.duration) {
+                const targetTime = self.progress * video.duration;
+                gsap.to(video, {
+                  currentTime: targetTime,
+                  duration: 0.1,
+                  overwrite: "auto",
+                  ease: "none"
+                });
+              }
+            }
+          });
+        }
+      };
 
-    window.addEventListener('scroll', handleScroll);
-    animId = requestAnimationFrame(render);
+      if (video.readyState >= 1) {
+        initScrollTrigger();
+      } else {
+        video.addEventListener('loadedmetadata', initScrollTrigger);
+      }
 
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      cancelAnimationFrame(animId);
-    };
+      return () => {
+        document.body.style.backgroundColor = originalBodyBg;
+        if (rootEl) rootEl.style.backgroundColor = originalRootBg;
+        video.removeEventListener('loadedmetadata', initScrollTrigger);
+      };
+    }
   }, [profileEmail]);
 
   useEffect(() => {
@@ -773,316 +739,254 @@ function App() {
   }
 
   if (profileEmail === 'membro@1convite.com') {
-    if (!framesLoaded) {
-      return (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: '#09090b', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', zIndex: 10000,
-          color: '#fafafa', fontFamily: "'Inter', sans-serif"
-        }}>
-          <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '36px', marginBottom: '24px', opacity: 0.9 }} />
-          <div style={{ width: '160px', height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative', overflow: 'hidden', marginBottom: '12px' }}>
-            <div style={{ width: `${loadProgress}%`, height: '100%', background: '#10B981', transition: 'width 0.1s ease', borderRadius: '3px' }}></div>
-          </div>
-          <span style={{ fontSize: '0.78rem', fontWeight: 'bold', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#10B981' }}>
-            Carregando Experiência {loadProgress}%
-          </span>
-        </div>
-      );
-    }
-
     return (
       <div className="lp-container">
+        {/* Video em Background controlado pelo ScrollTrigger */}
+        <video 
+          id="lp-bg-video"
+          src="/Imagens/video.mp4.mp4"
+          preload="auto"
+          playsInline
+          webkit-playsinline="true"
+          muted
+          loop
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: -2,
+            pointerEvents: 'none'
+          }}
+        />
+        {/* Overlay escuro para contraste e legibilidade */}
+        <div className="lp-video-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.45)',
+          zIndex: -1,
+          pointerEvents: 'none'
+        }} />
+
         {/* ── HEADER DA LANDING PAGE ────────────────────────── */}
-        <header className="lp-header">
-          <div className="lp-header-inner">
-            <img src="/LOGOMARCA.png" alt="1Convite Logo" className="lp-logo-img" />
+        <header className="lp-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 40px', background: 'rgba(3, 3, 3, 0.45)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', zIndex: 100, width: '100%', position: 'sticky', top: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
+            <img src="/LOGOMARCA.png" alt="1Convite Logo" style={{ height: '30px', objectFit: 'contain' }} />
             <button 
-              className="theme-toggle-btn" 
-              onClick={() => setDarkMode(!darkMode)}
-              title="Alternar Tema Claro/Escuro"
+              className="btn-secondary" 
+              onClick={() => {
+                const loginEl = document.getElementById('secao-login');
+                if (loginEl) loginEl.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{ padding: '8px 20px', fontSize: '0.85rem', fontWeight: 'bold', background: 'transparent', color: '#00f08f', border: '1.5px solid rgba(0, 240, 143, 0.4)', borderRadius: '9999px', cursor: 'pointer', transition: 'all 0.3s' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(0, 240, 143, 0.08)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
-              {darkMode ? '☀️' : '🌙'}
+              Acessar App 🔑
             </button>
           </div>
         </header>
 
-        {/* ── HERO SECTION COM CANVAS DE SCROLL ────────────────────────── */}
-        <section className="lp-hero-scroll-section">
-          {/* Container Sticky do Canvas */}
-          <div className="lp-canvas-sticky-container">
-            <canvas ref={canvasRef} className="lp-scroll-canvas" />
-            
-            {/* Moldura de Vidro Arredondada (Portal Estilo Harmont/Woodnest) */}
-            <div className="lp-portal-frame"></div>
-            
-            {/* Badges Flutuantes (Woodnest/Harmont Style) */}
-            <div className="lp-floating-badge lp-floating-badge-1">★ 4.9 (2,400+ membros)</div>
-            <div className="lp-floating-badge lp-floating-badge-2">🧘 Respiração Ativa</div>
-            <div className="lp-floating-badge lp-floating-badge-3">🎧 Meditação Cristã</div>
-
-            {/* Barra Dock Inferior (Estilo Harmont) */}
-            <div className="lp-dock-bar">
-              <div className="lp-dock-item">
-                <span className="lp-dock-label">💡 Devocional</span>
-                <span className="lp-dock-value">Dia 1 Ativo</span>
-              </div>
-              <div className="lp-dock-divider"></div>
-              <div className="lp-dock-item">
-                <span className="lp-dock-label">🧘 Respiração</span>
-                <span className="lp-dock-value">Inspirar & Exalar</span>
-              </div>
-              <div className="lp-dock-divider"></div>
-              <div className="lp-dock-item">
-                <span className="lp-dock-label">📖 Bíblia</span>
-                <span className="lp-dock-value">ACF Narrada</span>
-              </div>
-              <div className="lp-dock-divider"></div>
-              <div className="lp-dock-item">
-                <span className="lp-dock-label">👥 Contatos</span>
-                <span className="lp-dock-value">Alerta 48h</span>
-              </div>
-              <button className="lp-dock-btn" onClick={() => {
-                const windowHeight = window.innerHeight;
-                window.scrollTo({ top: windowHeight * 6.5, behavior: 'smooth' });
-              }}>
-                Entrar no App 🚀
+        {/* ── SEÇÃO 1: HERO (100vh) ────────────────────────── */}
+        <section className="lp-section">
+          <div style={{ maxWidth: '800px', width: '100%', padding: '0 24px', zIndex: 5, textAlign: 'center' }}>
+            <span className="lp-badge">Jornada Espiritual Ativa</span>
+            <h1 className="lp-title" style={{ marginTop: '24px', fontSize: '3.5rem', lineHeight: '1.1', color: '#ffffff' }}>
+              Desacelere sua mente. <br /><span>Conecte-se com Deus.</span>
+            </h1>
+            <p className="lp-description" style={{ marginTop: '20px', fontSize: '1.15rem', color: '#e4e4e7', margin: '20px auto 30px' }}>
+              11 minutos diários de meditação cristã orientada, respiração controlada contra ansiedade e leitura da Bíblia narrada.
+            </p>
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              <button 
+                className="lp-hero-cta"
+                onClick={() => {
+                  const loginEl = document.getElementById('secao-login');
+                  if (loginEl) loginEl.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Começar Agora 🚀
+              </button>
+              <button 
+                className="lp-hero-cta-outline"
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: '1.05rem', fontWeight: '700', padding: '16px 36px', borderRadius: '9999px', textDecoration: 'none', border: '1.5px solid rgba(255, 255, 255, 0.25)', cursor: 'pointer', transition: 'all 0.3s' }}
+                onClick={() => {
+                  const nextEl = document.getElementById('secao-escritura');
+                  if (nextEl) nextEl.scrollIntoView({ behavior: 'smooth' });
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+              >
+                Descobrir Roots 📖
               </button>
             </div>
+          </div>
+        </section>
+
+        {/* ── SEÇÃO 2: ESCRITURA (100vh) ────────────────────────── */}
+        <section id="secao-escritura" className="lp-section">
+          <div className="lp-scroll-text-card" style={{ background: 'rgba(10, 10, 12, 0.55)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
+            <div className="lp-giant-bg-text" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.04 }}>ESCRITURA</div>
+            <span className="lp-badge" style={{ background: 'rgba(255,255,255,0.04)', color: '#fafafa', borderColor: 'rgba(255,255,255,0.15)' }}>Passado 10%</span>
+            <h2 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem', textAlign: 'left' }}>
+              A Biblioteca da <span>Palavra</span>
+            </h2>
+            <p className="lp-description" style={{ marginTop: '12px', textAlign: 'left', maxWidth: '640px', color: '#e4e4e7' }}>
+              O conhecimento acumulado ao longo da história cristã. 10% da nossa mente é moldada pelas lições e escrituras antigas que pavimentam o nosso caminho com verdade.
+            </p>
+          </div>
+        </section>
+
+        {/* ── SEÇÃO 3: PRESENÇA (100vh) ────────────────────────── */}
+        <section className="lp-section">
+          <div className="lp-scroll-text-card" style={{ background: 'rgba(10, 10, 12, 0.55)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
+            <div className="lp-giant-bg-text" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.04 }}>PRESENÇA</div>
+            <span className="lp-badge">Presente 70%</span>
+            <h2 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem', textAlign: 'left' }}>
+              O Eterno <span>Agora</span>
+            </h2>
+            <p className="lp-description" style={{ marginTop: '12px', textAlign: 'left', maxWidth: '640px', color: '#e4e4e7' }}>
+              70% de nossa vida espiritual ativa acontece no dia de hoje. A quietude silenciosa para orar, meditar e sentir a presença do Criador no único tempo que realmente existe: o Agora.
+            </p>
+          </div>
+        </section>
+
+        {/* ── SEÇÃO 4: RECURSOS & PREÇOS (100vh) ────────────────────────── */}
+        <section className="lp-section">
+          <div className="lp-scroll-text-card lp-card-wide" style={{ background: 'rgba(10, 10, 12, 0.55)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
+            <span className="lp-badge">O que oferecemos</span>
+            <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2.1rem', textAlign: 'left' }}>Recursos do <span>1Convite</span></h2>
             
-            {/* Gradientes de escurecimento para legibilidade */}
-            <div className="lp-canvas-overlay-gradient"></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginTop: '20px' }} className="lp-grid-mobile-single">
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 240, 143, 0.15)', transition: 'all 0.3s' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00f08f'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 240, 143, 0.15)'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 240, 143, 0.15)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                <span style={{ fontSize: '1.6rem' }}>🎧</span>
+                <h4 style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#00f08f' }}>Meditação Cristã</h4>
+                <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Áudios diários guiados focados em alinhar a mente com Jesus.</p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 240, 143, 0.15)', transition: 'all 0.3s' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00f08f'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 240, 143, 0.15)'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 240, 143, 0.15)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                <span style={{ fontSize: '1.6rem' }}>🌀</span>
+                <h4 style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#00f08f' }}>Respiração Ativa</h4>
+                <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Técnicas respiratórias guiadas para aliviar estresse e ansiedade.</p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 240, 143, 0.15)', transition: 'all 0.3s' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00f08f'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 240, 143, 0.15)'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 240, 143, 0.15)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                <span style={{ fontSize: '1.6rem' }}>📖</span>
+                <h4 style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#00f08f' }}>Bíblia ACF Narrada</h4>
+                <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Leitura bíblica em áudio e dicionário teológico integrado.</p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 240, 143, 0.15)', transition: 'all 0.3s' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00f08f'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 240, 143, 0.15)'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 240, 143, 0.15)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                <span style={{ fontSize: '1.6rem' }}>👥</span>
+                <h4 style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#00f08f' }}>Cultivar Contatos</h4>
+                <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Alertas a cada 48h para cultivar relacionamentos prioritários.</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            {/* Overlays de Conteúdo Dinâmico que reagem ao Scroll */}
-            <div className="lp-scroll-text-overlay-wrapper">
-              
-              {/* Estágio 1: Introdução Hero (0% a 15%) */}
-              <div className={`lp-scroll-text-card ${scrollPercent < 15 ? 'visible' : ''}`}>
-                <span className="lp-badge">Jornada Espiritual Ativa</span>
-                <h1 className="lp-title" style={{ marginTop: '12px' }}>
-                  Desacelere sua mente. <span>Conecte-se com Deus.</span>
-                </h1>
-                <p className="lp-description" style={{ marginTop: '12px' }}>
-                  11 minutos diários de meditação cristã orientada, respiração controlada contra ansiedade e leitura da Bíblia narrada.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '18px' }}>
-                  <button 
-                    className="lp-hero-cta"
-                    onClick={() => {
-                      const windowHeight = window.innerHeight;
-                      window.scrollTo({ top: windowHeight * 6.5, behavior: 'smooth' });
-                    }}
-                  >
-                    Começar Agora 🚀
+        {/* ── SEÇÃO 5: ACESSO / LOGIN (100vh) ────────────────────────── */}
+        <section id="secao-login" className="lp-section">
+          <div className="lp-scroll-text-card" style={{ maxWidth: '480px', background: 'rgba(10, 10, 12, 0.7)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
+            <span className="lp-badge">Mateus 24:14</span>
+            <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2rem', textAlign: 'center' }}>Acesse o <span>1Convite</span></h2>
+            
+            <div className="login-card" style={{ margin: '20px auto 0', background: 'rgba(10, 10, 12, 0.85)', border: '1.5px solid rgba(0, 240, 143, 0.25)', backdropFilter: 'none', padding: '24px', borderRadius: '18px', width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', padding: '3px', marginBottom: '16px' }}>
+                <button
+                  onClick={() => { setLoginMethod('google'); setLoginError(''); }}
+                  style={{
+                    flex: 1,
+                    background: loginMethod === 'google' ? '#00f08f' : 'transparent',
+                    color: loginMethod === 'google' ? '#030303' : '#fafafa',
+                    border: 'none', borderRadius: '6px', padding: '8px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                >
+                  Google
+                </button>
+                <button
+                  onClick={() => { setLoginMethod('email'); setLoginError(''); }}
+                  style={{
+                    flex: 1,
+                    background: loginMethod === 'email' ? '#00f08f' : 'transparent',
+                    color: loginMethod === 'email' ? '#030303' : '#fafafa',
+                    border: 'none', borderRadius: '6px', padding: '8px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                >
+                  E-mail
+                </button>
+              </div>
+
+              {loginMethod === 'google' ? (
+                <div className="flex-column gap-sm">
+                  <button className="btn-google-signin" onClick={handleSimularLoginGoogle} style={{ marginTop: '0', width: '100%', padding: '12px', background: '#ffffff', color: '#000000', fontWeight: '800', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="18" height="18" viewBox="0 0 18 18" style={{ marginRight: '8px' }}>
+                      <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
+                      <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
+                      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
+                    </svg>
+                    Acessar com o Google
                   </button>
-                  <button 
-                    className="lp-hero-cta-outline"
-                    onClick={() => window.scrollBy({ top: window.innerHeight * 0.9, behavior: 'smooth' })}
-                  >
-                    Ver Conceito 🖱️
-                  </button>
                 </div>
-              </div>
-
-              {/* Estágio 2: Passado (15% a 30%) */}
-              <div className={`lp-scroll-text-card ${scrollPercent >= 15 && scrollPercent < 30 ? 'visible' : ''}`}>
-                <span className="lp-badge" style={{ background: 'rgba(255,255,255,0.08)', color: '#fafafa', borderColor: 'rgba(255,255,255,0.15)' }}>Passado 10%</span>
-                <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
-                  A Biblioteca da <span>Palavra</span>
-                </h1>
-                <p className="lp-description" style={{ marginTop: '12px' }}>
-                  O conhecimento acumulado ao longo da história cristã. 10% da nossa mente é moldada pelas lições e escrituras antigas que pavimentam o nosso caminho com verdade.
-                </p>
-              </div>
-
-              {/* Estágio 3: Presente (30% a 45%) */}
-              <div className={`lp-scroll-text-card ${scrollPercent >= 30 && scrollPercent < 45 ? 'visible' : ''}`}>
-                <span className="lp-badge">Presente 70%</span>
-                <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
-                  O Eterno <span>Agora</span>
-                </h1>
-                <p className="lp-description" style={{ marginTop: '12px' }}>
-                  70% de nossa vida espiritual ativa acontece no dia de hoje. A quietude silenciosa para orar, meditar e sentir a presença do Criador no único tempo que realmente existe: o Agora.
-                </p>
-              </div>
-
-              {/* Estágio 4: Futuro (45% a 60%) */}
-              <div className={`lp-scroll-text-card ${scrollPercent >= 45 && scrollPercent < 60 ? 'visible' : ''}`}>
-                <span className="lp-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', borderColor: 'rgba(16, 185, 129, 0.2)' }}>Futuro 20%</span>
-                <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
-                  A Bússola da <span>Missão</span>
-                </h1>
-                <p className="lp-description" style={{ marginTop: '12px' }}>
-                  20% de nosso foco aponta para a frente, guiados pela bússola da esperança eterna. A certeza do cumprimento de nossa missão terrena com propósito divino.
-                </p>
-              </div>
-
-              {/* Estágio 5: Recursos (60% a 75%) */}
-              <div className={`lp-scroll-text-card lp-card-wide ${scrollPercent >= 60 && scrollPercent < 75 ? 'visible' : ''}`}>
-                <span className="lp-badge">O que oferecemos</span>
-                <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2.1rem' }}>Recursos do <span>1Convite</span></h2>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginTop: '20px' }} className="lp-grid-mobile-single">
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: '1.4rem' }}>🎧</span>
-                    <h4 style={{ margin: '4px 0', fontSize: '0.92rem' }}>Meditação Cristã</h4>
-                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>Áudios diários guiados focados em alinhar a mente com Jesus.</p>
+              ) : (
+                <form onSubmit={handleEmailLogin} className="flex-column gap-xs" style={{ textAlign: 'left' }}>
+                  <div className="input-group">
+                    <label style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Nome</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={loginNome}
+                      onChange={(e) => setLoginNome(e.target.value)}
+                      placeholder="Nome"
+                      style={{ padding: '10px', fontSize: '0.82rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', width: '100%', boxSizing: 'border-box' }}
+                      required
+                    />
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: '1.4rem' }}>🌀</span>
-                    <h4 style={{ margin: '4px 0', fontSize: '0.92rem' }}>Respiração Ativa</h4>
-                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>Técnicas respiratórias guiadas para aliviar estresse e ansiedade.</p>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: '1.4rem' }}>📖</span>
-                    <h4 style={{ margin: '4px 0', fontSize: '0.92rem' }}>Bíblia ACF Narrada</h4>
-                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>Leitura bíblica em áudio e dicionário teológico integrado.</p>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: '1.4rem' }}>👥</span>
-                    <h4 style={{ margin: '4px 0', fontSize: '0.92rem' }}>Cultivar Contatos</h4>
-                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>Alertas a cada 48h para cultivar relacionamentos prioritários.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Estágio 6: Comparativo de Planos (75% a 90%) */}
-              <div className={`lp-scroll-text-card lp-card-wide ${scrollPercent >= 75 && scrollPercent < 90 ? 'visible' : ''}`}>
-                <span className="lp-badge">Acesso Livre</span>
-                <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2.1rem' }}>Escolha o seu <span>Plano</span></h2>
-                
-                <div style={{ marginTop: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '12px 18px', background: 'rgba(255,255,255,0.04)', fontWeight: 'bold', fontSize: '0.8rem' }}>
-                    <span>Recurso</span>
-                    <span style={{ textAlign: 'center' }}>FREE</span>
-                    <span style={{ color: '#10B981', textAlign: 'center' }}>PREMIUM</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.78rem' }}>
-                    <span>Bíblia & Dicionário</span>
-                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
-                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.78rem' }}>
-                    <span>Respiração Controlada</span>
-                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
-                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.78rem' }}>
-                    <span>Contatos (Alertas)</span>
-                    <span style={{ textAlign: 'center' }}>Até 3</span>
-                    <span style={{ color: '#10B981', textAlign: 'center' }}>Ilimitados</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '10px 18px', fontSize: '0.78rem' }}>
-                    <span>Áudios de Meditação</span>
-                    <span style={{ color: '#dc2626', textAlign: 'center' }}>✕</span>
-                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Estágio 7: Formulário de Login Integrado (90% a 100%) */}
-              <div className={`lp-scroll-text-card ${scrollPercent >= 90 ? 'visible' : ''}`}>
-                <span className="lp-badge">Mateus 24:14</span>
-                <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2rem', textAlign: 'center' }}>Acesse o <span>1Convite</span></h2>
-                
-                <div className="login-card" style={{ margin: '16px auto 0', background: 'rgba(24, 24, 27, 0.8)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'none', padding: '20px' }}>
-                  <div style={{ display: 'flex', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', padding: '3px', marginBottom: '14px' }}>
-                    <button
-                      onClick={() => { setLoginMethod('google'); setLoginError(''); }}
-                      style={{
-                        flex: 1,
-                        background: loginMethod === 'google' ? '#10B981' : 'transparent',
-                        color: '#fff',
-                        border: 'none', borderRadius: '6px', padding: '6px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
-                      }}
-                    >
-                      Google
-                    </button>
-                    <button
-                      onClick={() => { setLoginMethod('email'); setLoginError(''); }}
-                      style={{
-                        flex: 1,
-                        background: loginMethod === 'email' ? '#10B981' : 'transparent',
-                        color: '#fff',
-                        border: 'none', borderRadius: '6px', padding: '6px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
-                      }}
-                    >
-                      E-mail
-                    </button>
+                  <div className="input-group">
+                    <label style={{ fontSize: '0.7rem', color: '#9ca3af' }}>E-mail</label>
+                    <input
+                      type="email"
+                      className="input-field"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="E-mail"
+                      style={{ padding: '10px', fontSize: '0.82rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', width: '100%', boxSizing: 'border-box' }}
+                      required
+                    />
                   </div>
 
-                  {loginMethod === 'google' ? (
-                    <div className="flex-column gap-sm">
-                      <button className="btn-google-signin" onClick={handleSimularLoginGoogle} style={{ marginTop: '0', width: '100%', padding: '10px' }}>
-                        <svg width="18" height="18" viewBox="0 0 18 18" style={{ marginRight: '8px' }}>
-                          <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
-                          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
-                          <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
-                          <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
-                        </svg>
-                        Acessar com o Google
-                      </button>
+                  {loginError && (
+                    <div style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 'bold', margin: '4px 0' }}>
+                      {loginError}
                     </div>
-                  ) : (
-                    <form onSubmit={handleEmailLogin} className="flex-column gap-xs" style={{ textAlign: 'left' }}>
-                      <div className="input-group">
-                        <label style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Nome</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          value={loginNome}
-                          onChange={(e) => setLoginNome(e.target.value)}
-                          placeholder="Nome"
-                          style={{ padding: '8px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
-                          required
-                        />
-                      </div>
-                      <div className="input-group">
-                        <label style={{ fontSize: '0.7rem', color: '#9ca3af' }}>E-mail</label>
-                        <input
-                          type="email"
-                          className="input-field"
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
-                          placeholder="E-mail"
-                          style={{ padding: '8px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
-                          required
-                        />
-                      </div>
-
-                      {loginError && (
-                        <div style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                          {loginError}
-                        </div>
-                      )}
-
-                      <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '6px', padding: '10px', fontSize: '0.82rem' }}>
-                        🚀 Entrar com E-mail
-                      </button>
-                    </form>
                   )}
 
-                  <div className="login-separator" style={{ margin: '8px 0', fontSize: '0.72rem', color: '#6b7280' }}>ou</div>
-
-                  <button className="btn-secondary" style={{ width: '100%', padding: '8px', fontSize: '0.78rem' }} onClick={handleGuestLogin}>
-                    🔓 Modo Convidado (Rápido)
+                  <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px', padding: '12px', fontSize: '0.85rem', background: '#00f08f', color: '#030303', fontWeight: '800', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                    🚀 Entrar com E-mail
                   </button>
-                </div>
-              </div>
+                </form>
+              )}
 
+              <div className="login-separator" style={{ margin: '14px 0', fontSize: '0.72rem', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>ou</div>
+
+              <button className="btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '0.8rem', background: 'transparent', color: '#fafafa', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', cursor: 'pointer' }} onClick={handleGuestLogin}>
+                🔓 Modo Convidado (Rápido)
+              </button>
             </div>
           </div>
         </section>
 
         {/* ── FOOTER DA LP ────────────────────────── */}
-        <footer style={{ textAlign: 'center', padding: '40px 24px', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(16, 185, 129, 0.08)', background: '#09090b', zIndex: 10, position: 'relative' }}>
+        <footer style={{ textAlign: 'center', padding: '30px 24px', fontSize: '0.78rem', color: '#71717a', borderTop: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(3, 3, 3, 0.45)', zIndex: 10, position: 'relative', marginTop: 'auto' }}>
           <p>© {new Date().getFullYear()} Movimento 1Convite. Todos os direitos reservados.</p>
           <p style={{ marginTop: '4px', opacity: 0.7 }}>Desenvolvido com foco no bem-estar espiritual cristão.</p>
         </footer>
       </div>
     );
-  }
+}
 
   return (
     <div className="app-container">
@@ -1355,7 +1259,7 @@ function App() {
             {/* Player de Áudio da Bíblia */}
             {bibleAudioUrl && (
               <div style={{ padding: '0 20px 10px 20px', marginTop: '-18px', position: 'relative', zIndex: 5 }}>
-                <div className="player-container" style={{ padding: '12px 16px', flexDirection: 'row', gap: '12px', background: 'rgba(255, 255, 255, 0.7)' }}>
+                <div className="player-container" style={{ padding: '12px 16px', flexDirection: 'row', gap: '12px', background: darkMode ? 'rgba(24, 24, 27, 0.85)' : 'rgba(255, 255, 255, 0.7)', border: darkMode ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
                   <audio ref={bibleAudioRef} src={bibleAudioUrl} onTimeUpdate={onBibleAudioTimeUpdate} onLoadedMetadata={onBibleAudioLoadedMetadata} />
                   <button className="play-btn" style={{ width: '40px', height: '40px', flexShrink: 0 }} onClick={() => setBibleAudioPlaying(!bibleAudioPlaying)}>
                     {bibleAudioPlaying
@@ -1367,7 +1271,7 @@ function App() {
                     <div className="progress-bar-container" onClick={handleBibleAudioProgressBarClick} style={{ height: '4px' }}>
                       <div className="progress-bar-fill" style={{ width: `${(bibleAudioCurrentTime / (bibleAudioDuration || 1)) * 100}%` }} />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#78716C' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: darkMode ? '#a1a1aa' : '#78716C' }}>
                       <span>{formatTime(bibleAudioCurrentTime)}</span>
                       <span>{formatTime(bibleAudioDuration)}</span>
                     </div>
@@ -1427,7 +1331,7 @@ function App() {
                 )}
 
                 {!bibleSelectedVerse && (
-                  <div style={{ padding: '28px 20px', marginTop: '20px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                  <div style={{ padding: '28px 20px', marginTop: '20px', borderTop: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.06)' }}>
                     <form onSubmit={searchBible} style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
                       <input type="text" className="input-field" placeholder="Buscar versículo (ex: amor, fé)..." value={bibleSearchQuery} onChange={e => setBibleSearchQuery(e.target.value)} />
                       <button type="submit" className="btn-secondary" disabled={bibleLoading} style={{ flexShrink: 0, padding: '0 16px' }}>🔍</button>
