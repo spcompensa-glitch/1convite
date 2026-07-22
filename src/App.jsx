@@ -90,9 +90,33 @@ function App() {
   const [bibleAudioCurrentTime, setBibleAudioCurrentTime] = useState(0);
   const bibleAudioRef = useRef(null);
 
-  // Destaques e Comentários da Bíblia
+  // Destaques, Comentários e Progresso da Bíblia
   const [bibleHighlights, setBibleHighlights] = useState(() => JSON.parse(localStorage.getItem('bible-highlights')) || {});
   const [bibleComments, setBibleComments] = useState(() => JSON.parse(localStorage.getItem('bible-comments')) || {});
+  const [bibleProgress, setBibleProgress] = useState(() => JSON.parse(localStorage.getItem('bible-progress')) || {});
+
+  // Calcula progresso de um livro: { percent, readChapters, totalChapters }
+  const calcBookProgress = (bookAbrev, totalChapters) => {
+    const read = bibleProgress[bookAbrev];
+    if (!read || !totalChapters) return { percent: 0, readCount: 0, totalChapters };
+    const readCount = Object.keys(read).filter(k => read[k]).length;
+    return { percent: Math.round((readCount / totalChapters) * 100), readCount, totalChapters };
+  };
+
+  // Marca um capítulo como lido/não lido
+  const markChapterAsRead = (bookAbrev, chapter, value = true) => {
+    setBibleProgress(prev => {
+      const updated = {
+        ...prev,
+        [bookAbrev]: { ...(prev[bookAbrev] || {}), [chapter]: value }
+      };
+      localStorage.setItem('bible-progress', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Verifica se um capítulo está marcado como lido
+  const isChapterRead = (bookAbrev, chapter) => !!(bibleProgress[bookAbrev]?.[chapter]);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [bibleShowAudioPlayer, setBibleShowAudioPlayer] = useState(false);
@@ -1865,47 +1889,155 @@ Importante: O JSON deve ser 100% válido.`;
         </div>
       )}
 
-      {activeTab === 'biblia' && bibleViewMode === 'select-book' && (
-        <div className="bible-modal-overlay">
-          <div className="bible-modal-header">
-            <h3 style={{ margin: 0, fontSize: '1.05rem' }}>📖 Selecione o Livro</h3>
-            <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.9rem' }} onClick={() => setBibleViewMode('reading')}>✕</button>
-          </div>
-          <div className="bible-modal-content">
-            <div className="bible-testament-title">✦ Antigo Testamento</div>
-            {bibleBooks.filter((_, i) => i < 39).map((bk, idx) => (
-              <div key={idx} className="bible-book-item" onClick={() => { setBibleSelectedBook(bk); setBibleViewMode('select-chapter'); }}>
-                {bk.livro_nome}
-              </div>
-            ))}
-            <div className="bible-testament-title">✦ Novo Testamento</div>
-            {bibleBooks.filter((_, i) => i >= 39).map((bk, idx) => (
-              <div key={idx} className="bible-book-item" onClick={() => { setBibleSelectedBook(bk); setBibleViewMode('select-chapter'); }}>
-                {bk.livro_nome}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {activeTab === 'biblia' && bibleViewMode === 'select-book' && (() => {
+        // Calcula progresso geral AT e NT
+        const atBooks = bibleBooks.filter((_, i) => i < 39);
+        const ntBooks = bibleBooks.filter((_, i) => i >= 39);
+        const chaptersPerBook = { gn:50,ex:40,lv:27,nm:36,dt:34,js:24,jz:21,rt:4,'1sm':31,'2sm':24,'1rs':22,'2rs':25,'1cr':29,'2cr':36,ed:10,ne:13,et:10,jó:42,sl:150,pv:31,ec:12,ct:8,is:66,jr:52,lm:5,ez:48,dn:12,os:14,jl:3,am:9,ob:1,jn:4,mq:7,na:3,hc:3,sf:3,ag:2,zc:14,ml:4,mt:28,mc:16,lc:24,jo:21,at:28,rm:16,'1co':16,'2co':13,gl:6,ef:6,fp:4,cl:4,'1ts':5,'2ts':3,'1tm':6,'2tm':4,tt:3,fm:1,hb:13,tg:5,'1pe':5,'2pe':3,'1jo':5,'2jo':1,'3jo':1,jd:1,ap:22 };
+        const calcTotal = (books) => books.reduce((acc, bk) => {
+          const total = chaptersPerBook[bk.livro_abrev] || bk.capitulos || 0;
+          const prog = calcBookProgress(bk.livro_abrev, total);
+          return { read: acc.read + prog.readCount, total: acc.total + total };
+        }, { read: 0, total: 0 });
+        const atStats = calcTotal(atBooks);
+        const ntStats = calcTotal(ntBooks);
+        const atPercent = atStats.total > 0 ? Math.round((atStats.read / atStats.total) * 100) : 0;
+        const ntPercent = ntStats.total > 0 ? Math.round((ntStats.read / ntStats.total) * 100) : 0;
+        const totalPercent = (atStats.total + ntStats.total) > 0 ? Math.round(((atStats.read + ntStats.read) / (atStats.total + ntStats.total)) * 100) : 0;
 
-      {activeTab === 'biblia' && bibleViewMode === 'select-chapter' && (
-        <div className="bible-modal-overlay">
-          <div className="bible-modal-header">
-            <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }} onClick={() => setBibleViewMode('select-book')}>← Livros</button>
-            <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{bibleSelectedBook.livro_nome}</h3>
-            <div style={{ width: '72px' }} />
-          </div>
-          <div className="bible-modal-content">
-            <div className="bible-chapter-grid">
-              {Array.from({ length: bibleChaptersCount }).map((_, i) => (
-                <div key={i} className="bible-chapter-btn" onClick={() => { setBibleSelectedChapter(i + 1); setBibleViewMode('reading'); }}>
-                  {i + 1}
+        return (
+          <div className="bible-modal-overlay">
+            <div className="bible-modal-header">
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Selecione o Livro</h3>
+              <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.9rem' }} onClick={() => setBibleViewMode('reading')}>✕</button>
+            </div>
+            <div className="bible-modal-content">
+
+              {/* Painel Resumo Global */}
+              <div style={{ margin: '0 0 16px 0', padding: '14px 16px', background: 'rgba(255,255,255,0.04)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Progresso Total da Bíblia</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--orange)' }}>{totalPercent}%</span>
                 </div>
-              ))}
+                <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '99px', overflow: 'hidden', marginBottom: '12px' }}>
+                  <div style={{ height: '100%', width: `${totalPercent}%`, background: 'linear-gradient(90deg, var(--orange), #f97316)', borderRadius: '99px', transition: 'width 0.5s ease' }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                    <div style={{ fontSize: '1rem', fontWeight: '700', color: '#f59e0b' }}>{atPercent}%</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Antigo Testamento</div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>{atStats.read}/{atStats.total} capítulos</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                    <div style={{ fontSize: '1rem', fontWeight: '700', color: '#3b82f6' }}>{ntPercent}%</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Novo Testamento</div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>{ntStats.read}/{ntStats.total} capítulos</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bible-testament-title">Antigo Testamento</div>
+              {atBooks.map((bk, idx) => {
+                const total = chaptersPerBook[bk.livro_abrev] || bk.capitulos || 0;
+                const prog = calcBookProgress(bk.livro_abrev, total);
+                const isDone = prog.percent === 100;
+                return (
+                  <div key={idx} style={{ padding: '10px 14px', marginBottom: '2px', cursor: 'pointer', borderRadius: '10px', background: isDone ? 'rgba(34,197,94,0.08)' : 'transparent', border: isDone ? '1px solid rgba(34,197,94,0.2)' : '1px solid transparent', transition: 'all 0.2s' }}
+                    onClick={() => { setBibleSelectedBook(bk); setBibleViewMode('select-chapter'); }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                      <span style={{ fontSize: '0.92rem', fontWeight: isDone ? '700' : '500', color: isDone ? '#22c55e' : 'var(--text-primary)' }}>{bk.livro_nome}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {isDone && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                        <span style={{ fontSize: '0.72rem', fontWeight: '700', color: isDone ? '#22c55e' : 'var(--text-muted)' }}>{prog.percent}%</span>
+                      </div>
+                    </div>
+                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '99px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${prog.percent}%`, background: isDone ? '#22c55e' : 'var(--orange)', borderRadius: '99px', transition: 'width 0.4s ease' }} />
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div className="bible-testament-title" style={{ marginTop: '8px' }}>Novo Testamento</div>
+              {ntBooks.map((bk, idx) => {
+                const total = chaptersPerBook[bk.livro_abrev] || bk.capitulos || 0;
+                const prog = calcBookProgress(bk.livro_abrev, total);
+                const isDone = prog.percent === 100;
+                return (
+                  <div key={idx} style={{ padding: '10px 14px', marginBottom: '2px', cursor: 'pointer', borderRadius: '10px', background: isDone ? 'rgba(34,197,94,0.08)' : 'transparent', border: isDone ? '1px solid rgba(34,197,94,0.2)' : '1px solid transparent', transition: 'all 0.2s' }}
+                    onClick={() => { setBibleSelectedBook(bk); setBibleViewMode('select-chapter'); }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                      <span style={{ fontSize: '0.92rem', fontWeight: isDone ? '700' : '500', color: isDone ? '#22c55e' : 'var(--text-primary)' }}>{bk.livro_nome}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {isDone && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                        <span style={{ fontSize: '0.72rem', fontWeight: '700', color: isDone ? '#22c55e' : 'var(--text-muted)' }}>{prog.percent}%</span>
+                      </div>
+                    </div>
+                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '99px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${prog.percent}%`, background: isDone ? '#22c55e' : '#3b82f6', borderRadius: '99px', transition: 'width 0.4s ease' }} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
+      {activeTab === 'biblia' && bibleViewMode === 'select-chapter' && (() => {
+        const chaptersPerBook = { gn:50,ex:40,lv:27,nm:36,dt:34,js:24,jz:21,rt:4,'1sm':31,'2sm':24,'1rs':22,'2rs':25,'1cr':29,'2cr':36,ed:10,ne:13,et:10,jó:42,sl:150,pv:31,ec:12,ct:8,is:66,jr:52,lm:5,ez:48,dn:12,os:14,jl:3,am:9,ob:1,jn:4,mq:7,na:3,hc:3,sf:3,ag:2,zc:14,ml:4,mt:28,mc:16,lc:24,jo:21,at:28,rm:16,'1co':16,'2co':13,gl:6,ef:6,fp:4,cl:4,'1ts':5,'2ts':3,'1tm':6,'2tm':4,tt:3,fm:1,hb:13,tg:5,'1pe':5,'2pe':3,'1jo':5,'2jo':1,'3jo':1,jd:1,ap:22 };
+        const total = chaptersPerBook[bibleSelectedBook.livro_abrev] || bibleChaptersCount;
+        const prog = calcBookProgress(bibleSelectedBook.livro_abrev, total);
+        return (
+          <div className="bible-modal-overlay">
+            <div className="bible-modal-header">
+              <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }} onClick={() => setBibleViewMode('select-book')}>← Livros</button>
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{bibleSelectedBook.livro_nome}</h3>
+              <div style={{ width: '72px' }} />
+            </div>
+            <div className="bible-modal-content">
+              {/* Barra de progresso do livro */}
+              <div style={{ padding: '8px 4px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{prog.readCount} de {total} capítulos lidos</span>
+                  <span style={{ fontSize: '0.78rem', fontWeight: '700', color: prog.percent === 100 ? '#22c55e' : 'var(--orange)' }}>{prog.percent}%</span>
+                </div>
+                <div style={{ height: '5px', background: 'rgba(255,255,255,0.07)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${prog.percent}%`, background: prog.percent === 100 ? '#22c55e' : 'var(--orange)', borderRadius: '99px', transition: 'width 0.4s ease' }} />
+                </div>
+              </div>
+              <div className="bible-chapter-grid">
+                {Array.from({ length: bibleChaptersCount }).map((_, i) => {
+                  const chNum = i + 1;
+                  const read = isChapterRead(bibleSelectedBook.livro_abrev, chNum);
+                  return (
+                    <div key={i}
+                      onClick={() => { setBibleSelectedChapter(chNum); setBibleViewMode('reading'); }}
+                      style={{
+                        position: 'relative',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '44px', height: '44px', borderRadius: '10px',
+                        cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600',
+                        background: read ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
+                        border: read ? '1.5px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                        color: read ? '#22c55e' : 'var(--text-primary)',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {chNum}
+                      {read && (
+                        <div style={{ position: 'absolute', top: '2px', right: '2px', width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── MODAL DICIONÁRIO TEOLÓGICO ────────── */}
       {selectedDicionarioTermo && (
@@ -2892,7 +3024,17 @@ Importante: O JSON deve ser 100% válido.`;
             {bibleShowAudioPlayer && bibleAudioUrl && (
               <div style={{ padding: '0 20px 10px 20px', marginTop: '-18px', position: 'relative', zIndex: 5 }}>
                 <div className="player-container" style={{ padding: '12px 16px', flexDirection: 'row', gap: '12px', background: darkMode ? 'rgba(24, 24, 27, 0.85)' : 'rgba(255, 255, 255, 0.7)', border: darkMode ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                  <audio ref={bibleAudioRef} src={bibleAudioUrl} onTimeUpdate={onBibleAudioTimeUpdate} onLoadedMetadata={onBibleAudioLoadedMetadata} />
+                  <audio
+                    ref={bibleAudioRef}
+                    src={bibleAudioUrl}
+                    onTimeUpdate={onBibleAudioTimeUpdate}
+                    onLoadedMetadata={onBibleAudioLoadedMetadata}
+                    onEnded={() => {
+                      // Auto-marcar capítulo como lido ao terminar o áudio
+                      markChapterAsRead(bibleSelectedBook.livro_abrev, bibleSelectedChapter);
+                      setBibleAudioPlaying(false);
+                    }}
+                  />
                   <button className="play-btn" style={{ width: '40px', height: '40px', flexShrink: 0 }} onClick={() => setBibleAudioPlaying(!bibleAudioPlaying)}>
                     {bibleAudioPlaying
                       ? <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" /></svg>
@@ -3147,10 +3289,10 @@ Importante: O JSON deve ser 100% válido.`;
               onClick={() => setBibleViewMode(bibleViewMode === 'select-book' ? 'reading' : 'select-book')}
               style={{
                 position: 'fixed',
-                bottom: bibleSelectedVerse ? '180px' : '24px',
+                bottom: bibleSelectedVerse ? '215px' : '88px',
                 right: '24px',
-                width: '56px',
-                height: '56px',
+                width: '52px',
+                height: '52px',
                 borderRadius: '50%',
                 backgroundColor: '#3b82f6',
                 color: '#ffffff',
@@ -3160,7 +3302,7 @@ Importante: O JSON deve ser 100% válido.`;
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.5rem',
+                fontSize: '1.4rem',
                 zIndex: 90,
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
@@ -3168,6 +3310,43 @@ Importante: O JSON deve ser 100% válido.`;
             >
               ☰
             </button>
+
+            {/* Botão Flutuante: Marcar Capítulo como Lido */}
+            {!bibleSelectedVerse && (() => {
+              const alreadyRead = isChapterRead(bibleSelectedBook.livro_abrev, bibleSelectedChapter);
+              return (
+                <button
+                  onClick={() => markChapterAsRead(bibleSelectedBook.livro_abrev, bibleSelectedChapter, !alreadyRead)}
+                  style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    height: '52px',
+                    padding: '0 18px',
+                    borderRadius: '26px',
+                    backgroundColor: alreadyRead ? 'rgba(34,197,94,0.15)' : '#22c55e',
+                    color: alreadyRead ? '#22c55e' : '#fff',
+                    border: alreadyRead ? '1.5px solid rgba(34,197,94,0.4)' : 'none',
+                    boxShadow: alreadyRead ? 'none' : '0 4px 14px rgba(34,197,94,0.4)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '7px',
+                    fontSize: '0.85rem',
+                    fontWeight: '700',
+                    zIndex: 90,
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                  title={alreadyRead ? 'Capítulo já lido – clique para desmarcar' : 'Marcar capítulo como lido'}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  {alreadyRead ? 'Lido' : 'Marcar como Lido'}
+                </button>
+              );
+            })()}
           </div>
         )}
 
