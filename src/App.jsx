@@ -2789,7 +2789,6 @@ Importante: O JSON deve ser 100% válido.`;
                     </div>
                   </div>
                 ) : (
-                  /* Lista de Seleção de Trilhas */
                   listaTrilhas.length > 0 && (
                     <div className="glass-panel" style={{ padding: '20px', borderRadius: '20px' }}>
                       <h3 style={{ marginBottom: '6px', fontSize: '1.15rem', fontWeight: '800' }}>🌱 Trilhas de Crescimento (30 Dias)</h3>
@@ -2797,41 +2796,99 @@ Importante: O JSON deve ser 100% válido.`;
                         Escolha uma trilha e receba uma porção diária de sabedoria teológica com ações práticas por 30 dias.
                       </p>
                       
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(2, 1fr)', 
+                        gap: '16px' 
+                      }} className="lp-grid-mobile-single">
                         {listaTrilhas.map(tema => {
-                          let detail = { desc: '', icon: '🌱', color: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' };
-                          if (tema === 'Ansiedade') detail = { desc: 'Vença a ansiedade e controle o estresse em uma jornada de paz.', icon: '🕊️', color: 'rgba(14, 165, 233, 0.1)', border: 'rgba(14, 165, 233, 0.2)' };
-                          else if (tema === 'Família') detail = { desc: 'Cultive harmonia, perdão e laços fortes no seu lar.', icon: '🏠', color: 'rgba(244, 63, 94, 0.1)', border: 'rgba(244, 63, 94, 0.2)' };
-                          else if (tema === 'Finanças') detail = { desc: 'Aprenda princípios bíblicos de prosperidade e mordomia.', icon: '💰', color: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.2)' };
-                          else if (tema === 'Propósito') detail = { desc: 'Descubra e ative seus dons para governar e frutificar.', icon: '🎯', color: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.2)' };
+                          let detail = { desc: '', icon: null, color: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' };
+                          
+                          if (tema === 'Ansiedade') {
+                            detail = { 
+                              desc: 'Controle o estresse em uma jornada de paz.', 
+                              icon: (
+                                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                </svg>
+                              ), 
+                              color: 'rgba(14, 165, 233, 0.1)', 
+                              border: 'rgba(14, 165, 233, 0.2)' 
+                            };
+                          } else if (tema === 'Família') {
+                            detail = { 
+                              desc: 'Harmonia, perdão e laços fortes no seu lar.', 
+                              icon: (
+                                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                              ), 
+                              color: 'rgba(244, 63, 94, 0.1)', 
+                              border: 'rgba(244, 63, 94, 0.2)' 
+                            };
+                          } else if (tema === 'Finanças') {
+                            detail = { 
+                              desc: 'Princípios bíblicos de mordomia.', 
+                              icon: (
+                                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              ), 
+                              color: 'rgba(16, 185, 129, 0.1)', 
+                              border: 'rgba(16, 185, 129, 0.2)' 
+                            };
+                          } else if (tema === 'Propósito') {
+                            detail = { 
+                              desc: 'Descubra e ative seus dons para governar.', 
+                              icon: (
+                                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                              ), 
+                              color: 'rgba(139, 92, 246, 0.1)', 
+                              border: 'rgba(139, 92, 246, 0.2)' 
+                            };
+                          }
                           
                           return (
                             <div 
                               key={tema} 
-                              className="trilha-theme-card animate-fade-in" 
+                              className="dashboard-card animate-fade-in" 
                               onClick={() => iniciarTrilha(tema)} 
                               style={{ 
-                                padding: '16px', 
-                                borderRadius: '16px', 
+                                padding: '20px 16px', 
+                                borderRadius: '18px', 
                                 display: 'flex', 
-                                gap: '14px',
-                                alignItems: 'center', 
+                                flexDirection: 'column',
+                                gap: '12px',
+                                alignItems: 'flex-start', 
                                 cursor: 'pointer', 
-                                border: `1px solid ${detail.border}`,
-                                background: detail.color,
-                                transition: 'all 0.25s ease'
+                                border: `1.5px solid ${detail.border}`,
+                                backgroundColor: 'var(--white)',
+                                transition: 'all 0.2s ease',
+                                textAlign: 'left',
+                                boxSizing: 'border-box'
                               }}
                             >
-                              <div style={{ fontSize: '2rem', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', minWidth: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ 
+                                color: tema === 'Ansiedade' ? '#0ea5e9' : tema === 'Família' ? '#f43f5e' : tema === 'Finanças' ? '#10b981' : '#8b5cf6',
+                                background: detail.color,
+                                padding: '10px',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
                                 {detail.icon}
                               </div>
                               <div style={{ flex: 1 }}>
-                                <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>Trilha de {tema}</strong>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.3' }}>
+                                <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)', display: 'block' }}>
+                                  Trilha de {tema}
+                                </strong>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.4' }}>
                                   {detail.desc}
                                 </div>
                               </div>
-                              <span style={{ color: 'var(--orange)', fontWeight: 'bold', fontSize: '1.2rem', paddingLeft: '6px' }}>→</span>
                             </div>
                           );
                         })}
