@@ -11,12 +11,149 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Studio de Compartilhamento
+  // Studio de Compartilhamento
   const [cardCategory, setCardCategory] = useState('bomdia');
   const [cardSelectedText, setCardSelectedText] = useState('');
   const [cardBg, setCardBg] = useState(0);
-  const [cardFormat, setCardFormat] = useState('square'); // 'square' | 'story'
+  const [cardBgCategory, setCardBgCategory] = useState('paisagem');
+  const [cardFormat, setCardFormat] = useState('square');
+  const [cardFont, setCardFont] = useState('Georgia, serif');
+  const [cardFontSize, setCardFontSize] = useState('md');
+  const [cardTextColor, setCardTextColor] = useState('#ffffff');
+  const [cardTextStyle, setCardTextStyle] = useState('italic');
+  const [cardOverlay, setCardOverlay] = useState(0.65);
   const [cardGenerating, setCardGenerating] = useState(false);
   const cardPreviewRef = useRef(null);
+
+  // Carregar fontes do Google dinamicamente
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=Cormorant+Garamond:ital@0;1&family=Lora:ital@0;1&family=Merriweather:ital@0;1&family=Cinzel&family=Dancing+Script&family=Satisfy&family=Great+Vibes&family=Pacifico&family=Raleway:wght@400;700&family=Montserrat:wght@400;700&family=Josefin+Sans:wght@400;700&family=Quicksand:wght@400;700&family=Nunito:wght@400;700&family=Oswald:wght@400;700&family=Lobster&family=EB+Garamond:ital@0;1&family=Libre+Baskerville:ital@0;1&family=Crimson+Text:ital@0;1&display=swap';
+    if (!document.querySelector('link[href*="googleapis.com/css2?family=Playfair"]')) {
+      document.head.appendChild(link);
+    }
+  }, []);
+
+  const CARD_FONTS = [
+    { label: 'Georgia', value: 'Georgia, serif' },
+    { label: 'Playfair Display', value: 'Playfair Display, serif' },
+    { label: 'Cormorant', value: 'Cormorant Garamond, serif' },
+    { label: 'EB Garamond', value: 'EB Garamond, serif' },
+    { label: 'Libre Baskerville', value: 'Libre Baskerville, serif' },
+    { label: 'Crimson Text', value: 'Crimson Text, serif' },
+    { label: 'Lora', value: 'Lora, serif' },
+    { label: 'Merriweather', value: 'Merriweather, serif' },
+    { label: 'Cinzel', value: 'Cinzel, serif' },
+    { label: 'Dancing Script', value: 'Dancing Script, cursive' },
+    { label: 'Satisfy', value: 'Satisfy, cursive' },
+    { label: 'Great Vibes', value: 'Great Vibes, cursive' },
+    { label: 'Lobster', value: 'Lobster, cursive' },
+    { label: 'Pacifico', value: 'Pacifico, cursive' },
+    { label: 'Raleway', value: 'Raleway, sans-serif' },
+    { label: 'Montserrat', value: 'Montserrat, sans-serif' },
+    { label: 'Josefin Sans', value: 'Josefin Sans, sans-serif' },
+    { label: 'Quicksand', value: 'Quicksand, sans-serif' },
+    { label: 'Nunito', value: 'Nunito, sans-serif' },
+    { label: 'Oswald', value: 'Oswald, sans-serif' },
+  ];
+
+  const CARD_TEXT_COLORS = [
+    { label: 'Branco', value: '#ffffff' },
+    { label: 'Creme', value: '#fef9e7' },
+    { label: 'Dourado', value: '#FFD700' },
+    { label: 'Ouro Rosa', value: '#F4C2C2' },
+    { label: 'Azul Claro', value: '#B3D9FF' },
+    { label: 'Mint', value: '#B3FFD9' },
+    { label: 'Lavanda', value: '#E0B3FF' },
+    { label: 'Laranja', value: '#FFB347' },
+  ];
+
+  const CARD_FONT_SIZES = [
+    { label: 'P', value: 'sm', size: '0.88rem' },
+    { label: 'M', value: 'md', size: '1.1rem' },
+    { label: 'G', value: 'lg', size: '1.35rem' },
+    { label: 'GG', value: 'xl', size: '1.65rem' },
+  ];
+
+  const CARD_BG_CATEGORIES = [
+    {
+      id: 'paisagem', label: 'Paisagem',
+      items: [
+        { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80', label: 'Montanha' },
+        { url: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80', label: 'Vale Verde' },
+        { url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80', label: 'Cume' },
+        { url: 'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=800&q=80', label: 'Lago' },
+        { url: 'https://images.unsplash.com/photo-1476673160081-cf065607f449?w=800&q=80', label: 'Trigo' },
+        { url: 'https://images.unsplash.com/photo-1490750967868-88df5691cc5e?w=800&q=80', label: 'Flores' },
+        { url: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=800&q=80', label: 'Floresta' },
+        { url: 'https://images.unsplash.com/photo-1519451241324-20b4ea2c4220?w=800&q=80', label: 'Oceano' },
+        { url: 'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=800&q=80', label: 'Luz na Mata' },
+        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80', label: 'Colinas' },
+        { url: 'https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=800&q=80', label: 'Praia' },
+        { url: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80', label: 'Cachoeira' },
+      ]
+    },
+    {
+      id: 'universo', label: 'Universo',
+      items: [
+        { url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=80', label: 'Galáxia' },
+        { url: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=80', label: 'Nebulosa' },
+        { url: 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=800&q=80', label: 'Lua' },
+        { url: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80', label: 'Estrelas' },
+        { url: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=800&q=80', label: 'Via Láctea' },
+        { url: 'https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?w=800&q=80', label: 'Cosmos' },
+        { url: 'https://images.unsplash.com/photo-1537420327992-d6e192287183?w=800&q=80', label: 'Aurora Boreal' },
+        { url: 'https://images.unsplash.com/photo-1605106702734-205df224ecce?w=800&q=80', label: 'Espaço Azul' },
+      ]
+    },
+    {
+      id: 'solar', label: 'Sol',
+      items: [
+        { url: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=800&q=80', label: 'Nascer' },
+        { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80', label: 'Aurora' },
+        { url: 'https://images.unsplash.com/photo-1472120435266-53107fd0c44a?w=800&q=80', label: 'Pôr do Sol' },
+        { url: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=800&q=80', label: 'Horizonte' },
+        { url: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800&q=80', label: 'Dourado' },
+        { url: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=80', label: 'Raios de Sol' },
+        { url: 'https://images.unsplash.com/photo-1498429152472-9a433d9ddf3b?w=800&q=80', label: 'Crepúsculo' },
+        { url: 'https://images.unsplash.com/photo-1504805572947-34fad45aed93?w=800&q=80', label: 'Manhã' },
+      ]
+    },
+    {
+      id: 'cachorro', label: 'Cachorro',
+      items: [
+        { url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&q=80', label: 'Golden' },
+        { url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80', label: 'Fofo' },
+        { url: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=800&q=80', label: 'Filhote' },
+        { url: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&q=80', label: 'Correndo' },
+        { url: 'https://images.unsplash.com/photo-1593134257782-e89567b7718a?w=800&q=80', label: 'Labrador' },
+        { url: 'https://images.unsplash.com/photo-1560743641-3914f2c45636?w=800&q=80', label: 'Sorrindo' },
+      ]
+    },
+    {
+      id: 'gato', label: 'Gato',
+      items: [
+        { url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&q=80', label: 'Olhos' },
+        { url: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=800&q=80', label: 'Fofo' },
+        { url: 'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=800&q=80', label: 'Sentado' },
+        { url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&q=80', label: 'Curioso' },
+        { url: 'https://images.unsplash.com/photo-1518791841217-8f162f1912da?w=800&q=80', label: 'Listrado' },
+        { url: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=800&q=80', label: 'Filhote' },
+      ]
+    },
+    {
+      id: 'passaro', label: 'Pássaro',
+      items: [
+        { url: 'https://images.unsplash.com/photo-1444464666168-49d633b86797?w=800&q=80', label: 'Bando' },
+        { url: 'https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=800&q=80', label: 'Colorido' },
+        { url: 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=800&q=80', label: 'No Galho' },
+        { url: 'https://images.unsplash.com/photo-1551085254-e96b210db58a?w=800&q=80', label: 'Águia' },
+        { url: 'https://images.unsplash.com/photo-1547394765-185e1e68f34e?w=800&q=80', label: 'Papagaio' },
+        { url: 'https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?w=800&q=80', label: 'Beija-flor' },
+      ]
+    },
+  ];
 
   const CARD_PHRASES = {
     bomdia: [
@@ -56,19 +193,6 @@ function App() {
       { text: 'Uma boa palavra no momento certo pode mudar uma eternidade.', ref: 'Provérbios 15:23' },
     ],
   };
-
-  const CARD_BACKGROUNDS = [
-    { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80', label: 'Montanha' },
-    { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80', label: 'Aurora' },
-    { url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80', label: 'Cume' },
-    { url: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80', label: 'Vale Verde' },
-    { url: 'https://images.unsplash.com/photo-1519451241324-20b4ea2c4220?w=800&q=80', label: 'Oceano' },
-    { url: 'https://images.unsplash.com/photo-1476673160081-cf065607f449?w=800&q=80', label: 'Trigo' },
-    { url: 'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=800&q=80', label: 'Lago' },
-    { url: 'https://images.unsplash.com/photo-1490750967868-88df5691cc5e?w=800&q=80', label: 'Flores' },
-    { url: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=800&q=80', label: 'Floresta' },
-    { url: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=800&q=80', label: 'Nascer do Sol' },
-  ];
 
   const handleGenerateCard = async (mode) => {
     if (!cardPreviewRef.current) return;
@@ -4002,11 +4126,19 @@ Importante: O JSON deve ser 100% válido.`;
         {/* ════════════ ABA STUDIO DE CARDS ════════════ */}
         {activeTab === 'criar-card' && (() => {
           const phrases = CARD_PHRASES[cardCategory] || [];
-          const bg = CARD_BACKGROUNDS[cardBg];
+          const activeBgCat = CARD_BG_CATEGORIES.find(c => c.id === cardBgCategory);
+          const activeBgItems = activeBgCat?.items || [];
+          const bg = activeBgItems[cardBg] || activeBgItems[0] || { url: '', label: '' };
           const selectedPhrase = cardSelectedText || (phrases[0] ? phrases[0].text : '');
           const selectedRef = phrases.find(p => p.text === selectedPhrase)?.ref;
-
-          const CATS = [
+          const fontSizeMap = { sm: '0.88rem', md: '1.1rem', lg: '1.35rem', xl: '1.65rem' };
+          const fontStyleMap = {
+            normal: { fontStyle: 'normal', fontWeight: '400' },
+            italic: { fontStyle: 'italic', fontWeight: '400' },
+            bold: { fontStyle: 'normal', fontWeight: '700' },
+            bolditalic: { fontStyle: 'italic', fontWeight: '700' },
+          };
+          const MSG_CATS = [
             { id: 'bomdia', label: 'Bom Dia' },
             { id: 'boatarde', label: 'Boa Tarde' },
             { id: 'boanoite', label: 'Boa Noite' },
@@ -4017,7 +4149,7 @@ Importante: O JSON deve ser 100% válido.`;
           return (
             <div className="page-enter" style={{ paddingBottom: '40px' }}>
               {/* Hero */}
-              <div className="page-hero hero-sabado" style={{ padding: '28px 20px 36px' }}>
+              <div className="page-hero hero-sabado" style={{ padding: '24px 20px 30px' }}>
                 <div className="hero-orb" style={{ width: 200, height: 200, top: -50, right: -60, background: 'rgba(139,92,246,0.25)' }} />
                 <div className="hero-content">
                   <div className="hero-label">Mateus 28:19</div>
@@ -4028,160 +4160,238 @@ Importante: O JSON deve ser 100% válido.`;
 
               <div className="page-content" style={{ paddingTop: '10px' }}>
 
-                {/* PREVIEW DO CARD */}
-                <div style={{ padding: '0 20px 20px', position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-primary)' }}>
-                  <div
-                    ref={cardPreviewRef}
-                    style={{
-                      position: 'relative',
-                      width: '100%',
-                      paddingTop: cardFormat === 'square' ? '100%' : '177%',
-                      borderRadius: '16px',
-                      overflow: 'hidden',
-                      backgroundImage: `url(${bg.url})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
-                    }}
-                  >
-                    {/* Overlay escuro */}
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.30) 50%, rgba(0,0,0,0.10) 100%)' }} />
-                    {/* Texto central */}
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      display: 'flex', flexDirection: 'column',
-                      alignItems: 'center', justifyContent: 'flex-end',
-                      padding: '28px 24px',
-                      textAlign: 'center',
-                    }}>
+                {/* ── PREVIEW STICKY ── */}
+                <div style={{ padding: '0 20px 16px', position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-primary)' }}>
+                  <div ref={cardPreviewRef} style={{
+                    position: 'relative',
+                    width: '100%',
+                    paddingTop: cardFormat === 'square' ? '100%' : '177%',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    backgroundImage: bg.url ? `url(${bg.url})` : 'linear-gradient(135deg,#1a1a2e,#16213e)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.40)',
+                  }}>
+                    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to top, rgba(0,0,0,${cardOverlay}) 0%, rgba(0,0,0,${(cardOverlay*0.4).toFixed(2)}) 50%, rgba(0,0,0,${(cardOverlay*0.1).toFixed(2)}) 100%)` }} />
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '24px 20px', textAlign: 'center' }}>
                       <p style={{
-                        fontFamily: 'Georgia, serif',
-                        fontSize: cardFormat === 'square' ? '1.15rem' : '1.35rem',
-                        color: '#ffffff',
+                        fontFamily: cardFont,
+                        fontSize: fontSizeMap[cardFontSize],
+                        color: cardTextColor,
                         lineHeight: '1.65',
-                        fontStyle: 'italic',
-                        textShadow: '0 2px 12px rgba(0,0,0,0.8)',
+                        ...fontStyleMap[cardTextStyle],
+                        textShadow: '0 2px 14px rgba(0,0,0,0.85)',
                         margin: 0,
                         letterSpacing: '0.01em',
                       }}>
                         &ldquo;{selectedPhrase}&rdquo;
                       </p>
                       {selectedRef && (
-                        <span style={{ marginTop: '12px', fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>
+                        <span style={{ marginTop: '10px', fontSize: '0.75rem', color: cardTextColor, opacity: 0.8, fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 1px 6px rgba(0,0,0,0.8)', fontFamily: cardFont }}>
                           — {selectedRef}
                         </span>
                       )}
-                      <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.65 }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-                        <span style={{ fontSize: '0.68rem', color: '#fff', fontWeight: '700', letterSpacing: '0.1em' }}>1CONVITE.COM.BR</span>
+                      <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '5px', opacity: 0.55 }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                        <span style={{ fontSize: '0.6rem', color: '#fff', fontWeight: '700', letterSpacing: '0.1em' }}>1CONVITE.COM.BR</span>
                       </div>
                     </div>
                   </div>
-
-                  {/* Toggle Formato */}
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  {/* Formato */}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                     {[{ id: 'square', label: 'Post (1:1)' }, { id: 'story', label: 'Story (9:16)' }].map(f => (
-                      <button key={f.id} onClick={() => setCardFormat(f.id)}
-                        style={{
-                          flex: 1, padding: '8px', fontSize: '0.82rem', fontWeight: '600', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
-                          background: cardFormat === f.id ? 'var(--orange)' : 'transparent',
-                          color: cardFormat === f.id ? '#000' : 'var(--text-secondary)',
-                          border: cardFormat === f.id ? 'none' : '1px solid rgba(255,255,255,0.12)',
-                        }}
-                      >{f.label}</button>
+                      <button key={f.id} onClick={() => setCardFormat(f.id)} style={{
+                        flex: 1, padding: '7px', fontSize: '0.8rem', fontWeight: '600', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
+                        background: cardFormat === f.id ? 'var(--orange)' : 'transparent',
+                        color: cardFormat === f.id ? '#000' : 'var(--text-secondary)',
+                        border: cardFormat === f.id ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                      }}>{f.label}</button>
                     ))}
                   </div>
                 </div>
 
-                {/* CATEGORIAS */}
-                <div className="glass-panel" style={{ marginBottom: '16px', margin: '0 20px 16px' }}>
+                {/* ── EDITOR DE TEXTO (Canva) ── */}
+                <div className="glass-panel" style={{ margin: '0 20px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    <h3 style={{ margin: 0, fontSize: '1rem' }}>Escolha a Mensagem</h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <h3 style={{ margin: 0, fontSize: '1rem' }}>Estilo do Texto</h3>
                   </div>
 
-                  {/* Tabs de categorias */}
-                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '14px' }}>
-                    {CATS.map(c => (
+                  {/* Fonte */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', display: 'block', marginBottom: '6px' }}>FONTE</label>
+                    <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                      {CARD_FONTS.map(f => (
+                        <button key={f.value} onClick={() => setCardFont(f.value)}
+                          style={{
+                            flexShrink: 0, padding: '6px 12px', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', border: 'none',
+                            background: cardFont === f.value ? 'var(--orange)' : 'rgba(255,255,255,0.06)',
+                            color: cardFont === f.value ? '#000' : 'var(--text-secondary)',
+                            fontFamily: f.value, fontSize: '0.82rem',
+                          }}
+                        >{f.label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tamanho, Estilo e Overlay na mesma linha */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                    {/* Tamanho */}
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', display: 'block', marginBottom: '6px' }}>TAMANHO</label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {CARD_FONT_SIZES.map(s => (
+                          <button key={s.value} onClick={() => setCardFontSize(s.value)}
+                            style={{
+                              flex: 1, padding: '7px 4px', borderRadius: '8px', cursor: 'pointer', border: 'none', transition: 'all 0.2s',
+                              background: cardFontSize === s.value ? 'var(--orange)' : 'rgba(255,255,255,0.06)',
+                              color: cardFontSize === s.value ? '#000' : 'var(--text-secondary)',
+                              fontSize: s.value === 'xl' ? '0.9rem' : s.value === 'sm' ? '0.7rem' : '0.8rem', fontWeight: '700',
+                            }}
+                          >{s.label}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Estilo */}
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', display: 'block', marginBottom: '6px' }}>ESTILO</label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {[{ id: 'normal', label: 'A', style: {} }, { id: 'italic', label: 'A', style: { fontStyle: 'italic' } }, { id: 'bold', label: 'A', style: { fontWeight: '700' } }, { id: 'bolditalic', label: 'A', style: { fontStyle: 'italic', fontWeight: '700' } }].map(s => (
+                          <button key={s.id} onClick={() => setCardTextStyle(s.id)}
+                            style={{
+                              flex: 1, padding: '7px 4px', borderRadius: '8px', cursor: 'pointer', border: 'none', transition: 'all 0.2s',
+                              background: cardTextStyle === s.id ? 'var(--orange)' : 'rgba(255,255,255,0.06)',
+                              color: cardTextStyle === s.id ? '#000' : 'var(--text-secondary)',
+                              fontSize: '0.88rem', ...s.style,
+                            }}
+                          >{s.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cores do texto */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', display: 'block', marginBottom: '8px' }}>COR DO TEXTO</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {CARD_TEXT_COLORS.map(c => (
+                        <button key={c.value} onClick={() => setCardTextColor(c.value)} title={c.label}
+                          style={{
+                            width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', padding: 0,
+                            background: c.value,
+                            border: cardTextColor === c.value ? '3px solid var(--orange)' : '2px solid rgba(255,255,255,0.15)',
+                            transform: cardTextColor === c.value ? 'scale(1.2)' : 'scale(1)',
+                            transition: 'all 0.2s', boxSizing: 'border-box',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Escuridão do overlay */}
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', display: 'block', marginBottom: '6px' }}>ESCURIDÃO DO FUNDO: {Math.round(cardOverlay * 100)}%</label>
+                    <input type="range" min="0" max="100" value={Math.round(cardOverlay * 100)}
+                      onChange={e => setCardOverlay(Number(e.target.value) / 100)}
+                      style={{ width: '100%', accentColor: 'var(--orange)' }}
+                    />
+                  </div>
+                </div>
+
+                {/* ── GALERIA DE FUNDOS ── */}
+                <div className="glass-panel" style={{ margin: '0 20px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <h3 style={{ margin: 0, fontSize: '1rem' }}>Escolha o Fundo</h3>
+                  </div>
+                  {/* Abas de categoria de fundo */}
+                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '12px' }}>
+                    {CARD_BG_CATEGORIES.map(cat => (
+                      <button key={cat.id} onClick={() => { setCardBgCategory(cat.id); setCardBg(0); }}
+                        style={{
+                          flexShrink: 0, padding: '5px 12px', fontSize: '0.78rem', fontWeight: '600',
+                          borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', border: 'none',
+                          background: cardBgCategory === cat.id ? 'var(--orange)' : 'rgba(255,255,255,0.06)',
+                          color: cardBgCategory === cat.id ? '#000' : 'var(--text-secondary)',
+                        }}
+                      >{cat.label}</button>
+                    ))}
+                  </div>
+                  {/* Grid de imagens */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                    {activeBgItems.map((item, idx) => (
+                      <div key={idx} onClick={() => setCardBg(idx)}
+                        style={{
+                          position: 'relative', paddingTop: '100%', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer',
+                          backgroundImage: `url(${item.url})`, backgroundSize: 'cover', backgroundPosition: 'center',
+                          border: cardBg === idx ? '2.5px solid var(--orange)' : '2px solid transparent',
+                          transition: 'all 0.2s',
+                          transform: cardBg === idx ? 'scale(1.06)' : 'scale(1)',
+                        }}
+                      >
+                        {cardBg === idx && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.25)', paddingBottom: '4px' }}>
+                            <span style={{ fontSize: '0.6rem', color: '#fff', fontWeight: '700', background: 'rgba(0,0,0,0.5)', padding: '1px 5px', borderRadius: '4px' }}>{item.label}</span>
+                          </div>
+                        )}
+                        {cardBg !== idx && (
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2px 4px', background: 'rgba(0,0,0,0.4)' }}>
+                            <span style={{ fontSize: '0.55rem', color: '#fff', fontWeight: '600' }}>{item.label}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── MENSAGEM ── */}
+                <div className="glass-panel" style={{ margin: '0 20px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <h3 style={{ margin: 0, fontSize: '1rem' }}>Escolha a Mensagem</h3>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '12px' }}>
+                    {MSG_CATS.map(c => (
                       <button key={c.id} onClick={() => { setCardCategory(c.id); setCardSelectedText(''); }}
                         style={{
                           flexShrink: 0, padding: '6px 12px', fontSize: '0.78rem', fontWeight: '600',
-                          borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                          borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', border: 'none',
                           background: cardCategory === c.id ? 'var(--orange)' : 'rgba(255,255,255,0.06)',
                           color: cardCategory === c.id ? '#000' : 'var(--text-secondary)',
-                          border: 'none',
                         }}
                       >{c.label}</button>
                     ))}
                   </div>
-
-                  {/* Frases da categoria */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {phrases.map((p, idx) => (
-                      <div key={idx}
-                        onClick={() => setCardSelectedText(p.text)}
+                      <div key={idx} onClick={() => setCardSelectedText(p.text)}
                         style={{
                           padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                          background: (cardSelectedText || phrases[0]?.text) === p.text ? 'rgba(var(--orange-rgb, 249,115,22),0.12)' : 'rgba(255,255,255,0.04)',
+                          background: (cardSelectedText || phrases[0]?.text) === p.text ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.04)',
                           border: (cardSelectedText || phrases[0]?.text) === p.text ? '1.5px solid var(--orange)' : '1px solid rgba(255,255,255,0.07)',
                         }}
                       >
-                        <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: '1.55', color: 'var(--text-primary)', fontStyle: 'italic' }}>
-                          &ldquo;{p.text}&rdquo;
-                        </p>
+                        <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: '1.55', color: 'var(--text-primary)', fontStyle: 'italic' }}>&ldquo;{p.text}&rdquo;</p>
                         {p.ref && <span style={{ marginTop: '6px', display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '600' }}>{p.ref}</span>}
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* GALERIA DE FUNDOS */}
-                <div className="glass-panel" style={{ margin: '0 20px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                    <h3 style={{ margin: 0, fontSize: '1rem' }}>Escolha o Fundo</h3>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-                    {CARD_BACKGROUNDS.map((bg, idx) => (
-                      <div key={idx} onClick={() => setCardBg(idx)}
-                        style={{
-                          position: 'relative', paddingTop: '100%', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer',
-                          backgroundImage: `url(${bg.url})`, backgroundSize: 'cover', backgroundPosition: 'center',
-                          border: cardBg === idx ? '2.5px solid var(--orange)' : '2px solid transparent',
-                          transition: 'border 0.2s, transform 0.2s',
-                          transform: cardBg === idx ? 'scale(1.06)' : 'scale(1)',
-                        }}
-                      >
-                        {cardBg === idx && (
-                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <p style={{ margin: '10px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>Fundo selecionado: {CARD_BACKGROUNDS[cardBg].label}</p>
-                </div>
-
-                {/* BOTÕES DE AÇÃO */}
+                {/* ── AÇÕES ── */}
                 <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <button
-                    className="btn-primary"
-                    onClick={() => handleGenerateCard('share')}
-                    disabled={cardGenerating}
+                  <button className="btn-primary" onClick={() => handleGenerateCard('share')} disabled={cardGenerating}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '16px', fontSize: '1rem', fontWeight: '700', borderRadius: '14px' }}
                   >
-                    {cardGenerating ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                    )}
+                    {cardGenerating
+                      ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                      : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    }
                     {cardGenerating ? 'Gerando...' : 'Compartilhar no WhatsApp / Redes'}
                   </button>
-                  <button
-                    className="btn-secondary"
-                    onClick={() => handleGenerateCard('download')}
-                    disabled={cardGenerating}
+                  <button className="btn-secondary" onClick={() => handleGenerateCard('download')} disabled={cardGenerating}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '14px', fontSize: '0.92rem', fontWeight: '600', borderRadius: '14px' }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
