@@ -4,14 +4,99 @@ import sqlite3 from 'sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
+import { createChatGPTHandler } from '@opencoredev/loginwithchatgpt-server';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true
+}));
 app.use(express.json());
+
+// Configuração do Login with ChatGPT
+const chatGptHandler = createChatGPTHandler({
+  secret: process.env.LWC_SECRET || 'a-very-stable-secret-for-development-1convite-32-chars-long!',
+  basePath: '/api/v1/chatgpt',
+  // Permitimos exportar tokens caso o frontend precise diretamente (opcional, para flexibilidade)
+  dangerouslyAllowTokenExport: true,
+  allowedOrigins: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+});
+
+// Adaptadores para converter Express <-> Web Request/Response
+async function toWebRequest(req) {
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const originalUrl = req.originalUrl;
+  const url = `${protocol}://${host}${originalUrl}`;
+  
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach(v => headers.append(key, v));
+      } else {
+        headers.set(key, value);
+      }
+    }
+  }
+
+  let body = null;
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    body = typeof req.body === 'object' ? JSON.stringify(req.body) : req.body;
+  }
+
+  return new Request(url, {
+    method: req.method,
+    headers,
+    body,
+  });
+}
+
+async function fromWebResponse(webRes, res) {
+  res.status(webRes.status);
+  webRes.headers.forEach((value, key) => {
+    res.setHeader(key, value);
+  });
+
+  if (webRes.body) {
+    const reader = webRes.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(value);
+    }
+    res.end();
+  } else {
+    res.end();
+  }
+}
+
+// Roteamento do Login with ChatGPT no Express
+app.all('/api/v1/chatgpt/*splat', async (req, res) => {
+  console.log(`[ChatGPT Request] ${req.method} ${req.originalUrl}`);
+  try {
+    const webReq = await toWebRequest(req);
+    const webRes = await chatGptHandler.handler(webReq);
+    console.log(`[ChatGPT Request] Response: ${webRes.status}`);
+    
+    // Se a resposta não for bem-sucedida, vamos ler e logar o corpo para ajudar no diagnóstico
+    if (!webRes.ok) {
+      const clone = webRes.clone();
+      const text = await clone.text();
+      console.warn(`[ChatGPT Request] Error response payload: ${text}`);
+    }
+
+    await fromWebResponse(webRes, res);
+  } catch (err) {
+    console.error('Erro no ChatGPT handler:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

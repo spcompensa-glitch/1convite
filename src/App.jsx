@@ -8,6 +8,20 @@ function App() {
   const [historico, setHistorico] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Login com ChatGPT
+  const [chatGptUser, setChatGptUser] = useState(null);
+  const [lwcState, setLwcState] = useState('unauthenticated');
+  const [lwcDeviceCode, setLwcDeviceCode] = useState(null);
+  const [lwcPollingActive, setLwcPollingActive] = useState(false);
+
+  // Chat IA
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'assistant', content: 'Olá! Sou o Conselheiro Inteligente do 1Convite. Como posso te apoiar hoje em suas reflexões, relacionamentos ou espiritualidade?' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
   const [countdown, setCountdown] = useState(12);
   const [isCountdownActive, setIsCountdownActive] = useState(false);
   const [pedagioErro, setPedagioErro] = useState('');
@@ -379,6 +393,183 @@ function App() {
   const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
     ? 'http://localhost:3001/api/v1' 
     : '/api/v1';
+
+  // ── ChatGPT Integration & Chat IA ──────────────────────────
+  useEffect(() => {
+    fetch(`${API_BASE}/chatgpt/session`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.status === 'authenticated') {
+          setLwcState('authenticated');
+          setChatGptUser(data.user);
+        }
+      })
+      .catch(err => console.error('Erro ao verificar sessão do ChatGPT:', err));
+  }, [API_BASE]);
+
+  const startLwcPolling = (intervalSeconds) => {
+    setLwcPollingActive(true);
+    const intervalMs = intervalSeconds * 1000;
+    
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/chatgpt/status`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === 'authenticated') {
+            clearInterval(poll);
+            setLwcPollingActive(false);
+            setLwcState('authenticated');
+            setChatGptUser(data.user);
+            setLwcDeviceCode(null);
+          } else if (data.status === 'expired' || data.status === 'error') {
+            clearInterval(poll);
+            setLwcPollingActive(false);
+            setLwcState('unauthenticated');
+            setLwcDeviceCode(null);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao obter status do ChatGPT:', err);
+      }
+    }, intervalMs);
+
+    return () => clearInterval(poll);
+  };
+
+  const handleConnectChatGPT = async () => {
+    try {
+      setLwcState('pending');
+      const res = await fetch(`${API_BASE}/chatgpt/login`, { method: 'POST', credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setLwcDeviceCode(data);
+        startLwcPolling(data.interval || 5);
+      } else {
+        setLwcState('unauthenticated');
+        alert('Erro ao iniciar conexão com ChatGPT.');
+      }
+    } catch (err) {
+      setLwcState('unauthenticated');
+      console.error(err);
+    }
+  };
+
+  const handleDisconnectChatGPT = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/chatgpt/logout`, { method: 'POST', credentials: 'include' });
+      if (res.ok) {
+        setLwcState('unauthenticated');
+        setChatGptUser(null);
+        setLwcDeviceCode(null);
+      }
+    } catch (err) {
+      console.error('Erro ao desconectar ChatGPT:', err);
+    }
+  };
+
+  const parseStreamChunk = (chunk) => {
+    let text = '';
+    const lines = chunk.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const dataStr = line.slice(6).trim();
+        if (dataStr === '[DONE]') continue;
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.type === 'response.output_text.delta' && typeof data.delta === 'string') {
+            text += data.delta;
+          } else if (data.type === 'response.content_part.updated' || data.type === 'response.content_part.delta') {
+            if (data.part?.text) text += data.part.text;
+            else if (data.delta?.text) text += data.delta.text;
+          } else if (data.type === 'text_delta') {
+            text += data.text;
+          } else if (data.delta?.content) {
+            text += data.delta.content;
+          } else if (data.part?.type === 'text' && data.part.text) {
+            text += data.part.text;
+          } else if (data.choices?.[0]?.delta?.content) {
+            text += data.choices[0].delta.content;
+          }
+        } catch {
+          // Ignore
+        }
+      }
+    }
+    return text;
+  };
+
+  const handleSendChatMessage = async (e, customText = null) => {
+    if (e) e.preventDefault();
+    const textToSend = customText || chatInput;
+    if (!textToSend.trim() || chatLoading) return;
+
+    if (lwcState !== 'authenticated') {
+      alert('Conecte sua conta do ChatGPT na aba "Conta" para conversar com o Conselheiro IA.');
+      return;
+    }
+
+    const newUserMessage = { role: 'user', content: textToSend };
+    setChatMessages(prev => [...prev, newUserMessage]);
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      const history = chatMessages.concat(newUserMessage);
+      
+      const payload = {
+        stream: true,
+        instructions: 'Você é o Conselheiro Inteligente do aplicativo 1Convite. Seu objetivo é ajudar o usuário com aconselhamento de relacionamentos, paz interior, espiritualidade e ideias de convites/conexões intencionais (café, reflexões, jantares, tempo de qualidade). Seja caloroso, empático, bíblico e focado no momento presente (o Agora). Responda sempre em português do Brasil.',
+        input: history.map(msg => ({
+          role: msg.role,
+          content: [
+            { 
+              type: msg.role === 'user' ? 'input_text' : 'output_text', 
+              text: msg.content 
+            }
+          ]
+        }))
+      };
+
+      const res = await fetch(`${API_BASE}/chatgpt/responses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        throw new Error('Falha ao obter resposta do ChatGPT.');
+      }
+
+      setChatMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const newText = parseStreamChunk(chunk);
+        if (newText) {
+          accumulatedText += newText;
+          setChatMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: 'assistant', content: accumulatedText };
+            return updated;
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Desculpe, ocorreu um erro ao obter a resposta.' }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   // ── Bíblia ──────────────────────────────────────────────────
   const searchBible = async (e) => {
@@ -1517,6 +1708,96 @@ function App() {
           </div>
         )}
 
+        {/* ════════════ ABA CHAT IA ════════════ */}
+        {activeTab === 'chat' && (
+          <div className="page-enter flex-column" style={{ height: 'calc(100vh - 76px)', justifyContent: 'space-between' }}>
+            {lwcState !== 'authenticated' ? (
+              <div className="flex-column gap-md align-center justify-center text-center" style={{ flex: 1, padding: '2rem' }}>
+                <div style={{ fontSize: '4.5rem', filter: 'drop-shadow(0 0 10px rgba(16, 185, 129, 0.2))' }}>🤖</div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>Conselheiro Inteligente</h2>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '300px' }}>
+                  Conecte sua própria conta do ChatGPT nas configurações para ativar o conselheiro personalizado do app a custo zero de processamento!
+                </p>
+                <button className="btn-primary" style={{ padding: '12px 24px' }} onClick={() => setActiveTab('conta')}>
+                  ⚙️ Conectar ChatGPT Agora
+                </button>
+              </div>
+            ) : (
+              <div className="chat-container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {/* Header */}
+                <div className="chat-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.95rem' }}>Conselheiro IA</strong>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>ChatGPT ({chatGptUser?.plan?.toUpperCase() || 'SESSÃO'})</span>
+                    </div>
+                  </div>
+                  <button className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => {
+                    if (confirm('Deseja limpar o histórico do chat?')) {
+                      setChatMessages([{ role: 'assistant', content: 'Olá! Sou o Conselheiro Inteligente do 1Convite. Como posso te apoiar hoje?' }]);
+                    }
+                  }}>
+                    🧹 Limpar
+                  </button>
+                </div>
+
+                {/* Mensagens */}
+                <div className="chat-messages">
+                  {chatMessages.map((msg, index) => (
+                    <div key={index} className={`chat-bubble ${msg.role}`}>
+                      {msg.content}
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="chat-bubble assistant">
+                      <div className="typing-indicator">
+                        <div className="typing-dot"></div>
+                        <div className="typing-dot"></div>
+                        <div className="typing-dot"></div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Área de Entrada */}
+                <div className="chat-input-area">
+                  <div className="chat-suggestions">
+                    {[
+                      'Como cultivar paz hoje?',
+                      'Ideia de convite para cônjuge',
+                      'Reflexão para ansiedade',
+                      'Resolução de conflito'
+                    ].map(sug => (
+                      <button key={sug} className="chat-suggest-chip" onClick={(e) => handleSendChatMessage(e, sug)}>
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
+
+                  <form onSubmit={handleSendChatMessage} className="chat-input-row">
+                    <input
+                      type="text"
+                      className="chat-input-field"
+                      placeholder="Fale com o Conselheiro..."
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      disabled={chatLoading}
+                    />
+                    <button type="submit" className="chat-send-btn" disabled={chatLoading || !chatInput.trim()}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ════════════ ABA UPGRADE ════════════ */}
         {activeTab === 'upgrade' && (
           <div className="page-enter">
@@ -1645,6 +1926,53 @@ function App() {
                 )}
               </div>
 
+              {/* Login/Integração com ChatGPT (LWC) */}
+              <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'center' }}>
+                <h3 style={{ marginBottom: '14px', fontSize: '1.05rem', textAlign: 'left' }}>🤖 Conexão com ChatGPT (Custo Zero)</h3>
+                
+                {lwcState === 'authenticated' ? (
+                  <div className="flex-column gap-sm">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--orange)', fontWeight: '600', fontSize: '0.95rem', margin: '4px 0' }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟢</span> ChatGPT Ativo ({chatGptUser?.plan ? chatGptUser.plan.toUpperCase() : 'FREE/PLUS'})
+                    </div>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                      Conta conectada: <strong>{chatGptUser?.email || 'Usuário ChatGPT'}</strong>. Você já pode conversar com o Conselheiro IA.
+                    </p>
+                    <button className="btn-secondary" style={{ width: '100%' }} onClick={handleDisconnectChatGPT}>
+                      🔌 Desconectar ChatGPT
+                    </button>
+                  </div>
+                ) : lwcState === 'pending' && lwcDeviceCode ? (
+                  <div className="flex-column gap-sm">
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                      Abra o link abaixo e insira o seguinte código para autorizar o acesso:
+                    </p>
+                    <div className="lwc-code-box">{lwcDeviceCode.userCode}</div>
+                    <a 
+                      href={lwcDeviceCode.verificationUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn-primary" 
+                      style={{ textDecoration: 'none', display: 'block', width: '100%', padding: '10px' }}
+                    >
+                      🔗 Abrir Página de Verificação
+                    </a>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Aguardando autorização... (Expira em 5 minutos)
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex-column gap-sm">
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '10px', lineHeight: '1.5', textAlign: 'left' }}>
+                      Conecte sua própria conta do ChatGPT para liberar o <strong>Conselheiro IA</strong> e <strong>Desafios Inteligentes</strong> customizados, sem custo extra para você ou para a plataforma.
+                    </p>
+                    <button className="btn-primary" style={{ width: '100%' }} onClick={handleConnectChatGPT}>
+                      🔌 Conectar ChatGPT
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Alternância de Tema */}
               <div className="glass-panel" style={{ marginBottom: '16px' }}>
                 <h3 style={{ marginBottom: '14px', fontSize: '1.05rem' }}>🎨 Aparência & Tema</h3>
@@ -1727,7 +2055,7 @@ function App() {
             { id: 'biblia', label: 'Bíblia', path: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
             { id: 'contatos', label: 'Contatos', path: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
             { id: 'historico', label: 'Histórico', path: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-            { id: 'upgrade', label: 'Premium', path: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' },
+            { id: 'chat', label: 'Conselheiro', path: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
             { id: 'conta', label: 'Conta', path: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
           ].map(tab => (
             <button
