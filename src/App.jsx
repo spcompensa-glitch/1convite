@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Onboarding from './components/Onboarding';
+import html2canvas from 'html2canvas';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -8,6 +9,92 @@ function App() {
   const [contatos, setContatos] = useState([]);
   const [historico, setHistorico] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Studio de Compartilhamento
+  const [cardCategory, setCardCategory] = useState('bomdia');
+  const [cardSelectedText, setCardSelectedText] = useState('');
+  const [cardBg, setCardBg] = useState(0);
+  const [cardFormat, setCardFormat] = useState('square'); // 'square' | 'story'
+  const [cardGenerating, setCardGenerating] = useState(false);
+  const cardPreviewRef = useRef(null);
+
+  const CARD_PHRASES = {
+    bomdia: [
+      { text: 'Que este novo dia seja cheio da paz que só Deus pode dar.', ref: 'Salmos 118:24' },
+      { text: 'Cada manhã são renovadas as Suas misericórdias. Grande é a Tua fidelidade.', ref: 'Lamentações 3:23' },
+      { text: 'Desperta, ó minha alma! O Senhor abriu mais um dia para que você floresça.', ref: null },
+      { text: 'Bom dia! Que hoje você experimente o amor de Deus em cada detalhe.', ref: null },
+      { text: 'Antes que o mundo te fale, deixe Deus falar primeiro. Bom dia!', ref: null },
+    ],
+    boatarde: [
+      { text: 'No meio do dia, lembre-se: Deus cuida de você com cuidado e ternura.', ref: 'Mateus 6:26' },
+      { text: 'Boa tarde! Que o seu descanso de hoje seja tão produtivo quanto o seu trabalho.', ref: null },
+      { text: 'A metade do dia passou. Que a segunda parte seja guiada por Ele.', ref: null },
+      { text: 'Seja forte e corajoso! O Senhor, seu Deus, está com você por onde quer que você vá.', ref: 'Josué 1:9' },
+      { text: 'Boa tarde! Um sorriso pode ser o seu maior testemunho hoje.', ref: null },
+    ],
+    boanoite: [
+      { text: 'Que o Senhor te guarde em teu repouso e que Seus anjos velem sobre você.', ref: 'Salmos 91:11' },
+      { text: 'Em paz deitarei e logo dormirei, pois só Tu, Senhor, me fazes habitar em segurança.', ref: 'Salmos 4:8' },
+      { text: 'Boa noite! Entregue ao Senhor o que ficou por fazer. Ele é fiel.', ref: null },
+      { text: 'Descanse. Amanhã é uma nova chance de recomeçar com Deus.', ref: null },
+      { text: 'Feche os olhos em paz. O mesmo Deus que cuidou hoje, cuidará amanhã.', ref: null },
+    ],
+    versiculo: [
+      { text: 'Ninguém tem maior amor do que este: de dar alguém a própria vida pelos seus amigos.', ref: 'João 15:13' },
+      { text: 'Não andeis ansiosos por coisa alguma, mas em tudo pela oração fazei os vossos pedidos.', ref: 'Filipenses 4:6' },
+      { text: 'Tudo posso naquele que me fortalece.', ref: 'Filipenses 4:13' },
+      { text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito.', ref: 'João 3:16' },
+      { text: 'O Senhor é o meu pastor e nada me faltará.', ref: 'Salmos 23:1' },
+      { text: 'Eu sou o caminho, a verdade e a vida; ninguém vem ao Pai senão por mim.', ref: 'João 14:6' },
+    ],
+    convite: [
+      { text: 'Você tem um convite para fazer parte de algo maior. 1 convite pode mudar uma vida.', ref: 'Mateus 24:14' },
+      { text: 'Compartilhe a boa notícia! O Evangelho foi feito para ser levado a todos.', ref: 'Marcos 16:15' },
+      { text: 'Quem salva uma alma, salva o mundo. Faça o seu 1Convite hoje.', ref: null },
+      { text: 'Seja o instrumento de Deus nas mãos de alguém que precisa de esperança.', ref: null },
+      { text: 'Uma boa palavra no momento certo pode mudar uma eternidade.', ref: 'Provérbios 15:23' },
+    ],
+  };
+
+  const CARD_BACKGROUNDS = [
+    { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80', label: 'Montanha' },
+    { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80', label: 'Aurora' },
+    { url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80', label: 'Cume' },
+    { url: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80', label: 'Vale Verde' },
+    { url: 'https://images.unsplash.com/photo-1519451241324-20b4ea2c4220?w=800&q=80', label: 'Oceano' },
+    { url: 'https://images.unsplash.com/photo-1476673160081-cf065607f449?w=800&q=80', label: 'Trigo' },
+    { url: 'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=800&q=80', label: 'Lago' },
+    { url: 'https://images.unsplash.com/photo-1490750967868-88df5691cc5e?w=800&q=80', label: 'Flores' },
+    { url: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=800&q=80', label: 'Floresta' },
+    { url: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=800&q=80', label: 'Nascer do Sol' },
+  ];
+
+  const handleGenerateCard = async (mode) => {
+    if (!cardPreviewRef.current) return;
+    setCardGenerating(true);
+    try {
+      const canvas = await html2canvas(cardPreviewRef.current, { useCORS: true, allowTaint: true, scale: 2, logging: false });
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        if (mode === 'share' && navigator.canShare && navigator.canShare({ files: [new File([blob], 'card.png', { type: 'image/png' })] })) {
+          await navigator.share({ files: [new File([blob], '1convite-card.png', { type: 'image/png' })] });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = '1convite-card.png';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+        setCardGenerating(false);
+      }, 'image/png');
+    } catch (e) {
+      console.error('Erro ao gerar card:', e);
+      setCardGenerating(false);
+    }
+  };
+
 
   // Customização de Temas & Cores
   const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'theme-green');
@@ -1768,6 +1855,7 @@ Importante: O JSON deve ser 100% válido.`;
                   {activeTab === 'chat' && 'Conselheiro IA'}
                   {activeTab === 'contatos' && 'Conexões & Contatos'}
                   {activeTab === 'conta' && 'Minha Conta'}
+                  {activeTab === 'criar-card' && 'Studio de Cards'}
                 </h2>
               )}
             </div>
@@ -2128,11 +2216,13 @@ Importante: O JSON deve ser 100% válido.`;
                   )
                 },
                 { 
-                  id: 'compartilhar', 
-                  label: 'Compartilhar App', 
+                  id: 'criar-card', 
+                  label: 'Criar Card', 
                   icon: (
                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 10.742l5.013-2.507m0 7.53l-5.013-2.507m11.383-6.526a3.001 3.001 0 11-6 0 3 3 0 016 0zm-11.383 6.526a3.001 3.001 0 11-6 0 3 3 0 016 0zm11.383 6.526a3.001 3.001 0 11-6 0 3 3 0 016 0z" />
+                      <rect x="3" y="3" width="18" height="18" rx="3" ry="3" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )
                 }
@@ -2140,21 +2230,17 @@ Importante: O JSON deve ser 100% válido.`;
                 <div
                   key={card.id}
                   onClick={() => {
-                    if (card.id === 'compartilhar') {
-                      if (navigator.share) {
-                        navigator.share({ title: '1Convite', text: 'Venha se conectar intencionalmente!', url: window.location.origin });
-                      } else {
-                        alert('Link de compartilhamento copiado!');
-                      }
-                    } else {
-                      setActiveTab(card.id);
-                      if (card.id === 'biblia') {
-                        setBibleViewMode('reading');
-                        setBibleSelectedVerse(null);
-                      }
-                      if (card.id === 'sabado') {
-                        setActiveSabadoBlock('menu');
-                      }
+                    setActiveTab(card.id);
+                    if (card.id === 'biblia') {
+                      setBibleViewMode('reading');
+                      setBibleSelectedVerse(null);
+                    }
+                    if (card.id === 'sabado') {
+                      setActiveSabadoBlock('menu');
+                    }
+                    if (card.id === 'criar-card') {
+                      setCardSelectedText('');
+                      setCardCategory('bomdia');
                     }
                   }}
                   className="dashboard-card"
@@ -3912,6 +3998,201 @@ Importante: O JSON deve ser 100% válido.`;
             </div>
           </div>
         )}
+
+        {/* ════════════ ABA STUDIO DE CARDS ════════════ */}
+        {activeTab === 'criar-card' && (() => {
+          const phrases = CARD_PHRASES[cardCategory] || [];
+          const bg = CARD_BACKGROUNDS[cardBg];
+          const selectedPhrase = cardSelectedText || (phrases[0] ? phrases[0].text : '');
+          const selectedRef = phrases.find(p => p.text === selectedPhrase)?.ref;
+
+          const CATS = [
+            { id: 'bomdia', label: 'Bom Dia' },
+            { id: 'boatarde', label: 'Boa Tarde' },
+            { id: 'boanoite', label: 'Boa Noite' },
+            { id: 'versiculo', label: 'Versículo' },
+            { id: 'convite', label: '1Convite' },
+          ];
+
+          return (
+            <div className="page-enter" style={{ paddingBottom: '40px' }}>
+              {/* Hero */}
+              <div className="page-hero hero-sabado" style={{ padding: '28px 20px 36px' }}>
+                <div className="hero-orb" style={{ width: 200, height: 200, top: -50, right: -60, background: 'rgba(139,92,246,0.25)' }} />
+                <div className="hero-content">
+                  <div className="hero-label">Mateus 28:19</div>
+                  <div className="hero-title">Studio de Cards</div>
+                  <div className="hero-sub">Crie uma imagem linda para compartilhar nas redes</div>
+                </div>
+              </div>
+
+              <div className="page-content" style={{ paddingTop: '10px' }}>
+
+                {/* PREVIEW DO CARD */}
+                <div style={{ padding: '0 20px 20px', position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-primary)' }}>
+                  <div
+                    ref={cardPreviewRef}
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      paddingTop: cardFormat === 'square' ? '100%' : '177%',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                      backgroundImage: `url(${bg.url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+                    }}
+                  >
+                    {/* Overlay escuro */}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.30) 50%, rgba(0,0,0,0.10) 100%)' }} />
+                    {/* Texto central */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'flex-end',
+                      padding: '28px 24px',
+                      textAlign: 'center',
+                    }}>
+                      <p style={{
+                        fontFamily: 'Georgia, serif',
+                        fontSize: cardFormat === 'square' ? '1.15rem' : '1.35rem',
+                        color: '#ffffff',
+                        lineHeight: '1.65',
+                        fontStyle: 'italic',
+                        textShadow: '0 2px 12px rgba(0,0,0,0.8)',
+                        margin: 0,
+                        letterSpacing: '0.01em',
+                      }}>
+                        &ldquo;{selectedPhrase}&rdquo;
+                      </p>
+                      {selectedRef && (
+                        <span style={{ marginTop: '12px', fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>
+                          — {selectedRef}
+                        </span>
+                      )}
+                      <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.65 }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                        <span style={{ fontSize: '0.68rem', color: '#fff', fontWeight: '700', letterSpacing: '0.1em' }}>1CONVITE.COM.BR</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Toggle Formato */}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                    {[{ id: 'square', label: 'Post (1:1)' }, { id: 'story', label: 'Story (9:16)' }].map(f => (
+                      <button key={f.id} onClick={() => setCardFormat(f.id)}
+                        style={{
+                          flex: 1, padding: '8px', fontSize: '0.82rem', fontWeight: '600', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
+                          background: cardFormat === f.id ? 'var(--orange)' : 'transparent',
+                          color: cardFormat === f.id ? '#000' : 'var(--text-secondary)',
+                          border: cardFormat === f.id ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                        }}
+                      >{f.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CATEGORIAS */}
+                <div className="glass-panel" style={{ marginBottom: '16px', margin: '0 20px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <h3 style={{ margin: 0, fontSize: '1rem' }}>Escolha a Mensagem</h3>
+                  </div>
+
+                  {/* Tabs de categorias */}
+                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '14px' }}>
+                    {CATS.map(c => (
+                      <button key={c.id} onClick={() => { setCardCategory(c.id); setCardSelectedText(''); }}
+                        style={{
+                          flexShrink: 0, padding: '6px 12px', fontSize: '0.78rem', fontWeight: '600',
+                          borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                          background: cardCategory === c.id ? 'var(--orange)' : 'rgba(255,255,255,0.06)',
+                          color: cardCategory === c.id ? '#000' : 'var(--text-secondary)',
+                          border: 'none',
+                        }}
+                      >{c.label}</button>
+                    ))}
+                  </div>
+
+                  {/* Frases da categoria */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {phrases.map((p, idx) => (
+                      <div key={idx}
+                        onClick={() => setCardSelectedText(p.text)}
+                        style={{
+                          padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                          background: (cardSelectedText || phrases[0]?.text) === p.text ? 'rgba(var(--orange-rgb, 249,115,22),0.12)' : 'rgba(255,255,255,0.04)',
+                          border: (cardSelectedText || phrases[0]?.text) === p.text ? '1.5px solid var(--orange)' : '1px solid rgba(255,255,255,0.07)',
+                        }}
+                      >
+                        <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: '1.55', color: 'var(--text-primary)', fontStyle: 'italic' }}>
+                          &ldquo;{p.text}&rdquo;
+                        </p>
+                        {p.ref && <span style={{ marginTop: '6px', display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '600' }}>{p.ref}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* GALERIA DE FUNDOS */}
+                <div className="glass-panel" style={{ margin: '0 20px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    <h3 style={{ margin: 0, fontSize: '1rem' }}>Escolha o Fundo</h3>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                    {CARD_BACKGROUNDS.map((bg, idx) => (
+                      <div key={idx} onClick={() => setCardBg(idx)}
+                        style={{
+                          position: 'relative', paddingTop: '100%', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer',
+                          backgroundImage: `url(${bg.url})`, backgroundSize: 'cover', backgroundPosition: 'center',
+                          border: cardBg === idx ? '2.5px solid var(--orange)' : '2px solid transparent',
+                          transition: 'border 0.2s, transform 0.2s',
+                          transform: cardBg === idx ? 'scale(1.06)' : 'scale(1)',
+                        }}
+                      >
+                        {cardBg === idx && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ margin: '10px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>Fundo selecionado: {CARD_BACKGROUNDS[cardBg].label}</p>
+                </div>
+
+                {/* BOTÕES DE AÇÃO */}
+                <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => handleGenerateCard('share')}
+                    disabled={cardGenerating}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '16px', fontSize: '1rem', fontWeight: '700', borderRadius: '14px' }}
+                  >
+                    {cardGenerating ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    )}
+                    {cardGenerating ? 'Gerando...' : 'Compartilhar no WhatsApp / Redes'}
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => handleGenerateCard('download')}
+                    disabled={cardGenerating}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '14px', fontSize: '0.92rem', fontWeight: '600', borderRadius: '14px' }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Baixar Imagem PNG
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
 
       </main>
     </div>
