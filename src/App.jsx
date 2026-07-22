@@ -1557,86 +1557,58 @@ Importante: O JSON deve ser 100% válido.`;
             <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2rem', textAlign: 'center' }}>Acesse o <span>1Convite</span></h2>
             
             <div className="login-card" style={{ margin: '20px auto 0', background: 'rgba(10, 10, 12, 0.85)', border: '1.5px solid rgba(0, 240, 143, 0.25)', backdropFilter: 'none', padding: '24px', borderRadius: '18px', width: '100%', boxSizing: 'border-box' }}>
-              <div style={{ display: 'flex', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', padding: '3px', marginBottom: '16px' }}>
-                <button
-                  onClick={() => { setLoginMethod('google'); setLoginError(''); }}
-                  style={{
-                    flex: 1,
-                    background: loginMethod === 'google' ? '#00f08f' : 'transparent',
-                    color: loginMethod === 'google' ? '#030303' : '#fafafa',
-                    border: 'none', borderRadius: '6px', padding: '8px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
-                  }}
-                >
-                  Google
-                </button>
-                <button
-                  onClick={() => { setLoginMethod('email'); setLoginError(''); }}
-                  style={{
-                    flex: 1,
-                    background: loginMethod === 'email' ? '#00f08f' : 'transparent',
-                    color: loginMethod === 'email' ? '#030303' : '#fafafa',
-                    border: 'none', borderRadius: '6px', padding: '8px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
-                  }}
-                >
-                  E-mail
-                </button>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00f08f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px' }}>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <h3 style={{ fontSize: '1.2rem', color: '#fff', margin: 0, fontWeight: '700' }}>Acesso ao Sistema</h3>
+                <p style={{ fontSize: '0.85rem', color: '#9ca3af', margin: '4px 0 0 0' }}>Entre com seu e-mail para continuar</p>
               </div>
 
-              {loginMethod === 'google' ? (
-                <div className="flex-column gap-sm">
-                  <button className="btn-google-signin" onClick={handleSimularLoginGoogle} style={{ marginTop: '0', width: '100%', padding: '12px', background: '#ffffff', color: '#000000', fontWeight: '800', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="18" height="18" viewBox="0 0 18 18" style={{ marginRight: '8px' }}>
-                      <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
-                      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
-                      <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
-                      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
-                    </svg>
-                    Acessar com o Google
-                  </button>
+              <form onSubmit={handleEmailLogin} className="flex-column gap-xs" style={{ textAlign: 'left' }}>
+                <div className="input-group">
+                  <label style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: '500' }}>Nome Completo</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={loginNome}
+                    onChange={(e) => setLoginNome(e.target.value)}
+                    placeholder="Seu nome"
+                    style={{ padding: '12px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', width: '100%', boxSizing: 'border-box', marginTop: '4px', outline: 'none' }}
+                    required
+                  />
                 </div>
-              ) : (
-                <form onSubmit={handleEmailLogin} className="flex-column gap-xs" style={{ textAlign: 'left' }}>
-                  <div className="input-group">
-                    <label style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Nome</label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      value={loginNome}
-                      onChange={(e) => setLoginNome(e.target.value)}
-                      placeholder="Nome"
-                      style={{ padding: '10px', fontSize: '0.82rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', width: '100%', boxSizing: 'border-box' }}
-                      required
-                    />
+                <div className="input-group" style={{ marginTop: '12px' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: '500' }}>Endereço de E-mail</label>
+                  <input
+                    type="email"
+                    className="input-field"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    style={{ padding: '12px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', width: '100%', boxSizing: 'border-box', marginTop: '4px', outline: 'none' }}
+                    required
+                  />
+                </div>
+
+                {loginError && (
+                  <div style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: '500', margin: '8px 0 0' }}>
+                    {loginError}
                   </div>
-                  <div className="input-group">
-                    <label style={{ fontSize: '0.7rem', color: '#9ca3af' }}>E-mail</label>
-                    <input
-                      type="email"
-                      className="input-field"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="E-mail"
-                      style={{ padding: '10px', fontSize: '0.82rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', width: '100%', boxSizing: 'border-box' }}
-                      required
-                    />
-                  </div>
+                )}
 
-                  {loginError && (
-                    <div style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 'bold', margin: '4px 0' }}>
-                      {loginError}
-                    </div>
-                  )}
+                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '20px', padding: '14px', fontSize: '0.9rem', background: '#00f08f', color: '#030303', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                  Entrar na Conta
+                </button>
+              </form>
 
-                  <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px', padding: '12px', fontSize: '0.85rem', background: '#00f08f', color: '#030303', fontWeight: '800', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-                    🚀 Entrar com E-mail
-                  </button>
-                </form>
-              )}
+              <div className="login-separator" style={{ margin: '20px 0', fontSize: '0.75rem', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>ou</div>
 
-              <div className="login-separator" style={{ margin: '14px 0', fontSize: '0.72rem', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>ou</div>
-
-              <button className="btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '0.8rem', background: 'transparent', color: '#fafafa', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', cursor: 'pointer' }} onClick={handleGuestLogin}>
-                🔓 Modo Convidado (Rápido)
+              <button className="btn-secondary" style={{ width: '100%', padding: '12px', fontSize: '0.85rem', background: 'transparent', color: '#fafafa', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onClick={handleGuestLogin}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                Acessar como Visitante
               </button>
             </div>
           </div>
@@ -3554,7 +3526,7 @@ Importante: O JSON deve ser 100% válido.`;
                 <div className="profile-avatar-container">
                   <img src={profileAvatar} alt="Foto de Perfil" className="profile-avatar-img" />
                   <label className="profile-avatar-upload-btn" title="Alterar foto de perfil">
-                    📷
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                     <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
                   </label>
                 </div>
@@ -3568,7 +3540,10 @@ Importante: O JSON deve ser 100% válido.`;
             <div className="page-content" style={{ paddingTop: '10px' }}>
               {/* Tema & Aparência */}
               <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'center' }}>
-                <h3 style={{ marginBottom: '12px', fontSize: '1.05rem', textAlign: 'left' }}>🎨 Tema & Aparência</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0, textAlign: 'left' }}>Tema & Aparência</h3>
+                </div>
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', textAlign: 'left', lineHeight: '1.4' }}>
                   Escolha a cor de destaque do seu aplicativo para personalizar a sua experiência:
                 </p>
@@ -3600,61 +3575,47 @@ Importante: O JSON deve ser 100% válido.`;
                 </div>
               </div>
 
-              {/* Login com o Google */}
+              {/* Logout da Conta */}
               <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'center' }}>
-                <h3 style={{ marginBottom: '14px', fontSize: '1.05rem', textAlign: 'left' }}>🔑 Autenticação do Google</h3>
-                
-                {profileEmail !== 'membro@1convite.com' ? (
-                  <div className="flex-column gap-sm">
-                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                      Conectado como <strong>{profileEmail}</strong>
-                    </p>
-                    <button className="btn-secondary" style={{ width: '100%' }} onClick={handleLogout}>
-                      🚪 Sair da Conta (Logout)
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex-column gap-sm">
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.5' }}>
-                      Conecte sua conta do Google para preencher automaticamente sua foto de perfil, nome e garantir seu acesso.
-                    </p>
-                    
-                    {/* Container do Botão Real do Google */}
-                    <div id="google-signin-btn-container" style={{ width: '100%', marginBottom: '8px' }}></div>
-                    
-                    {/* Botão de Simulação de Login Google */}
-                    <button className="btn-google-signin" onClick={handleSimularLoginGoogle}>
-                      <svg width="18" height="18" viewBox="0 0 18 18">
-                        <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
-                        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
-                        <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
-                        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
-                      </svg>
-                      Testar/Simular Login Google
-                    </button>
-                  </div>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0, textAlign: 'left' }}>Sessão Ativa</h3>
+                </div>
+                <div className="flex-column gap-sm">
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '8px', textAlign: 'left' }}>
+                    Conectado como <strong>{profileEmail || 'Visitante'}</strong>
+                  </p>
+                  <button className="btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onClick={handleLogout}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Sair da Conta (Logout)
+                  </button>
+                </div>
               </div>
 
-              {/* Login/Integração com ChatGPT (LWC) */}
+              {/* Integração com IA */}
               <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'center' }}>
-                <h3 style={{ marginBottom: '14px', fontSize: '1.05rem', textAlign: 'left' }}>🤖 Conexão com ChatGPT (Custo Zero)</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0, textAlign: 'left' }}>Conexão com Conselheiro IA</h3>
+                </div>
                 
                 {lwcState === 'authenticated' ? (
                   <div className="flex-column gap-sm">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--orange)', fontWeight: '600', fontSize: '0.95rem', margin: '4px 0' }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟢</span> ChatGPT Ativo ({chatGptUser?.plan ? chatGptUser.plan.toUpperCase() : 'FREE/PLUS'})
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg>
+                      IA Ativa ({chatGptUser?.plan ? chatGptUser.plan.toUpperCase() : 'FREE/PLUS'})
                     </div>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                      Conta conectada: <strong>{chatGptUser?.email || 'Usuário ChatGPT'}</strong>. Você já pode conversar com o Conselheiro IA.
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px', textAlign: 'left' }}>
+                      Conta conectada: <strong>{chatGptUser?.email || 'Usuário ChatGPT'}</strong>. Você já pode conversar com o Conselheiro.
                     </p>
-                    <button className="btn-secondary" style={{ width: '100%' }} onClick={handleDisconnectChatGPT}>
-                      🔌 Desconectar ChatGPT
+                    <button className="btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onClick={handleDisconnectChatGPT}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                      Desconectar Conta
                     </button>
                   </div>
                 ) : lwcState === 'pending' && lwcDeviceCode ? (
                   <div className="flex-column gap-sm">
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', textAlign: 'left' }}>
                       Abra o link abaixo e insira o seguinte código para autorizar o acesso:
                     </p>
                     <div className="lwc-code-box">{lwcDeviceCode.userCode}</div>
@@ -3663,21 +3624,23 @@ Importante: O JSON deve ser 100% válido.`;
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="btn-primary" 
-                      style={{ textDecoration: 'none', display: 'block', width: '100%', padding: '10px' }}
+                      style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '10px' }}
                     >
-                      🔗 Abrir Página de Verificação
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                      Página de Verificação
                     </a>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>
                       Aguardando autorização... (Expira em 5 minutos)
                     </p>
                   </div>
                 ) : (
                   <div className="flex-column gap-sm">
                     <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '10px', lineHeight: '1.5', textAlign: 'left' }}>
-                      Conecte sua própria conta do ChatGPT para liberar o <strong>Conselheiro IA</strong> e <strong>Desafios Inteligentes</strong> customizados, sem custo extra para você ou para a plataforma.
+                      Conecte sua conta do ChatGPT para liberar o <strong>Conselheiro IA</strong> e <strong>Desafios Inteligentes</strong> customizados, sem custo extra para você ou para a plataforma.
                     </p>
-                    <button className="btn-primary" style={{ width: '100%' }} onClick={handleConnectChatGPT}>
-                      🔌 Conectar ChatGPT
+                    <button className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onClick={handleConnectChatGPT}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                      Conectar Conta IA
                     </button>
                   </div>
                 )}
@@ -3685,10 +3648,19 @@ Importante: O JSON deve ser 100% válido.`;
 
               {/* Alternância de Tema */}
               <div className="glass-panel" style={{ marginBottom: '16px' }}>
-                <h3 style={{ marginBottom: '14px', fontSize: '1.05rem' }}>🎨 Aparência & Tema</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M4.93 4.93l1.41 1.41"></path><path d="M17.66 17.66l1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M6.34 17.66l-1.41 1.41"></path><path d="M19.07 4.93l-1.41 1.41"></path></svg>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0, textAlign: 'left' }}>Aparência & Tema</h3>
+                </div>
                 <div className="toggle-switch-container">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '1.2rem' }}>{darkMode ? '🌙' : '☀️'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px' }}>
+                      {darkMode ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                      )}
+                    </div>
                     <div>
                       <strong style={{ display: 'block', fontSize: '0.92rem' }}>Modo Escuro (Dark Mode)</strong>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Alternar tema de cores da interface</span>
@@ -3703,7 +3675,10 @@ Importante: O JSON deve ser 100% válido.`;
 
               {/* Informações da Conta */}
               <div className="glass-panel" style={{ marginBottom: '16px' }}>
-                <h3 style={{ marginBottom: '16px', fontSize: '1.05rem' }}>👤 Informações Pessoais</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0, textAlign: 'left' }}>Informações Pessoais</h3>
+                </div>
                 <form onSubmit={handleSaveProfile} className="flex-column gap-sm">
                   <div className="input-group">
                     <label>Nome Completo</label>
@@ -3720,15 +3695,19 @@ Importante: O JSON deve ser 100% válido.`;
                     </div>
                   )}
 
-                  <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
-                    💾 Salvar Alterações
+                  <button type="submit" className="btn-primary" style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Salvar Alterações
                   </button>
                 </form>
               </div>
 
               {/* Plano & Assinatura */}
               <div className="glass-panel">
-                <h3 style={{ marginBottom: '12px', fontSize: '1.05rem' }}>💳 Plano & Assinatura</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0, textAlign: 'left' }}>Plano & Assinatura</h3>
+                </div>
                 <div className="flex-between" style={{ background: 'var(--slate-light)', padding: '14px', borderRadius: '12px', marginBottom: '14px' }}>
                   <div>
                     <strong style={{ display: 'block', fontSize: '0.95rem' }}>1Convite Premium</strong>
