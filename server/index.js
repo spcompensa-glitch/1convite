@@ -147,6 +147,7 @@ async function initDb() {
       codigo_verbal TEXT NOT NULL,
       versiculo_chave TEXT NOT NULL,
       texto_reflexao TEXT NOT NULL,
+      texto_meditacao TEXT,
       url_audio_meditacao TEXT NOT NULL
     )
   `);
@@ -186,7 +187,8 @@ async function initDb() {
     await dbRun('INSERT INTO tb_usuario_progresso (dia_atual, checkpoint_completado, status_plano, nome, email, avatar) VALUES (1, 0, "FREE", "Membro Convidado", "membro@1convite.com", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80")');
   }
 
-  // Preenche a tabela tb_matriz_diaria se estiver vazia
+  // Preenche a tabela tb_matriz_diaria (sempre limpamos no início do desenvolvimento para aplicar atualizações das sementes)
+  await dbRun('DELETE FROM tb_matriz_diaria');
   const countRow = await dbGet('SELECT COUNT(*) as count FROM tb_matriz_diaria');
   if (countRow.count === 0) {
     console.log('Populando tabela de 365 dias...');
@@ -196,56 +198,424 @@ async function initDb() {
         pilar_origem: 'PROPÓSITO_M2414',
         codigo_verbal: 'Código 01: O Reino começa no quintal da sua casa.',
         versiculo_chave: 'E este evangelho do reino será pregado em todo o mundo como testemunho a todas as nações, então, virá o fim. - Mateus 24:14',
-        texto_reflexao: 'O evangelismo eficaz não começa em outra nação, mas no próximo contato que você fizer hoje. Note quem está ao seu redor no agora de Deus e faça uma conexão real.',
-        url_audio_meditacao: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+        texto_reflexao: 'O evangelismo eficaz não começa em outra nação, mas no próximo contato que você fizer hoje. Note quem está ao seu redor no agora de Deus e faça uma conexão real. \n\n📖 HISTÓRIA CRISTÃ REAL:\nEdward Kimball era um simples professor voluntário de escola dominical. Em 1855, ele decidiu fazer uma conexão simples no quintal de sua casa: entrou na sapataria onde um jovem de 17 anos trabalhava para falar sobre Cristo. Esse jovem era Dwight L. Moody, que veio a pregar para milhões e fundou grandes instituições cristãs. O impacto mundial de Moody começou com a conexão intencional de Kimball em uma sapataria comum.',
+        texto_meditacao: `🎙️ Roteiro de Oração Guiada: "A Oração de Ação de Graças e Propósito"
+Duração aproximada: 3 a 4 minutos
+
+Trilha de fundo sugerida: Tom suave, seguro e focado. Sem desespero, com tom de certeza e autoridade espiritual.
+
+🟢 1. O Ponto de Partida: Ação de Graças pelo Hoje
+(Tom de voz: Calmo, grato, pausado)
+
+Repita comigo em seu coração ou em alta voz:
+
+"Pai, a Ti rendo graças.
+
+Obrigado porque o Senhor é bom e sempre me ouve.
+
+(Pausa de 3 segundos)
+
+Agradeço pela oportunidade de despertar para mais este dia incrível.
+
+Obrigado pelo ar nos meus pulmões, pelo pão na minha mesa e por esta nova chance de viver."
+
+🟡 2. O Alinhamento: Tudo o que Tenho é Suficiente
+(Inspirado na Multiplicação dos Pães - Marcos 6:41)
+
+"Senhor, assim como Jesus não olhou para a escassez dos cinco pães e dois peixes, mas ergueu os olhos para o céu e deu graças... eu entrego nas Tuas mãos o que eu tenho hoje.
+
+(Pausa de 4 segundos)
+
+Não vou reclamar do que me falta. Eu abençoo o pouco ou o muito que está nas minhas mãos agora, sabendo que a Tua graça multiplica o meu esforço."
+
+🟠 3. O Propósito e o Mover no Agora
+(Tom de voz: Firme, consciente, de governo)
+
+"Pai, o meu dia não será em vão.
+
+Eu desperto hoje para trabalhar alinhado ao meu propósito e à visão do Teu Reino.
+
+(Pausa de 3 segundos)
+
+Dá-me olhos para notar as pessoas ao meu redor.
+
+Usa a minha vida como um testemunho vivo. Que onde eu colocar as minhas mãos, haja bênção, sabedoria e multiplicação."
+
+🔴 4. A Selagem do Convite
+(Tom de voz: Decidido, pronto para a ação)
+
+"Eu não andarei ansioso pelo amanhã.
+
+Eu tomo posse da vitória e da paz que já foram conquistadas na cruz.
+
+Em nome de Jesus, o meu dia está abençoado.
+
+Amém!"`,
+        url_audio_meditacao: '/piano.mp3'
       },
       {
         dia_id: 2,
         pilar_origem: 'RECOMPENSA_AP321',
         codigo_verbal: 'Código 02: Desfrute da vitória que você não teve que conquistar.',
         versiculo_chave: 'Ao vencedor darei o direito de sentar-se comigo em meu trono, assim como eu também venci e sentei-me com meu Pai em seu trono. - Apocalipse 3:21',
-        texto_reflexao: 'A ansiedade morre quando você entende que a batalha principal já foi ganha. Você não trabalha para ser aceito, mas opera a partir da vitória consumada. Descanse nesse sábado eterno.',
-        url_audio_meditacao: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+        texto_reflexao: 'A ansiedade morre quando você entende que a batalha principal já foi ganha. Você não trabalha para ser aceito, mas opera a partir da vitória consumada. Descanse nesse sábado eterno. \n\n📖 HISTÓRIA CRISTÃ REAL:\nMartinho Lutero viveu anos sob severa angústia e culpa em um mosteiro agostiniano, tentando alcançar a aceitação de Deus através de jejuns, vigílias e autoflagelação sem sucesso. Ao estudar a epístola aos Romanos na torre do mosteiro, ele teve a revelação de que a salvação é um presente gratuito de Deus aceito pela fé. Lutero parou de lutar para conquistar o céu e pôde finalmente descansar na vitória consumada por Jesus Cristo.',
+        texto_meditacao: `🎙️ Roteiro de Oração Guiada: "A Oração do Descanse na Vitória"
+Duração aproximada: 3 minutos
+
+Trilha de fundo sugerida: Tom suave, seguro e focado. Sem desespero, com tom de certeza e autoridade espiritual.
+
+🟢 1. O Ponto de Partida: Ação de Graças pela Vitória
+(Tom de voz: Calmo, grato, pausado)
+
+Repita comigo em seu coração ou em alta voz:
+
+"Pai, eu Te dou graças.
+
+Obrigado porque a batalha principal já foi ganha por Jesus na cruz.
+
+(Pausa de 3 segundos)
+
+Agradeço porque meu valor não vem do meu esforço humano, mas do Teu amor gratuito.
+
+Eu recebo hoje a Tua paz que excede todo o entendimento."
+
+🟡 2. O Alinhamento: Assentado no Trono (Inspirado em Apocalipse 3:21)
+
+"Senhor, assim como Martinho Lutero compreendeu que a aceitação vem pela fé e não por autoflagelação ou ativismo... eu paro de lutar para ser aceito.
+
+(Pausa de 4 segundos)
+
+Eu me assento na Tua vitória hoje. Eu sou Teu filho, e o Teu favor me basta agora."
+
+🟠 3. O Propósito e o Mover no Agora
+(Tom de voz: Firme, consciente, de governo)
+
+"Pai, eu não andarei aflito para provar meu valor para os outros hoje.
+
+Tudo o que eu fizer fluirá a partir do descanso e da certeza da minha herança.
+
+(Pausa de 3 segundos)
+
+Que as minhas atitudes reflitam a segurança de quem já venceu com Cristo.
+
+Que eu traga paz e justiça aos ambientes onde eu pisar."
+
+🔴 4. A Selagem do Convite
+(Tom de voz: Decidido, pronto para a ação)
+
+"Eu declaro cancelada toda ansiedade de desempenho na minha vida.
+
+Estou livre para amar, servir e compartilhar sem medo.
+
+Em nome de Jesus, o meu dia está guardado.
+
+Amém!"`,
+        url_audio_meditacao: '/piano.mp3'
       },
       {
         dia_id: 3,
         pilar_origem: 'PROPÓSITO_M2414',
         codigo_verbal: 'Código 03: Pague um café para comprar um tempo de atenção.',
         versiculo_chave: 'Ninguém tem maior amor do que este: de dar alguém a própria vida pelos seus amigos. - João 15:13',
-        texto_reflexao: 'Um convite intencional demonstra valor. Pagar um café ou dedicar 15 minutos para ouvir alguém genuinamente é doar um fragmento da sua vida pelo outro.',
-        url_audio_meditacao: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+        texto_reflexao: 'Um convite intencional demonstra valor. Pagar um café ou dedicar 15 minutos para ouvir alguém genuinamente é doar um fragmento da sua vida pelo outro. \n\n📖 HISTÓRIA CRISTÃ REAL:\nC. S. Lewis, autor das Crônicas de Nárnia e um dos intelectuais mais famosos do século XX, recebia milhares de cartas de leitores do mundo inteiro. Ele estabeleceu como prioridade pessoal responder a cada uma delas à mão, dedicando horas de suas manhãs para acolher dúvidas de crianças e desconhecidos. Lewis preferia sacrificar seu tempo acadêmico para doar atenção focada e individual, sabendo que ouvir e responder a um irmão era servir a Cristo.',
+        texto_meditacao: `🎙️ Roteiro de Oração Guiada: "A Oração do Tempo como Oferta"
+Duração aproximada: 3 minutos
+
+Trilha de fundo sugerida: Tom suave, seguro e focado. Sem desespero, com tom de certeza e autoridade espiritual.
+
+🟢 1. O Ponto de Partida: Ação de Graças pela Atenção
+(Tom de voz: Calmo, grato, pausado)
+
+Repita comigo em seu coração ou em alta voz:
+
+"Pai, a Ti rendo graças.
+
+Obrigado por este momento de silêncio e por me ouvir com total atenção.
+
+(Pausa de 3 segundos)
+
+Agradeço porque diante de Ti eu posso desacelerar sem culpa.
+
+Obrigado porque o Senhor nunca tem pressa para comigo."
+
+🟡 2. O Alinhamento: Consagração do Tempo (Inspirado em João 15:13)
+
+"Senhor, assim como C.S. Lewis sacrificou seu tempo acadêmico para responder com atenção e amor a cada carta de crianças desconhecidas... eu coloco o meu tempo em Tuas mãos.
+
+(Pausa de 4 segundos)
+
+A minha vida não é medida pelo meu relógio, mas pelo amor que dedico.
+
+Entrego o meu dia para ser uma oferta de amor ao meu próximo."
+
+🟠 3. O Propósito e o Mover no Agora
+(Tom de voz: Firme, consciente, de governo)
+
+"Pai, ajuda-me a não olhar apenas para as minhas telas hoje.
+
+Dá-me sensibilidade para notar quem precisa de atenção.
+
+(Pausa de 3 segundos)
+
+Eu escolho parar e ouvir com o coração a pessoa que o Senhor colocar no meu caminho.
+
+Serei a presença de Cristo para o meu próximo no agora."
+
+🔴 4. A Selagem do Convite
+(Tom de voz: Decidido, pronto para a ação)
+
+"Eu não serei escravo da pressa hoje.
+
+Eu tomo posse da paz e da presença do Senhor em cada conversa.
+
+Em nome de Jesus, o meu dia está consagrado.
+
+Amém!"`,
+        url_audio_meditacao: '/piano.mp3'
       },
       {
         dia_id: 4,
         pilar_origem: 'RECOMPENSA_AP321',
         codigo_verbal: 'Código 04: A pressa é uma mentira que tenta roubar a sua eternidade.',
         versiculo_chave: 'Portanto, resta ainda um descanso sabático para o povo de Deus. - Hebreus 4:9',
-        texto_reflexao: 'A pressa e o ativismo tentam nos convencer de que nosso valor vem da nossa produtividade. Acalme o seu coração no Agora. Respire fundo, e sinta o repouso divino de Apocalipse 3:21.',
-        url_audio_meditacao: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+        texto_reflexao: 'A pressa e o ativismo tentam nos convencer de que nosso valor vem da nossa produtividade. Acalme o seu coração no Agora. Respire fundo, e sinta o repouso divino de Apocalipse 3:21. \n\n📖 HISTÓRIA CRISTÃ REAL:\nEric Liddell, velocista escocês e cristão fervoroso, descobriu que as eliminatórias dos 100 metros nas Olimpíadas de Paris em 1924 seriam realizadas em um domingo. Ele se recusou a correr, afirmando que o Dia do Senhor era sagrado para o descanso e adoração. Liddell sofreu imensa rejeição pública, mas manteve sua decisão. Dias depois, correu a prova de 400 metros (distância para a qual não havia treinado tanto) e conquistou a medalha de ouro olímpica estabelecendo um novo recorde mundial.',
+        texto_meditacao: `🎙️ Roteiro de Oração Guiada: "A Oração do Descanso da Alma"
+Duração aproximada: 3 minutos
+
+Trilha de fundo sugerida: Tom suave, seguro e focado. Sem desespero, com tom de certeza e autoridade espiritual.
+
+🟢 1. O Ponto de Partida: Ação de Graças pelo Sábado
+(Tom de voz: Calmo, grato, pausado)
+
+Repita comigo em seu coração ou em alta voz:
+
+"Pai, a Ti rendo graças.
+
+Obrigado por providenciar um descanso sabático para o Teu povo.
+
+(Pausa de 3 segundos)
+
+Agradeço porque o Senhor renova as minhas forças no silêncio.
+
+Obrigado por me lembrar de que a minha produtividade não determina o meu valor."
+
+🟡 2. O Alinhamento: O Sábado do Coração (Inspirado em Hebreus 4:9)
+
+"Senhor, assim como Eric Liddell abriu mão da glória olímpica no domingo para honrar o Teu descanso... eu decido parar agora.
+
+(Pausa de 4 segundos)
+
+Eu calo o barulho das minhas preocupações.
+
+O Senhor sustenta o meu amanhã enquanto eu descanso na Tua presença hoje."
+
+🟠 3. O Propósito e o Mover no Agora
+(Tom de voz: Firme, consciente, de governo)
+
+"Pai, eu rejeito todo o cansaço e esgotamento mental.
+
+Eu escolho focar na Tua graça e no Teu refrigério.
+
+(Pausa de 3 segundos)
+
+Que este tempo de descanso recarregue as minhas energias para servir melhor.
+
+Que eu leve leveza e paz a todos ao meu redor."
+
+🔴 4. A Selagem do Convite
+(Tom de voz: Decidido, pronto para a ação)
+
+"Eu tomo posse da promessa do descanso eterno em Cristo.
+
+O meu amanhã está seguro em Tuas mãos.
+
+Em nome de Jesus, eu declaro meu coração em paz.
+
+Amém!"`,
+        url_audio_meditacao: '/piano.mp3'
       },
       {
         dia_id: 5,
         pilar_origem: 'PROPÓSITO_M2414',
         codigo_verbal: 'Código 05: A conexão real vence o algoritmo digital.',
         versiculo_chave: 'E não nos cansemos de fazer o bem, pois no tempo próprio colheremos, se não desanimarmos. - Gálatas 6:9',
-        texto_reflexao: 'Substitua 10 minutos de feed infinito por uma mensagem direcionada a um amigo ou familiar que você não vê há tempos. Um convite sincero é uma semente do Reino.',
-        url_audio_meditacao: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
+        texto_reflexao: 'Substitua 10 minutos de feed infinito por uma mensagem direcionada a um amigo ou familiar que você não vê há tempos. Um convite sincero é uma semente do Reino. \n\n📖 HISTÓRIA CRISTÃ REAL:\nDietrich Bonhoeffer, pastor luterano que se opôs ativamente ao regime de Hitler, organizou um seminário clandestino em Finkenwalde. Longe da propaganda em massa do Estado nazista, ele reuniu pastores em uma comunidade real e física descrita em seu livro "Vida em Comunhão". Ele defendia que a comunhão real, física e o partir do pão face a face tinham o poder de sustentar a fé viva contra qualquer barulho artificial do mundo moderno.',
+        texto_meditacao: `🎙️ Roteiro de Oração Guiada: "A Oração da Conexão Real"
+Duração aproximada: 3 minutos
+
+Trilha de fundo sugerida: Tom suave, seguro e focado. Sem desespero, com tom de certeza e autoridade espiritual.
+
+🟢 1. O Ponto de Partida: Ação de Graças pela Comunhão
+(Tom de voz: Calmo, grato, pausado)
+
+Repita comigo em seu coração ou em alta voz:
+
+"Pai, a Ti rendo graças.
+
+Obrigado pelos amigos, pela família e pelas conexões reais.
+
+(Pausa de 3 segundos)
+
+Agradeço pela bênção de partilhar a vida face a face com outras pessoas.
+
+Obrigado por me resgatar do isolamento e da distração digital."
+
+🟡 2. O Alinhamento: Comunhão Verdadeira (Inspirado em Gálatas 6:9)
+
+"Senhor, assim como Dietrich Bonhoeffer liderou uma comunidade física e real em Finkenwalde para resistir à propaganda e ao caos... eu escolho a realidade hoje.
+
+(Pausa de 4 segundos)
+
+Prefiro a presença ao feed infinito.
+
+Abençoo cada pessoa com quem falarei hoje com palavras de vida."
+
+🟠 3. O Propósito e o Mover no Agora
+(Tom de voz: Firme, consciente, de governo)
+
+"Pai, eu não me cansarei de fazer o bem.
+
+Substituirei a pressa das telas pelo abraço e pelo tempo dedicado.
+
+(Pausa de 3 segundos)
+
+Usa a minha presença física para trazer conforto e encorajamento a quem precisa.
+
+Serei um canal do Teu amor em conexões genuínas."
+
+🔴 4. A Selagem do Convite
+(Tom de voz: Decidido, pronto para a ação)
+
+"Eu quebro toda barreira digital que me afasta do meu próximo.
+
+A minha vida frutificará em relacionamentos intencionais.
+
+Em nome de Jesus, o meu dia está sob a bênção da comunhão.
+
+Amém!"`,
+        url_audio_meditacao: '/piano.mp3'
       },
       {
         dia_id: 6,
         pilar_origem: 'RECOMPENSA_AP321',
         codigo_verbal: 'Código 06: Sentar no trono exige aprender a descansar.',
         versiculo_chave: 'Na tranquilidade e na confiança está a vossa força. - Isaías 30:15',
-        texto_reflexao: 'Os governantes do Reino não andam ansiosos ou apressados. Eles confiam na soberania e descansam em Deus. Encontre a força do governo próprio no desfrute espiritual.',
-        url_audio_meditacao: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3'
+        texto_reflexao: 'Os governantes do Reino não andam ansiosos ou apressados. Eles confiam na soberania e descansam em Deus. Encontre a força do governo próprio no desfrute espiritual. \n\n📖 HISTÓRIA CRISTÃ REAL:\nGeorge Müller, que cuidou de mais de 10 mil órfãos na Bristol do século XIX, comprometeu-se a nunca pedir recursos a homens, mas sim orar e descansar em Deus. Diversas vezes o orfanato amanheceu sem um único pedaço de pão. Müller pedia às crianças que se assentassem à mesa e orava dando graças. Invariavelmente, minutos depois, padeiros ou leiteiros locais batiam à porta doando alimentos devido a imprevistos na entrega ou a toques de Deus em seus corações.',
+        texto_meditacao: `🎙️ Roteiro de Oração Guiada: "A Oração do Descanso da Confiança"
+Duração aproximada: 3 minutos
+
+Trilha de fundo sugerida: Tom suave, seguro e focado. Sem desespero, com tom de certeza e autoridade espiritual.
+
+🟢 1. O Ponto de Partida: Ação de Graças pela Provisão
+(Tom de voz: Calmo, grato, pausado)
+
+Repita comigo em seu coração ou em alta voz:
+
+"Pai, a Ti rendo graças.
+
+Obrigado porque o Senhor é o meu provedor e nada me faltará.
+
+(Pausa de 3 segundos)
+
+Agradeço porque as Tuas promessas são fiéis e o Senhor cuida de cada detalhe.
+
+Obrigado pela paz de saber que minhas necessidades estão supridas."
+
+🟡 2. O Alinhamento: A Provisão na Mesa (Inspirado em Isaías 30:15)
+
+"Senhor, assim como George Müller deu graças diante de pratos vazios na mesa dos órfãos confiando na Tua fidelidade... eu dou graças agora pela provisão que virá.
+
+(Pausa de 4 segundos)
+
+Não andarei ansioso por recursos.
+
+Na tranquilidade e na confiança está a minha força."
+
+🟠 3. O Propósito e o Mover no Agora
+(Tom de voz: Firme, consciente, de governo)
+
+"Pai, eu rejeito todo o medo de escassez hoje.
+
+Eu governo sobre minhas finanças e meu futuro com sabedoria do Reino.
+
+(Pausa de 3 segundos)
+
+Usa a minha vida para abençoar e suprir outros em generosidade.
+
+Que eu colha sabedoria e multiplicação onde eu investir o meu esforço."
+
+🔴 4. A Selagem do Convite
+(Tom de voz: Decidido, pronto para a ação)
+
+"Eu declaro cancelada toda ansiedade de futuro em nome de Jesus.
+
+O meu suprimento diário está garantido pela cruz.
+
+Em nome de Jesus, a minha casa está abençoada.
+
+Amém!"`,
+        url_audio_meditacao: '/piano.mp3'
       },
       {
         dia_id: 7,
         pilar_origem: 'PROPÓSITO_M2414',
         codigo_verbal: 'Código 07: O Reino é construído sobre mesas e refeições.',
         versiculo_chave: 'E eles, perseverando unânimes todos os dias no templo, e partindo o pão em casa, comiam juntos com alegria e singeleza de coração. - Atos 2:46',
-        texto_reflexao: 'Abra a porta da sua casa ou convide alguém para uma refeição. A comunhão de mesa é o método mais poderoso de pregar o evangelho de Mateus 24:14 no dia a dia.',
-        url_audio_meditacao: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3'
+        texto_reflexao: 'Abra a porta da sua casa ou convide alguém para uma refeição. A comunhão de mesa é o método mais poderoso de pregar o evangelho de Mateus 24:14 no dia a dia. \n\n📖 HISTÓRIA CRISTÃ REAL:\nJohn Wesley, líder do avivamento do século XVIII que transformou a Inglaterra, organizou a igreja primitiva em pequenas células de comunhão em casas chamadas de "Classes". Nelas, os primeiros metodistas comiam juntos nas chamadas "Festas de Amor" (Ágapes), confessavam suas lutas e oravam uns pelos outros ao redor de mesas simples. O poder transformador que espalhou o evangelho não residia nos grandes templos, mas nas mesas compartilhadas.',
+        texto_meditacao: `🎙️ Roteiro de Oração Guiada: "A Oração do Banquete da Mesa"
+Duração aproximada: 3 minutos
+
+Trilha de fundo sugerida: Tom suave, seguro e focado. Sem desespero, com tom de certeza e autoridade espiritual.
+
+🟢 1. O Ponto de Partida: Ação de Graças pela Mesa
+(Tom de voz: Calmo, grato, pausado)
+
+Repita comigo em seu coração ou em alta voz:
+
+"Pai, a Ti rendo graças.
+
+Obrigado pela alegria do pão partilhado e pela comunhão de mesa.
+
+(Pausa de 3 segundos)
+
+Agradeço pela simplicidade de coração e pela união com meus irmãos.
+
+Obrigado pela oportunidade de acolher pessoas em minha vida."
+
+🟡 2. O Alinhamento: A Festa do Amor (Inspirado em Atos 2:46)
+
+"Senhor, assim como a igreja primitiva e as Classes de John Wesley se reuniam nas casas para partilhar o pão com alegria... eu consagro a minha mesa hoje.
+
+(Pausa de 4 segundos)
+
+Que a minha casa seja um altar do Teu amor.
+
+Eu abro espaço para a reconciliação, a cura e a hospitalidade sincera."
+
+🟠 3. O Propósito e o Mover no Agora
+(Tom de voz: Firme, consciente, de governo)
+
+"Pai, ajuda-me a ir além do ativismo religioso hoje.
+
+Usa a comunhão de mesa para curar feridas e resgatar vidas.
+
+(Pausa de 3 segundos)
+
+Dá-me um coração generoso para acolher e compartilhar o meu pão.
+
+Que o meu lar seja o ponto de partida do Teu Reino."
+
+🔴 4. A Selagem do Convite
+(Tom de voz: Decidido, pronto para a ação)
+
+"Eu declaro a minha mesa santificada e cheia de alegria espiritual.
+
+O evangelho do Reino se espalhará através do meu convite.
+
+Em nome de Jesus, a minha mesa está abençoada.
+
+Amém!"`,
+        url_audio_meditacao: '/piano.mp3'
       }
     ];
 
@@ -254,8 +624,8 @@ async function initDb() {
       const realDay = reais.find(r => r.dia_id === i);
       if (realDay) {
         await dbRun(
-          'INSERT INTO tb_matriz_diaria (dia_id, pilar_origem, codigo_verbal, versiculo_chave, texto_reflexao, url_audio_meditacao) VALUES (?, ?, ?, ?, ?, ?)',
-          [realDay.dia_id, realDay.pilar_origem, realDay.codigo_verbal, realDay.versiculo_chave, realDay.texto_reflexao, realDay.url_audio_meditacao]
+          'INSERT INTO tb_matriz_diaria (dia_id, pilar_origem, codigo_verbal, versiculo_chave, texto_reflexao, texto_meditacao, url_audio_meditacao) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [realDay.dia_id, realDay.pilar_origem, realDay.codigo_verbal, realDay.versiculo_chave, realDay.texto_reflexao, realDay.texto_meditacao, realDay.url_audio_meditacao]
         );
       } else {
         const isProposito = i % 2 !== 0;
@@ -269,11 +639,12 @@ async function initDb() {
         const reflexao = isProposito
           ? `O dia ${i} convida você a ir além do seu círculo de conforto. Notar as pessoas e fazer convites de coração aberto é trazer o Reino de Deus à terra em gestos simples.`
           : `Hoje, no dia ${i}, lembre-se de que sentar no trono significa reinar em paz. Pare, respire no silêncio e desfrute da abundância do amor que já preenche a sua identidade.`;
+        const meditacao_gen = `Respire fundo... e concentre-se na presença divina do Dia ${i}. Deixe de lado os ruídos e conecte-se com o pilar de hoje. Faça uma pausa de respiração guiada, sintonize seu coração com as promessas eternas e peça a Deus força para colocar essa palavra em prática no seu caminhar diário.`;
         const audio = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(i % 15) + 1}.mp3`;
 
         await dbRun(
-          'INSERT INTO tb_matriz_diaria (dia_id, pilar_origem, codigo_verbal, versiculo_chave, texto_reflexao, url_audio_meditacao) VALUES (?, ?, ?, ?, ?, ?)',
-          [i, pilar, codigo, versiculo, reflexao, audio]
+          'INSERT INTO tb_matriz_diaria (dia_id, pilar_origem, codigo_verbal, versiculo_chave, texto_reflexao, texto_meditacao, url_audio_meditacao) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [i, pilar, codigo, versiculo, reflexao, meditacao_gen, audio]
         );
       }
     }
@@ -433,6 +804,31 @@ app.get('/api/v1/codigo-dia', async (req, res) => {
 
     const code = await dbGet('SELECT * FROM tb_matriz_diaria WHERE dia_id = ?', [user.dia_atual]);
     res.json({ user, code });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Salvar código do dia enriquecido gerado pela IA
+app.post('/api/v1/codigo-dia/save', async (req, res) => {
+  try {
+    const { dia_id, codigo_verbal, versiculo_chave, texto_reflexao, texto_meditacao } = req.body;
+    if (!dia_id || !codigo_verbal || !versiculo_chave || !texto_reflexao) {
+      return res.status(400).json({ error: 'Parâmetros ausentes' });
+    }
+    
+    if (texto_meditacao) {
+      await dbRun(
+        'UPDATE tb_matriz_diaria SET codigo_verbal = ?, versiculo_chave = ?, texto_reflexao = ?, texto_meditacao = ? WHERE dia_id = ?',
+        [codigo_verbal, versiculo_chave, texto_reflexao, texto_meditacao, dia_id]
+      );
+    } else {
+      await dbRun(
+        'UPDATE tb_matriz_diaria SET codigo_verbal = ?, versiculo_chave = ?, texto_reflexao = ? WHERE dia_id = ?',
+        [codigo_verbal, versiculo_chave, texto_reflexao, dia_id]
+      );
+    }
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,14 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Onboarding from './components/Onboarding';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('sabado');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [user, setUser] = useState(null);
   const [codigoDia, setCodigoDia] = useState(null);
   const [contatos, setContatos] = useState([]);
   const [historico, setHistorico] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Customização de Temas & Cores
+  const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'theme-green');
+  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('onboarding-completed'));
+
+  useEffect(() => {
+    document.body.classList.remove('theme-orange', 'theme-blue', 'theme-green', 'theme-purple', 'theme-sepia');
+    document.body.classList.add(theme);
+    localStorage.setItem('app-theme', theme);
+  }, [theme]);
+
   // Login com ChatGPT
+  const [chatFontSize, setChatFontSize] = useState('md');
   const [chatGptUser, setChatGptUser] = useState(null);
   const [lwcState, setLwcState] = useState('unauthenticated');
   const [lwcDeviceCode, setLwcDeviceCode] = useState(null);
@@ -42,6 +54,11 @@ function App() {
   const [breathTimer, setBreathTimer] = useState(0);
   const [isBreathing, setIsBreathing] = useState(false);
   const [breathClass, setBreathClass] = useState('');
+  const [breathTechnique, setBreathTechnique] = useState('simple');
+  const [breathRounds, setBreathRounds] = useState(5);
+  const [currentRound, setCurrentRound] = useState(1);
+  const breathIntervalRef = useRef(null);
+  const isBreathingActiveRef = useRef(false);
 
   const [paymentPreferenceId, setPaymentPreferenceId] = useState('');
   const [isPaying, setIsPaying] = useState(false);
@@ -72,6 +89,64 @@ function App() {
   const [bibleAudioDuration, setBibleAudioDuration] = useState(0);
   const [bibleAudioCurrentTime, setBibleAudioCurrentTime] = useState(0);
   const bibleAudioRef = useRef(null);
+
+  // Destaques e Comentários da Bíblia
+  const [bibleHighlights, setBibleHighlights] = useState(() => JSON.parse(localStorage.getItem('bible-highlights')) || {});
+  const [bibleComments, setBibleComments] = useState(() => JSON.parse(localStorage.getItem('bible-comments')) || {});
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [bibleShowAudioPlayer, setBibleShowAudioPlayer] = useState(false);
+  const [activeSabadoBlock, setActiveSabadoBlock] = useState('menu');
+  const [isNarrating, setIsNarrating] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  // Estados específicos para o player de Meditação Guiada TTS
+  const [meditationPlaying, setMeditationPlaying] = useState(false);
+  const [meditationCurrentTime, setMeditationCurrentTime] = useState(0);
+  const [meditationDuration, setMeditationDuration] = useState(120);
+  const [showMeditationLyrics, setShowMeditationLyrics] = useState(false);
+  const meditationIntervalRef = useRef(null);
+  const [meditationCompleted, setMeditationCompleted] = useState(false);
+  
+  // Som ambiente de fundo e velocidade para Meditação
+  const [activeAmbient, setActiveAmbient] = useState('none');
+  const [ambientVolume, setAmbientVolume] = useState(0.15);
+  const [narrationRate, setNarrationRate] = useState(0.82);
+  const ambientAudioRef = useRef(null);
+  const meditationTimeoutRef = useRef(null);
+  const currentSegmentIndexRef = useRef(0);
+  const meditationVideoRef = useRef(null);
+
+  useEffect(() => {
+    if (meditationVideoRef.current) {
+      if (meditationPlaying) {
+        meditationVideoRef.current.play().catch(() => {});
+      } else {
+        meditationVideoRef.current.pause();
+      }
+    }
+  }, [meditationPlaying]);
+
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState(localStorage.getItem('preferred_voice') || '');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        const ptVoices = voices.filter(v => v.lang.startsWith('pt'));
+        setAvailableVoices(ptVoices);
+        if (!localStorage.getItem('preferred_voice') && ptVoices.length > 0) {
+          const best = ptVoices.find(v => v.name.includes('Natural')) || 
+                       ptVoices.find(v => v.name.includes('Google')) || 
+                       ptVoices[0];
+          setSelectedVoiceName(best.name);
+        }
+      };
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
 
   // Trilhas de Crescimento
   const [trilhaAtiva, setTrilhaAtiva] = useState(null);
@@ -730,21 +805,132 @@ function App() {
     return (Date.now() - c.ultimo_convite_timestamp) / 3600000 >= 48;
   };
 
-  // ── Respiração ──────────────────────────────────────────────
+  // ── Respiração (Botão do Descanso Pró) ──────────────────────
+  const playChime = (freq = 440, type = 'sine', duration = 1.2) => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {
+      console.warn('AudioContext bloqueado:', e);
+    }
+  };
+
+  const triggerHaptic = (ms = 50) => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(ms);
+    }
+  };
+
+  const pararRespiracao = () => {
+    isBreathingActiveRef.current = false;
+    setIsBreathing(false);
+    setBreathState('Toque para iniciar');
+    setBreathClass('');
+    if (breathIntervalRef.current) {
+      clearInterval(breathIntervalRef.current);
+      breathIntervalRef.current = null;
+    }
+  };
+
   const iniciarRespiracao = () => {
     if (isBreathing) return;
-    setIsBreathing(true); let step = 0;
-    const phases = [
-      { text: 'Inspire...', cls: 'inhaling', d: 4 },
-      { text: 'Segure...', cls: 'holding', d: 4 },
-      { text: 'Expire...', cls: 'exhaling', d: 4 }
-    ];
+    isBreathingActiveRef.current = true;
+    setIsBreathing(true);
+    setCurrentRound(1);
+    
+    let phases = [];
+    if (breathTechnique === 'box') {
+      phases = [
+        { text: 'Inspire...', cls: 'inhaling', d: 4, freq: 528, osc: 'sine' },
+        { text: 'Segure...', cls: 'holding', d: 4, freq: 639, osc: 'sine' },
+        { text: 'Expire...', cls: 'exhaling', d: 4, freq: 396, osc: 'triangle' },
+        { text: 'Aguarde...', cls: 'holding-empty', d: 4, freq: 432, osc: 'sine' }
+      ];
+    } else if (breathTechnique === 'relax') {
+      phases = [
+        { text: 'Inspire...', cls: 'inhaling', d: 4, freq: 528, osc: 'sine' },
+        { text: 'Segure...', cls: 'holding', d: 7, freq: 639, osc: 'sine' },
+        { text: 'Expire...', cls: 'exhaling', d: 8, freq: 396, osc: 'triangle' }
+      ];
+    } else {
+      phases = [
+        { text: 'Inspire...', cls: 'inhaling', d: 4, freq: 528, osc: 'sine' },
+        { text: 'Segure...', cls: 'holding', d: 4, freq: 639, osc: 'sine' },
+        { text: 'Expire...', cls: 'exhaling', d: 4, freq: 396, osc: 'triangle' }
+      ];
+    }
+
+    let round = 1;
+    let step = 0;
+
     const run = () => {
-      if (step >= phases.length) { setBreathState('Desfrute Completo! ✨'); setBreathClass(''); setIsBreathing(false); return; }
-      const ph = phases[step]; setBreathState(ph.text); setBreathClass(ph.cls); setBreathTimer(ph.d);
+      if (!isBreathingActiveRef.current) return;
+      
+      if (round > breathRounds) {
+        playChime(528, 'sine', 1.8);
+        setTimeout(() => playChime(432, 'sine', 2.0), 100);
+        triggerHaptic([80, 50, 80]);
+        setBreathState('Desfrute Completo! ✨');
+        setBreathClass('');
+        setIsBreathing(false);
+        isBreathingActiveRef.current = false;
+        return;
+      }
+
+      if (step >= phases.length) {
+        step = 0;
+        round++;
+        if (round <= breathRounds) {
+          setCurrentRound(round);
+          run();
+        } else {
+          // Finalização
+          playChime(528, 'sine', 1.8);
+          setTimeout(() => playChime(432, 'sine', 2.0), 100);
+          triggerHaptic([80, 50, 80]);
+          setBreathState('Desfrute Completo! ✨');
+          setBreathClass('');
+          setIsBreathing(false);
+          isBreathingActiveRef.current = false;
+        }
+        return;
+      }
+
+      const ph = phases[step];
+      setBreathState(ph.text);
+      setBreathClass(ph.cls);
+      setBreathTimer(ph.d);
+      
+      playChime(ph.freq, ph.osc, 1.2);
+      triggerHaptic(50);
+
       let cv = ph.d;
-      const iv = setInterval(() => { cv--; setBreathTimer(cv); if (cv <= 0) { clearInterval(iv); step++; run(); } }, 1000);
+      breathIntervalRef.current = setInterval(() => {
+        if (!isBreathingActiveRef.current) {
+          clearInterval(breathIntervalRef.current);
+          return;
+        }
+        cv--;
+        setBreathTimer(cv);
+        if (cv <= 0) {
+          clearInterval(breathIntervalRef.current);
+          step++;
+          run();
+        }
+      }, 1000);
     };
+
     run();
   };
 
@@ -761,6 +947,292 @@ function App() {
   const handleProgressBarClick = (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     if (audioRef.current) { audioRef.current.currentTime = ((e.clientX - r.left) / r.width) * audioDuration; setAudioCurrentTime(audioRef.current.currentTime); }
+  };
+
+  const speakReflection = () => {
+    if (!('speechSynthesis' in window)) {
+      alert('Narração de voz não disponível no navegador.');
+      return;
+    }
+    if (isNarrating) {
+      window.speechSynthesis.cancel();
+      setIsNarrating(false);
+      return;
+    }
+    const texto = `${codigoDia.codigo_verbal}. Versículo chave: ${codigoDia.versiculo_chave}. Reflexão: ${codigoDia.texto_reflexao.replace(/\n/g, ' ')}`;
+    const utterance = new SpeechSynthesisUtterance(texto);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 1.05;
+
+    if ('speechSynthesis' in window) {
+      const voices = window.speechSynthesis.getVoices();
+      let selectedVoice = voices.find(v => v.lang.startsWith('pt') && v.name.includes('Natural'));
+      if (!selectedVoice) {
+        selectedVoice = voices.find(v => v.lang.startsWith('pt') && v.name.includes('Google'));
+      }
+      if (!selectedVoice) {
+        selectedVoice = voices.find(v => v.lang.startsWith('pt'));
+      }
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+    }
+
+    utterance.onend = () => setIsNarrating(false);
+    utterance.onerror = () => setIsNarrating(false);
+    setIsNarrating(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const generateDailyReflectionWithAI = async () => {
+    if (!codigoDia) return;
+    try {
+      setAiGenerating(true);
+      const prompt = `Você é o teólogo e historiador oficial do aplicativo 1Convite.
+Gere um devocional cristão inspirador e um script de Oração Guiada no Estilo de Jesus (Ação de Graças, Certeza de que o Pai ouve e Alinhamento com o Propósito) para o Dia ${codigoDia.dia_id}.
+O pilar bíblico deste dia é ${codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'Mateus 24:14 (Propósito)' : 'Apocalipse 3:21 (Recompensa)'}.
+
+Você deve responder EXCLUSIVAMENTE em formato JSON (sem formatação markdown fora do JSON ou explicações extras):
+{
+  "codigo_verbal": "Código ${codigoDia.dia_id}: [Escreva um título/código curto e impactante sobre relacionamento intencional, mesa, comunhão, desacelerar ou servir]",
+  "versiculo_chave": "[Insira um versículo bíblico real e sua referência no formato Livro Capítulo:Versículo]",
+  "texto_reflexao": "[Escreva a reflexão prática do dia inspirada no versículo. Após a reflexão, insira duas quebras de linha e conte uma história real e verídica da história do cristianismo que exemplifique perfeitamente este tema (ex: biographies de heróis da fé, missionários, momentos de avivamento). Insira a história sob o título '📖 HISTÓRIA CRISTÃ REAL:\\n[sua história aqui]']",
+  "texto_meditacao": "[Escreva um Roteiro de Oração Guiada no Estilo de Jesus com cerca de 4 blocos. Use os seguintes títulos de blocos no roteiro: '🟢 1. O Ponto de Partida: Ação de Graças pelo Hoje' (Tom de voz: Calmo, grato, pausado), '🟡 2. O Alinhamento: Tudo o que Tenho é Suficiente', '🟠 3. O Propósito e o Mover no Agora' (Tom de voz: Firme, consciente, de governo), '🔴 4. A Selagem do Convite' (Tom de voz: Decidido, pronto para a ação). Insira marcadores de silêncio programados como '(Pausa de 3 segundos)' ou '(Pausa de 4 segundos)' de forma estratégica entre os parágrafos para simular pausas reais na leitura.]"
+}
+
+Importante: O JSON deve ser 100% válido.`;
+
+      const res = await fetch(`${API_BASE}/chatgpt/responses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: 'Você é um assistente teológico que responde estritamente no formato JSON puro especificado pelo usuário.' },
+            { role: 'user', content: prompt }
+          ]
+        }),
+        credentials: 'include'
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const contentText = data.choices[0].message.content;
+        const cleanJson = contentText.replace(/```json|```/g, '').trim();
+        const generated = JSON.parse(cleanJson);
+
+        const saveRes = await fetch(`${API_BASE}/codigo-dia/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dia_id: codigoDia.dia_id,
+            codigo_verbal: generated.codigo_verbal,
+            versiculo_chave: generated.versiculo_chave,
+            texto_reflexao: generated.texto_reflexao,
+            texto_meditacao: generated.texto_meditacao
+          })
+        });
+
+        if (saveRes.ok) {
+          setCodigoDia({
+            ...codigoDia,
+            codigo_verbal: generated.codigo_verbal,
+            versiculo_chave: generated.versiculo_chave,
+            texto_reflexao: generated.texto_reflexao,
+            texto_meditacao: generated.texto_meditacao
+          });
+        } else {
+          alert('Erro ao salvar reflexão gerada.');
+        }
+      } else {
+        alert('Erro ao solicitar resposta do ChatGPT.');
+      }
+    } catch (err) {
+      console.error('Erro na geração com IA:', err);
+      alert('Falha na geração: verifique sua conexão com o ChatGPT.');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const ambientTracks = [
+    { id: 'none', label: '🔕 Silêncio', url: '' },
+    { id: 'chuva', label: '🌧️ Chuva', url: '/rain.mp3' },
+    { id: 'mar', label: '🌊 Ondas', url: '/ocean.mp3' },
+    { id: 'piano', label: '🎹 Piano', url: '/piano.mp3' }
+  ];
+
+  useEffect(() => {
+    if (ambientAudioRef.current) {
+      ambientAudioRef.current.volume = ambientVolume;
+    }
+  }, [ambientVolume]);
+
+  useEffect(() => {
+    if (!ambientAudioRef.current) return;
+    ambientAudioRef.current.pause();
+    
+    const track = ambientTracks.find(t => t.id === activeAmbient);
+    if (track && track.url) {
+      ambientAudioRef.current.src = track.url;
+      ambientAudioRef.current.loop = true;
+      if (meditationPlaying) {
+        ambientAudioRef.current.volume = ambientVolume;
+        ambientAudioRef.current.play().catch(() => {});
+      }
+    }
+  }, [activeAmbient]);
+
+  const stopMeditation = () => {
+    window.speechSynthesis.cancel();
+    setMeditationPlaying(false);
+    if (ambientAudioRef.current) {
+      ambientAudioRef.current.pause();
+    }
+    if (meditationIntervalRef.current) {
+      clearInterval(meditationIntervalRef.current);
+      meditationIntervalRef.current = null;
+    }
+    if (meditationTimeoutRef.current) {
+      clearTimeout(meditationTimeoutRef.current);
+      meditationTimeoutRef.current = null;
+    }
+  };
+
+  const toggleMeditationTTS = () => {
+    if (!('speechSynthesis' in window)) {
+      alert('Narração de voz não disponível no navegador.');
+      return;
+    }
+
+    if (meditationPlaying) {
+      stopMeditation();
+      return;
+    }
+
+    const rawText = codigoDia.texto_meditacao || 'Respire fundo... e concentre-se.';
+    
+    // Parser profissional: extrai pausas programadas e tons de voz
+    const lines = rawText.split('\n');
+    const segments = [];
+    let currentRate = narrationRate;
+    
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+      
+      // Ignorar metadados de guia
+      if (line.startsWith('Roteiro de Meditação') || line.startsWith('Duração') || line.startsWith('Trilha de fundo') || line.startsWith('🟢') || line.startsWith('🟡') || line.startsWith('🟠') || line.startsWith('🔴')) {
+        continue;
+      }
+      
+      // Tom de voz
+      if (line.startsWith('(Tom de voz:')) {
+        if (line.includes('Suave') || line.includes('pausado')) {
+          currentRate = narrationRate * 0.9;
+        } else if (line.includes('Firme') || line.includes('ritmo')) {
+          currentRate = narrationRate * 1.05;
+        } else {
+          currentRate = narrationRate;
+        }
+        continue;
+      }
+      
+      // Pausa programada
+      const pauseMatch = line.match(/\(Pausa de (\d+) segundos\)/i);
+      if (pauseMatch) {
+        const secs = parseInt(pauseMatch[1], 10);
+        segments.push({ type: 'pause', duration: secs * 1000 });
+        continue;
+      }
+      
+      const cleanLine = line.replace(/^["']|["']$/g, '');
+      if (cleanLine) {
+        segments.push({ type: 'text', text: cleanLine, rate: currentRate });
+      }
+    }
+
+    if (segments.length === 0) {
+      segments.push({ type: 'text', text: rawText, rate: narrationRate });
+    }
+
+    // Calcular duração com precisão (considerando velocidade da fala e pausas de respiração)
+    let totalSecs = 0;
+    segments.forEach(seg => {
+      if (seg.type === 'pause') {
+        totalSecs += seg.duration / 1000;
+      } else {
+        const wc = seg.text.split(' ').length;
+        totalSecs += Math.max(3.5, Math.round((wc * 0.65) / seg.rate));
+      }
+    });
+
+    setMeditationDuration(totalSecs);
+    setMeditationCurrentTime(0);
+    setMeditationPlaying(true);
+    setMeditationCompleted(false);
+
+    if (activeAmbient !== 'none' && ambientAudioRef.current) {
+      const track = ambientTracks.find(t => t.id === activeAmbient);
+      if (track && track.url) {
+        ambientAudioRef.current.src = track.url;
+        ambientAudioRef.current.loop = true;
+        ambientAudioRef.current.volume = ambientVolume;
+        ambientAudioRef.current.play().catch(() => {});
+      }
+    }
+
+    const startTime = Date.now();
+    meditationIntervalRef.current = setInterval(() => {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      setMeditationCurrentTime(Math.min(elapsed, totalSecs));
+    }, 1000);
+
+    const playSegment = (index) => {
+      if (index >= segments.length) {
+        setMeditationCompleted(true);
+        // Mantém som ambiente por mais 15s de contemplação antes de terminar
+        meditationTimeoutRef.current = setTimeout(() => {
+          stopMeditation();
+          setMeditationCurrentTime(totalSecs);
+        }, 15000);
+        return;
+      }
+
+      currentSegmentIndexRef.current = index;
+      const seg = segments[index];
+
+      if (seg.type === 'pause') {
+        meditationTimeoutRef.current = setTimeout(() => {
+          playSegment(index + 1);
+        }, seg.duration);
+      } else {
+        const utterance = new SpeechSynthesisUtterance(seg.text);
+        utterance.lang = 'pt-BR';
+        utterance.rate = seg.rate;
+        utterance.pitch = 0.95;
+
+        if ('speechSynthesis' in window) {
+          const voice = window.speechSynthesis.getVoices().find(v => v.name === selectedVoiceName);
+          if (voice) {
+            utterance.voice = voice;
+          }
+        }
+
+        utterance.onend = () => {
+          meditationTimeoutRef.current = setTimeout(() => {
+            playSegment(index + 1);
+          }, 800);
+        };
+
+        utterance.onerror = () => {
+          stopMeditation();
+        };
+
+        window.speechSynthesis.speak(utterance);
+      }
+    };
+
+    playSegment(0);
   };
 
   // ── Áudio da Bíblia ─────────────────────────────────────────
@@ -1181,37 +1653,246 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* ── HEADER ────────────────────────────── */}
-      <header className="app-header">
-        {activeTab === 'biblia' ? (
-          <div className="bible-header-nav" style={{ width: '100%' }}>
-            <button
-              className="bible-select-btn"
-              onClick={() => setBibleViewMode(bibleViewMode === 'select-book' ? 'reading' : 'select-book')}
-            >
-              <span>{bibleSelectedBook.livro_nome}</span>
-              <span style={{ opacity: 0.6 }}>Cap. {bibleSelectedChapter} ▼</span>
-            </button>
-            <button className="bible-select-btn" style={{ flex: '0 0 72px', justifyContent: 'center', gap: '4px' }}>
-              NVI ▼
-            </button>
-          </div>
-        ) : (
+      {showOnboarding && <Onboarding onComplete={() => setShowOnboarding(false)} />}
+      <header className="app-header" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 16px',
+        height: '60px',
+        boxSizing: 'border-box'
+      }}>
+        {activeTab === 'dashboard' ? (
           <>
-            <img src="/LOGOMARCA.png" alt="1Convite" style={{ height: '28px', objectFit: 'contain' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {user && <span className="premium-status-badge">Plano {user.status_plano}</span>}
-              {user && (
-                <span style={{ fontSize: '0.82rem', fontWeight: '700', color: '#334155', background: '#F1F5F9', padding: '4px 10px', borderRadius: '9999px' }}>
-                  Dia {user.dia_atual}
-                </span>
+            {/* Esquerda: Perfil/Avatar */}
+            <div 
+              onClick={() => setActiveTab('conta')}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                border: '2px solid var(--slate-border)',
+                background: 'var(--slate-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {profileAvatar ? (
+                <img src={profileAvatar} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ fontSize: '1.1rem' }}>👤</span>
               )}
             </div>
+
+            {/* Centro: Título do App */}
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+              1Convite
+            </h1>
+
+            {/* Direita: Diamante Premium */}
+            <div 
+              onClick={() => setActiveTab('conta')}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: 'var(--orange-light)',
+                border: '1px solid var(--orange)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '1.1rem'
+              }}
+              title="Assinatura Premium"
+            >
+              💎
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Esquerda: Botão Voltar */}
+            <button 
+              onClick={() => {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                setIsNarrating(false);
+                setMeditationPlaying(false);
+                if (meditationIntervalRef.current) clearInterval(meditationIntervalRef.current);
+                if (activeTab === 'sabado' && activeSabadoBlock !== 'menu') {
+                  setActiveSabadoBlock('menu');
+                  // Parar meditação se estiver tocando
+                  setAudioPlaying(false);
+                  if (audioRef.current) audioRef.current.pause();
+                } else {
+                  setActiveTab('dashboard');
+                  setBibleAudioPlaying(false);
+                  if (bibleAudioRef.current) bibleAudioRef.current.pause();
+                }
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                fontSize: '1.4rem',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%'
+              }}
+              className="back-btn"
+            >
+              ←
+            </button>
+
+            {/* Centro: Título ou Dropdown da Bíblia */}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              {activeTab === 'biblia' ? (
+                <button
+                  className="bible-select-btn"
+                  onClick={() => setBibleViewMode(bibleViewMode === 'select-book' ? 'reading' : 'select-book')}
+                  style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}
+                >
+                  <span>{bibleSelectedBook.livro_nome} {bibleSelectedChapter} ▼</span>
+                </button>
+              ) : (
+                <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0, color: 'var(--text-primary)', textAlign: 'center' }}>
+                  {activeTab === 'sabado' && (
+                    activeSabadoBlock === 'menu' ? 'Desafio do Dia' :
+                    activeSabadoBlock === 'reflexao' ? 'Reflexão do Dia' :
+                    activeSabadoBlock === 'meditacao' ? 'Oração Guiada' :
+                    activeSabadoBlock === 'descanso' ? 'O Botão do Descanso' :
+                    'Trilha de Conhecimento'
+                  )}
+                  {activeTab === 'chat' && 'Conselheiro IA'}
+                  {activeTab === 'contatos' && 'Conexões & Contatos'}
+                  {activeTab === 'conta' && 'Minha Conta'}
+                </h2>
+              )}
+            </div>
+
+            {/* Direita: Controles especiais da Bíblia */}
+            {activeTab === 'biblia' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => setBibleShowAudioPlayer(!bibleShowAudioPlayer)}
+                  style={{
+                    background: bibleShowAudioPlayer ? 'var(--orange-light)' : 'transparent',
+                    border: bibleShowAudioPlayer ? '1px solid var(--orange)' : 'none',
+                    fontSize: '1.1rem',
+                    color: bibleShowAudioPlayer ? 'var(--orange)' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                  title="Ouvir Áudio do Capítulo"
+                >
+                  🎵
+                </button>
+                <button
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '1.1rem',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="Opções"
+                >
+                  ⋮
+                </button>
+              </div>
+            ) : (
+              <div style={{ width: '36px' }}></div>
+            )}
           </>
         )}
       </header>
 
       {/* ── MODAIS BÍBLIA ─────────────────────── */}
+      {commentModalOpen && bibleSelectedVerse && (
+        <div className="bible-modal-overlay" style={{ zIndex: 999 }}>
+          <div className="bible-modal" style={{
+            backgroundColor: darkMode ? '#1c1c1e' : '#ffffff',
+            borderRadius: '24px',
+            padding: '24px',
+            width: '90%',
+            maxWidth: '400px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxSizing: 'border-box'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+              📝 {bibleSelectedBook.livro_nome} {bibleSelectedChapter}:{bibleSelectedVerse.versiculo}
+            </h3>
+            
+            <textarea
+              className="input-field"
+              rows="4"
+              placeholder="Digite seu comentário ou anotação pessoal..."
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '12px',
+                border: '1px solid var(--slate-border)',
+                backgroundColor: darkMode ? '#2c2c2e' : '#ffffff',
+                color: 'var(--text-primary)',
+                resize: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+            
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                className="btn-secondary"
+                style={{ padding: '10px 20px', borderRadius: '12px' }}
+                onClick={() => setCommentModalOpen(false)}
+              >
+                FECHAR
+              </button>
+              <button
+                className="btn-primary"
+                style={{ padding: '10px 20px', borderRadius: '12px' }}
+                onClick={() => {
+                  const key = `${bibleSelectedBook.livro_abrev}-${bibleSelectedChapter}-${bibleSelectedVerse.versiculo}`;
+                  const newComments = { ...bibleComments };
+                  if (commentText.trim() === '') {
+                    delete newComments[key];
+                  } else {
+                    newComments[key] = commentText;
+                  }
+                  setBibleComments(newComments);
+                  localStorage.setItem('bible-comments', JSON.stringify(newComments));
+                  setCommentModalOpen(false);
+                }}
+              >
+                SALVAR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'biblia' && bibleViewMode === 'select-book' && (
         <div className="bible-modal-overlay">
           <div className="bible-modal-header">
@@ -1268,15 +1949,16 @@ function App() {
       {/* ── MAIN ──────────────────────────────── */}
       <main className="main-content">
 
-        {/* ════════════ ABA SABÁTICO ════════════ */}
-        {activeTab === 'sabado' && (
-          <div className="page-enter">
-            {/* Carrossel no topo com margens e efeito flutuante */}
-            <div style={{ padding: '16px 16px 8px 16px' }}>
+        {/* ════════════ TELA DASHBOARD PRINCIPAL ════════════ */}
+        {activeTab === 'dashboard' && (
+          <div className="page-enter animate-fade-in" style={{ padding: '16px', boxSizing: 'border-box' }}>
+            
+            {/* Carrossel no topo */}
+            <div style={{ marginBottom: '20px' }}>
               <div className="carousel-container">
                 <div className="carousel-wrapper" style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
                   {carouselImages.map((src, idx) => (
-                    <img key={idx} src={src} alt={`Banner ${idx + 1}`} className="carousel-image" style={{ height: '180px' }} />
+                    <img key={idx} src={src} alt={`Banner ${idx + 1}`} className="carousel-image" style={{ height: '140px' }} />
                   ))}
                 </div>
                 <div className="carousel-dots">
@@ -1287,150 +1969,880 @@ function App() {
               </div>
             </div>
 
-            {/* Hero */}
-            <div className="page-hero hero-sabado">
-              <div className="hero-orb" style={{ width: 200, height: 200, top: -60, right: -40 }} />
-              <div className="hero-orb" style={{ width: 120, height: 120, bottom: 20, left: -20, opacity: 0.5 }} />
-              <div className="hero-content">
-                {codigoDia && (
-                  <>
-                    <div className={`pedagio-badge ${codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'badge-proposito' : 'badge-recompensa'}`} style={{ background: 'rgba(255,255,255,0.20)', color: '#fff', border: '1px solid rgba(255,255,255,0.35)', marginBottom: '12px' }}>
-                      {codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'Mateus 24:14' : 'Apocalipse 3:21'} — Código de Hoje
-                    </div>
-                    <div className="hero-title">"{codigoDia.codigo_verbal}"</div>
-                    <div className="hero-sub">{codigoDia.versiculo_chave}</div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="page-content" style={{ paddingTop: '4px' }}>
-              
-              {codigoDia && (
-                <>
-                  {/* Reflexão */}
-                  <div className="glass-panel orange-card">
-                    <h3 style={{ marginBottom: '10px', color: '#C2550A' }}>💡 Reflexão do Dia</h3>
-                    <p style={{ lineHeight: '1.75' }}>{codigoDia.texto_reflexao}</p>
+            {/* Grid de 2 Colunas */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '16px',
+              paddingBottom: '20px'
+            }}>
+              {[
+                { 
+                  id: 'biblia', 
+                  label: 'Bíblia Sagrada', 
+                  icon: (
+                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  )
+                },
+                { 
+                  id: 'sabado', 
+                  label: 'Desafio do Dia', 
+                  icon: (
+                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                    </svg>
+                  )
+                },
+                { 
+                  id: 'chat', 
+                  label: 'Conselheiro IA', 
+                  icon: (
+                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  )
+                },
+                { 
+                  id: 'contatos', 
+                  label: 'Conexões & Contatos', 
+                  icon: (
+                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )
+                },
+                { 
+                  id: 'conta', 
+                  label: 'Aparência & Configs', 
+                  icon: (
+                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )
+                },
+                { 
+                  id: 'compartilhar', 
+                  label: 'Compartilhar App', 
+                  icon: (
+                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 10.742l5.013-2.507m0 7.53l-5.013-2.507m11.383-6.526a3.001 3.001 0 11-6 0 3 3 0 016 0zm-11.383 6.526a3.001 3.001 0 11-6 0 3 3 0 016 0zm11.383 6.526a3.001 3.001 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )
+                }
+              ].map(card => (
+                <div
+                  key={card.id}
+                  onClick={() => {
+                    if (card.id === 'compartilhar') {
+                      if (navigator.share) {
+                        navigator.share({ title: '1Convite', text: 'Venha se conectar intencionalmente!', url: window.location.origin });
+                      } else {
+                        alert('Link de compartilhamento copiado!');
+                      }
+                    } else {
+                      setActiveTab(card.id);
+                      if (card.id === 'biblia') {
+                        setBibleViewMode('reading');
+                        setBibleSelectedVerse(null);
+                      }
+                      if (card.id === 'sabado') {
+                        setActiveSabadoBlock('menu');
+                      }
+                    }
+                  }}
+                  className="dashboard-card"
+                >
+                  <div className="dashboard-card-icon">
+                    {card.icon}
                   </div>
+                  <span className="dashboard-card-label">
+                    {card.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-                  {/* Player */}
-                  <div className="glass-panel">
-                    <h3 style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      🎧 Meditação Guiada
-                      {user?.status_plano === 'FREE' && <span className="section-chip" style={{ fontSize: '0.62rem' }}>Premium</span>}
-                    </h3>
-                    {user?.status_plano === 'FREE' ? (
-                      <div className="premium-lock-card">
-                        <div className="premium-lock-icon">🔒</div>
-                        <h4 style={{ margin: '8px 0 4px 0', fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Conteúdo Exclusivo Premium</h4>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: '1.4' }}>Assine o Plano Premium para destravar os áudios diários de meditação e elevar a sua conexão espiritual.</p>
-                        <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', width: 'auto' }} onClick={() => setActiveTab('upgrade')}>🔓 Destravar Agora</button>
-                      </div>
-                    ) : (
-                      <div className="player-container">
-                        {codigoDia.url_audio_meditacao && (
-                          <audio ref={audioRef} src={codigoDia.url_audio_meditacao} onTimeUpdate={onAudioTimeUpdate} onLoadedMetadata={onAudioLoadedMetadata} />
-                        )}
-                        <div style={{ width: '100%' }}>
-                          <div className="progress-bar-container" onClick={handleProgressBarClick}>
-                            <div className="progress-bar-fill" style={{ width: `${(audioCurrentTime / (audioDuration || 1)) * 100}%` }} />
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#78716C', marginTop: '6px' }}>
-                            <span>{formatTime(audioCurrentTime)}</span>
-                            <span>{formatTime(audioDuration)}</span>
-                          </div>
+        {/* ════════════ ABA DESAFIO DO DIA ════════════ */}
+        {activeTab === 'sabado' && (
+          <div className="page-enter" style={{ padding: '16px', boxSizing: 'border-box' }}>
+            
+            {/* MENU PRINCIPAL DO DESAFIO */}
+            {activeSabadoBlock === 'menu' && (
+              <div className="animate-fade-in" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '16px',
+                paddingBottom: '20px'
+              }}>
+                {[
+                  {
+                    id: 'reflexao',
+                    title: 'Reflexão do Dia',
+                    desc: 'Código verbal e reflexão.',
+                    icon: (
+                      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    id: 'meditacao',
+                    title: 'Oração Guiada',
+                    desc: 'Alinhamento e ação de graças.',
+                    icon: (
+                      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                      </svg>
+                    )
+                  },
+                  {
+                    id: 'descanso',
+                    title: 'Botão do Descanso',
+                    desc: 'Pausa de respiração.',
+                    icon: (
+                      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5C7.8 10.5 10.5 7.8 10.5 4.5M19.5 10.5C16.2 10.5 13.5 7.8 13.5 4.5M4.5 13.5C7.8 13.5 10.5 16.2 10.5 19.5M19.5 13.5C16.2 13.5 13.5 16.2 13.5 19.5" />
+                      </svg>
+                    )
+                  },
+                  {
+                    id: 'trilha',
+                    title: 'Trilha Temática',
+                    desc: 'Estudo ativo de 30 dias.',
+                    icon: (
+                      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    )
+                  }
+                ].map(block => (
+                  <div
+                    key={block.id}
+                    onClick={() => setActiveSabadoBlock(block.id)}
+                    className="dashboard-card"
+                    style={{
+                      backgroundColor: 'var(--white)',
+                      border: '1px solid var(--slate-border)',
+                      borderRadius: '20px',
+                      padding: '24px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.25s ease-in-out',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    <div className="dashboard-card-icon" style={{ color: 'var(--orange)' }}>
+                      {block.icon}
+                    </div>
+                    <span className="dashboard-card-label" style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)', textAlign: 'center' }}>
+                      {block.title}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', opacity: 0.8 }}>
+                      {block.desc}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 1. REFLEXÃO DO DIA */}
+            {activeSabadoBlock === 'reflexao' && codigoDia && (
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                
+                {codigoDia.dia_id > 7 && !codigoDia.texto_reflexao.includes('📖 HISTÓRIA CRISTÃ REAL') ? (
+                  <div className="glass-panel" style={{ padding: '24px', borderRadius: '20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🤖</div>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', color: 'var(--text-primary)', fontWeight: '700' }}>Personalização por Inteligência Artificial</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '20px' }}>
+                      Você chegou ao Dia {codigoDia.dia_id}! Para este dia em diante, o aplicativo pode criar uma reflexão exclusiva contendo uma história cristã real histórica personalizada a custo zero de API.
+                    </p>
+
+                    {chatGptUser ? (
+                      aiGenerating ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '12px' }}>
+                          <div className="spinner" style={{ width: '32px', height: '32px', border: '3px solid var(--orange-light)', borderTopColor: 'var(--orange)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Escrevendo devocional com IA e buscando histórias cristãs reais na história...</span>
                         </div>
-                        <button className="play-btn" onClick={() => setAudioPlaying(!audioPlaying)}>
-                          {audioPlaying
-                            ? <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" /></svg>
-                            : <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16" style={{ marginLeft: '3px' }}><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" /></svg>
-                          }
+                      ) : (
+                        <button className="btn-primary" style={{ width: '100%', padding: '14px' }} onClick={generateDailyReflectionWithAI}>
+                          ✨ Enriquecer Devocional com IA
+                        </button>
+                      )
+                    ) : (
+                      <div style={{ background: 'var(--slate-bg)', padding: '16px', borderRadius: '16px', border: '1px dashed var(--slate-border)' }}>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>
+                          Conecte sua própria conta do ChatGPT gratuita nas Configurações para liberar o gerador inteligente.
+                        </p>
+                        <button className="btn-secondary" style={{ width: '100%', padding: '10px 16px', fontSize: '0.85rem' }} onClick={() => setActiveTab('conta')}>
+                          ⚙️ Conectar ChatGPT nas Configurações
                         </button>
                       </div>
                     )}
                   </div>
+                ) : (
+                  <>
+                    <div className="page-hero hero-sabado" style={{ borderRadius: '24px' }}>
+                      <div className="hero-orb" style={{ width: 160, height: 160, top: -40, right: -40 }} />
+                      <div className="hero-content">
+                        <div className={`pedagio-badge ${codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'badge-proposito' : 'badge-recompensa'}`} style={{ background: 'rgba(255,255,255,0.20)', color: '#fff', border: '1px solid rgba(255,255,255,0.35)', marginBottom: '12px' }}>
+                          {codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'Mateus 24:14' : 'Apocalipse 3:21'} — Código de Hoje
+                        </div>
+                        <div className="hero-title" style={{ fontSize: '1.25rem', lineHeight: '1.4' }}>"{codigoDia.codigo_verbal}"</div>
+                        <div className="hero-sub">{codigoDia.versiculo_chave}</div>
+                      </div>
+                    </div>
 
-                  {/* Respiração */}
-                  <div className="glass-panel" style={{ textAlign: 'center' }}>
-                    <h3 style={{ marginBottom: '6px' }}>🌬️ O Botão do Descanso</h3>
-                    <p style={{ fontSize: '0.88rem', marginBottom: '20px', color: '#78716C' }}>Micro-pausa de respiração guiada — 4 segundos por phase.</p>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <button
-                        className={`breath-circle ${breathClass}`}
-                        onClick={iniciarRespiracao}
-                        disabled={isBreathing}
-                        style={{ border: 'none', cursor: isBreathing ? 'default' : 'pointer' }}
-                      >
-                        <span style={{ fontSize: '0.95rem', fontWeight: '600', color: '#334155' }}>{breathState}</span>
-                        {isBreathing && <span style={{ fontSize: '1.4rem', fontWeight: '800', color: '#F97316', marginTop: '6px' }}>{breathTimer}</span>}
-                      </button>
+                    <div className="glass-panel orange-card" style={{ padding: '24px 20px', borderRadius: '20px', position: 'relative' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <h3 style={{ margin: 0, color: '#C2550A', fontSize: '1rem' }}>💡 Reflexão & Inspiração</h3>
+                        <button
+                          onClick={speakReflection}
+                          style={{
+                            padding: '8px 16px',
+                            borderRadius: '12px',
+                            border: '1.5px solid var(--orange)',
+                            background: isNarrating ? 'var(--orange)' : 'var(--orange-light)',
+                            color: isNarrating ? '#ffffff' : 'var(--orange-dark)',
+                            fontSize: '0.82rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s',
+                            boxShadow: 'var(--shadow-sm)'
+                          }}
+                        >
+                          {isNarrating ? '⏹️ Parar' : '🔊 Ouvir'}
+                        </button>
+                      </div>
+                      <p style={{ lineHeight: '1.8', fontSize: '1rem', color: 'var(--text-primary)', margin: 0, whiteSpace: 'pre-wrap', textAlign: 'left' }}>
+                        {codigoDia.texto_reflexao}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* 2. MEDITAÇÃO GUIADA */}
+            {activeSabadoBlock === 'meditacao' && codigoDia && (
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <audio ref={ambientAudioRef} />
+                
+                <div style={{
+                  background: 'linear-gradient(135deg, #0f0a1c 0%, #05030a 100%)',
+                  padding: '24px',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(139, 92, 246, 0.15)',
+                  boxShadow: 'var(--shadow-lg)',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Fundo decorativo animado em Gradiente Líquido */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50%',
+                    left: '-50%',
+                    width: '200%',
+                    height: '200%',
+                    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 60%)',
+                    animation: meditationPlaying ? 'pulse 8s infinite ease-in-out' : 'none',
+                    pointerEvents: 'none',
+                    zIndex: 0
+                  }} />
+
+                  {/* Ilustração Personalizada Premium do Calm/Headspace */}
+                  <div style={{
+                    width: '100%',
+                    maxWidth: '220px',
+                    aspectRatio: '1',
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    marginBottom: '20px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    position: 'relative',
+                    zIndex: 1
+                  }}>
+                    <video 
+                      ref={meditationVideoRef}
+                      src="/Imagens/oraçãoguiada.mp4" 
+                      loop 
+                      muted 
+                      playsInline
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        filter: meditationPlaying ? 'none' : 'grayscale(30%) contrast(90%)',
+                        transition: 'filter 0.5s ease'
+                      }}
+                    />
+                  </div>
+
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: '1.25rem', fontWeight: '800', color: '#f8fafc', zIndex: 1 }}>
+                    Oração do Dia {codigoDia.dia_id}
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: '#a78bfa', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '20px', zIndex: 1 }}>
+                    {codigoDia.pilar_origem === 'PROPÓSITO_M2414' ? 'Pilar Mateus 24:14' : 'Pilar Apocalipse 3:21'}
+                  </span>
+
+                  {/* Controle de Progresso */}
+                  <div style={{ width: '100%', marginBottom: '20px', zIndex: 1 }}>
+                    <div 
+                      style={{ 
+                        height: '6px', 
+                        width: '100%', 
+                        background: 'rgba(255, 255, 255, 0.1)', 
+                        borderRadius: '3px',
+                        position: 'relative'
+                      }}
+                    >
+                      <div 
+                        style={{ 
+                          height: '100%', 
+                          width: `${(meditationCurrentTime / (meditationDuration || 1)) * 100}%`, 
+                          background: 'linear-gradient(90deg, #c084fc 0%, #8b5cf6 100%)', 
+                          borderRadius: '3px',
+                          transition: 'width 0.25s linear'
+                        }} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#9ca3af', marginTop: '6px' }}>
+                      <span>{formatTime(meditationCurrentTime)}</span>
+                      <span>{formatTime(meditationDuration)}</span>
                     </div>
                   </div>
 
-                  {/* TRILHA ATIVA (SE HOUVER) */}
-                  {trilhaAtiva && (
-                    <div className="trilha-active-panel" style={{ marginTop: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                        <span className="section-chip">Trilha: {trilhaAtiva.tema}</span>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Dia {trilhaAtiva.dia_progresso}/30</span>
+                  {/* Painel de Controles Flexíveis */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', zIndex: 1 }}>
+                    {/* Botão de Transcrição */}
+                    <button 
+                      onClick={() => setShowMeditationLyrics(!showMeditationLyrics)}
+                      style={{
+                        background: showMeditationLyrics ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        padding: '8px 14px',
+                        borderRadius: '20px',
+                        color: showMeditationLyrics ? '#c084fc' : '#e2e8f0',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📖 Roteiro
+                    </button>
+
+                    {/* Botão Play/Pause Principal */}
+                    <button 
+                      onClick={toggleMeditationTTS} 
+                      style={{
+                        width: '54px',
+                        height: '54px',
+                        borderRadius: '50%',
+                        background: '#8b5cf6',
+                        border: 'none',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)',
+                        transition: 'transform 0.2s',
+                        transform: 'scale(1)',
+                      }}
+                      onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                      onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      {meditationPlaying ? (
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z" />
+                        </svg>
+                      ) : (
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 16 16" style={{ marginLeft: '3px' }}>
+                          <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {/* Velocidade da Narração */}
+                    <button 
+                      onClick={() => {
+                        const rates = [0.75, 0.82, 0.95, 1.05];
+                        const nextIndex = (rates.indexOf(narrationRate) + 1) % rates.length;
+                        setNarrationRate(rates[nextIndex]);
+                        if (meditationPlaying) {
+                          // Reinicia com a nova velocidade
+                          window.speechSynthesis.cancel();
+                          setMeditationPlaying(false);
+                          setTimeout(() => toggleMeditationTTS(), 100);
+                        }
+                      }}
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        padding: '8px 12px',
+                        borderRadius: '20px',
+                        color: '#cbd5e1',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ⏱️ {narrationRate === 0.75 ? 'Lento' : narrationRate === 0.82 ? 'Relax' : narrationRate === 0.95 ? 'Médio' : 'Rápido'}
+                    </button>
+                  </div>
+
+                  {/* Som Ambiente de Fundo (Padrão Calm) */}
+                  <div style={{
+                    width: '100%',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    padding: '16px',
+                    borderRadius: '16px',
+                    boxSizing: 'border-box',
+                    textAlign: 'left',
+                    zIndex: 1,
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '0.82rem', color: '#9ca3af', fontWeight: 'bold' }}>🍃 Paisagem Sonora</span>
+                      <span style={{ fontSize: '0.78rem', color: '#8b5cf6', fontWeight: 'bold' }}>
+                        {activeAmbient === 'none' ? 'Silêncio' : activeAmbient === 'chuva' ? 'Chuva' : activeAmbient === 'mar' ? 'Ondas' : 'Piano'}
+                      </span>
+                    </div>
+
+                    {/* Chips do Seletor */}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                      {ambientTracks.map(track => (
+                        <button
+                          key={track.id}
+                          onClick={() => setActiveAmbient(track.id)}
+                          style={{
+                            background: activeAmbient === track.id ? '#8b5cf6' : 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '12px',
+                            padding: '6px 12px',
+                            color: activeAmbient === track.id ? '#ffffff' : '#9ca3af',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {track.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Volume de Fundo */}
+                    {activeAmbient !== 'none' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>🔊 Vol. Fundo:</span>
+                        <input 
+                          type="range" 
+                          min="0.05" 
+                          max="0.4" 
+                          step="0.05"
+                          value={ambientVolume}
+                          onChange={(e) => setAmbientVolume(parseFloat(e.target.value))}
+                          style={{ flex: 1, accentColor: '#8b5cf6', cursor: 'pointer' }}
+                        />
                       </div>
+                    )}
+
+                    {/* Seletor de Voz do Narrador (pt-BR) */}
+                    {availableVoices.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
+                        <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>🗣️ Voz Narrador:</span>
+                        <select
+                          value={selectedVoiceName}
+                          onChange={(e) => {
+                            setSelectedVoiceName(e.target.value);
+                            localStorage.setItem('preferred_voice', e.target.value);
+                          }}
+                          style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '10px',
+                            padding: '4px 8px',
+                            color: '#ffffff',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            flex: 1,
+                            outline: 'none'
+                          }}
+                        >
+                          {availableVoices.map(v => (
+                            <option key={v.name} value={v.name} style={{ background: '#0f0a1c', color: '#fff' }}>
+                              {v.name.replace('Microsoft', '').replace('Google', '').replace('Desktop', '').trim()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mensagem de Conclusão da Oração de Ação de Graças */}
+                  {meditationCompleted && (
+                    <div 
+                      className="animate-fade-in" 
+                      style={{
+                        marginTop: '4px',
+                        marginBottom: '16px',
+                        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(0, 240, 143, 0.15))',
+                        border: '1px solid rgba(0, 240, 143, 0.3)',
+                        padding: '18px',
+                        borderRadius: '16px',
+                        color: '#f8fafc',
+                        zIndex: 1,
+                        boxShadow: '0 4px 15px rgba(0, 240, 143, 0.1)',
+                        textAlign: 'center',
+                        width: '100%',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>🍞🕊️</div>
+                      <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: '700', lineHeight: '1.5', color: '#00f08f' }}>
+                        Sua oração de ação de graças foi feita.
+                      </p>
+                      <p style={{ margin: '6px 0 0 0', fontSize: '0.85rem', color: '#cbd5e1', lineHeight: '1.4' }}>
+                        Agora, qual é o seu pão a ser compartilhado hoje? Quem você vai abençoar com o seu "1Convite" agora?
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Transcrição da Meditação */}
+                  {showMeditationLyrics && (
+                    <div className="animate-fade-in" style={{
+                      padding: '16px',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderRadius: '16px',
+                      width: '100%',
+                      textAlign: 'left',
+                      boxSizing: 'border-box',
+                      zIndex: 1
+                    }}>
+                      <p style={{
+                        fontSize: '0.9rem',
+                        color: '#cbd5e1',
+                        lineHeight: '1.75',
+                        margin: 0,
+                        whiteSpace: 'pre-wrap',
+                        maxHeight: '150px',
+                        overflowY: 'auto'
+                      }}>
+                        {codigoDia.texto_meditacao}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Fallback de IA no dia > 7 */}
+                  {codigoDia.dia_id > 7 && !codigoDia.texto_reflexao.includes('📖 HISTÓRIA CRISTÃ REAL') && (
+                    <div style={{
+                      marginTop: '16px',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px dashed rgba(239, 68, 68, 0.25)',
+                      padding: '12px',
+                      borderRadius: '14px',
+                      fontSize: '0.8rem',
+                      color: '#fca5a5',
+                      lineHeight: '1.4',
+                      zIndex: 1
+                    }}>
+                      ⚠️ Esta oração está usando um roteiro genérico. Vá na aba "Reflexão do Dia" e clique em "Enriquecer com IA" para gerar um roteiro de oração completo e personalizado com história real.
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            )}
+            {/* 3. O BOTÃO DO DESCANSO */}
+            {activeSabadoBlock === 'descanso' && (
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="glass-panel" style={{ padding: '28px 24px', borderRadius: '24px', textAlign: 'center', background: 'linear-gradient(135deg, var(--white) 0%, var(--slate-bg) 100%)' }}>
+                  
+                  {!isBreathing ? (
+                    <div className="animate-fade-in" style={{ marginBottom: '24px' }}>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', margin: '0 0 20px 0' }}>
+                        Desacelere os batimentos cardíacos, relaxe a mente e traga seu foco de volta para o Aqui e Agora.
+                      </p>
+                      
+                      {/* Seleção de Técnica */}
+                      <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+                        <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
+                          🧘 Técnica de Respiração
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                          {[
+                            { id: 'simple', label: 'Micro-Pausa', desc: '4-4-4' },
+                            { id: 'box', label: 'Box Breath', desc: '4-4-4-4' },
+                            { id: 'relax', label: 'Relaxar', desc: '4-7-8' }
+                          ].map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => setBreathTechnique(t.id)}
+                              style={{
+                                padding: '10px 6px',
+                                borderRadius: '12px',
+                                border: '1.5px solid',
+                                borderColor: breathTechnique === t.id ? 'var(--orange)' : 'var(--slate-border)',
+                                background: breathTechnique === t.id ? 'var(--orange-light)' : 'var(--white)',
+                                color: breathTechnique === t.id ? 'var(--orange-dark)' : 'var(--text-primary)',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                fontWeight: '700',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <span>{t.label}</span>
+                              <span style={{ fontSize: '0.65rem', fontWeight: '600', opacity: 0.7, marginTop: '2px' }}>{t.desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Seleção de Ciclos */}
+                      <div style={{ textAlign: 'left', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            🔄 Duração do Exercício
+                          </label>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--orange-dark)', fontWeight: '700' }}>
+                            {breathRounds} Ciclos
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="3"
+                          max="15"
+                          step="1"
+                          value={breathRounds}
+                          onChange={(e) => setBreathRounds(parseInt(e.target.value, 10))}
+                          style={{ width: '100%', accentColor: 'var(--orange)', cursor: 'pointer' }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in" style={{ marginBottom: '20px' }}>
+                      <span className="section-chip" style={{ background: 'var(--orange-light)', color: 'var(--orange-dark)', fontWeight: 'bold', padding: '6px 14px', borderRadius: '20px', fontSize: '0.8rem' }}>
+                        Ciclo {currentRound} de {breathRounds}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Círculo Interativo com Animação */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '30px 0' }}>
+                    <div
+                      className={`breath-circle ${breathClass}`}
+                      onClick={!isBreathing ? iniciarRespiracao : undefined}
+                      style={{
+                        border: '2px solid',
+                        borderColor: isBreathing ? (breathClass === 'inhaling' ? '#2563EB' : breathClass === 'holding' ? 'var(--orange)' : breathClass === 'holding-empty' ? '#8b5cf6' : 'rgba(0, 240, 143, 0.4)') : 'var(--orange-light)',
+                        boxShadow: isBreathing ? '0 10px 30px rgba(0,0,0,0.08)' : 'var(--shadow-md)',
+                        background: !isBreathing ? 'var(--white)' : undefined,
+                        cursor: isBreathing ? 'default' : 'pointer',
+                        width: '160px',
+                        height: '160px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        transition: 'all 3s ease-in-out',
+                        position: 'relative'
+                      }}
+                    >
+                      {/* Pulse Ring Decorativo */}
+                      {isBreathing && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0, left: 0, right: 0, bottom: 0,
+                          borderRadius: '50%',
+                          border: '2px solid',
+                          borderColor: breathClass === 'inhaling' ? 'rgba(37, 99, 235, 0.4)' : 'rgba(249, 115, 22, 0.4)',
+                          animation: 'pulse 2s infinite ease-in-out',
+                          pointerEvents: 'none'
+                        }} />
+                      )}
+
+                      <span style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {breathState}
+                      </span>
+                      {isBreathing && (
+                        <span style={{ fontSize: '1.8rem', fontWeight: '900', color: 'var(--orange-dark)', marginTop: '4px' }}>
+                          {breathTimer}s
+                        </span>
+                      )}
+                    </div>
+
+                    {isBreathing && (
+                      <button
+                        onClick={pararRespiracao}
+                        className="btn-secondary"
+                        style={{
+                          marginTop: '24px',
+                          padding: '10px 24px',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          fontWeight: '700',
+                          border: '1.5px solid var(--slate-border)',
+                          cursor: 'pointer',
+                          background: 'var(--white)',
+                          color: 'var(--text-secondary)',
+                          boxShadow: 'var(--shadow-sm)'
+                        }}
+                      >
+                        ⏹️ Parar Exercício
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 4. TRILHA DE CONHECIMENTO */}
+            {activeSabadoBlock === 'trilha' && (
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                
+                {/* Trilha Ativa */}
+                {trilhaAtiva ? (
+                  <div className="trilha-active-panel" style={{ margin: 0, padding: 0, borderRadius: '20px', overflow: 'hidden' }}>
+                    {/* Imagem de Topo Temática da Trilha */}
+                    <div style={{
+                      width: '100%',
+                      height: '140px',
+                      position: 'relative'
+                    }}>
+                      <img 
+                        src={
+                          trilhaAtiva.tema === 'Ansiedade' ? 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80' :
+                          trilhaAtiva.tema === 'Família' ? 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&q=80' :
+                          trilhaAtiva.tema === 'Finanças' ? 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80' :
+                          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'
+                        } 
+                        alt={trilhaAtiva.tema}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        bottom: 0, left: 0, right: 0,
+                        background: 'linear-gradient(to top, rgba(15, 10, 28, 0.9), transparent)',
+                        padding: '16px 20px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-end'
+                      }}>
+                        <div>
+                          <span style={{ fontSize: '0.7rem', color: '#a78bfa', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Jornada Ativa</span>
+                          <h4 style={{ margin: '2px 0 0 0', fontSize: '1.2rem', fontWeight: '800', color: '#ffffff' }}>Trilha de {trilhaAtiva.tema}</h4>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '800', background: 'rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: '12px', color: '#fff', backdropFilter: 'blur(4px)' }}>
+                          Dia {trilhaAtiva.dia_progresso}/30
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '20px' }}>
                       {trilhaAtiva.conteudo && (
                         <>
-                          <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>{trilhaAtiva.conteudo.titulo}</h3>
-                          <p style={{ fontStyle: 'italic', marginBottom: '10px', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>"{trilhaAtiva.conteudo.versiculo}"</p>
-                          <p style={{ marginBottom: '14px', fontSize: '0.92rem' }}>{trilhaAtiva.conteudo.reflexao}</p>
-                          <div className="glass-panel orange-card" style={{ padding: '12px 14px', marginBottom: '14px' }}>
+                          <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', fontWeight: 'bold' }}>{trilhaAtiva.conteudo.titulo}</h3>
+                          <p style={{ fontStyle: 'italic', marginBottom: '12px', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                            "{trilhaAtiva.conteudo.versiculo}"
+                          </p>
+                          <p style={{ marginBottom: '16px', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                            {trilhaAtiva.conteudo.reflexao}
+                          </p>
+                          <div className="glass-panel orange-card" style={{ padding: '14px', marginBottom: '18px', borderRadius: '14px' }}>
                             <strong style={{ fontSize: '0.85rem', color: 'var(--orange-dark)', display: 'block', marginBottom: '4px' }}>🎯 AÇÃO PRÁTICA DO DIA:</strong>
-                            <p style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{trilhaAtiva.conteudo.acao_pratica}</p>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', margin: 0 }}>{trilhaAtiva.conteudo.acao_pratica}</p>
                           </div>
                         </>
                       )}
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn-primary" style={{ padding: '10px' }} onClick={completarDiaTrilha}>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button className="btn-primary" style={{ padding: '12px', borderRadius: '12px', flex: 2 }} onClick={completarDiaTrilha}>
                           ✓ Concluir Ação de Hoje
                         </button>
-                        <button className="btn-secondary" style={{ padding: '10px', background: '#FEE2E2', color: '#EF4444', border: '1px solid #FCA5A5' }} onClick={cancelarTrilha}>
+                        <button className="btn-secondary" style={{ padding: '12px', borderRadius: '12px', flex: 1, background: '#FEE2E2', color: '#EF4444', border: '1px solid #FCA5A5' }} onClick={cancelarTrilha}>
                           Abandonar
                         </button>
                       </div>
                     </div>
-                  )}
-
-                  {/* SELEÇÃO DE TRILHAS (SE NÃO HOUVER ATIVA) */}
-                  {!trilhaAtiva && listaTrilhas.length > 0 && (
-                    <div className="glass-panel">
-                      <h3 style={{ marginBottom: '12px' }}>🌱 Trilhas de Crescimento (30 Dias)</h3>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>Escolha um tema e faça um devocional focado diário.</p>
-                      {listaTrilhas.map(tema => (
-                        <div key={tema} className="trilha-theme-card" onClick={() => iniciarTrilha(tema)}>
-                          <div>
-                            <strong>Trilha de {tema}</strong>
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Desafio diário de 30 dias</div>
-                          </div>
-                          <span style={{ color: 'var(--orange)', fontWeight: 'bold', fontSize: '1.1rem' }}>→</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Admin */}
-                  <div className="glass-panel" style={{ border: '1.5px dashed rgba(0,0,0,0.10)', background: 'rgba(255,255,255,0.40)' }}>
-                    <p style={{ fontSize: '0.72rem', fontWeight: '800', color: '#A8A29E', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>🔧 Simulação (Dev)</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <button className="btn-secondary" style={{ padding: '9px', fontSize: '0.82rem' }} onClick={avancarDia}>
-                        Avançar: Dia {user?.dia_atual} → {(user?.dia_atual ?? 0) + 1}
-                      </button>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn-secondary" style={{ flex: 1, padding: '9px', fontSize: '0.82rem' }} onClick={() => alterarPlanoAdmin('FREE')}>FREE</button>
-                        <button className="btn-secondary" style={{ flex: 1, padding: '9px', fontSize: '0.82rem' }} onClick={() => alterarPlanoAdmin('PREMIUM')}>PREMIUM</button>
-                      </div>
-                      <button className="btn-secondary" style={{ padding: '9px', fontSize: '0.82rem', color: '#ef4444' }} onClick={reiniciarJornada}>Reiniciar ao Dia 1</button>
-                    </div>
                   </div>
-                </>
-              )}
-            </div>
+                ) : (
+                  /* Lista de Seleção de Trilhas */
+                  listaTrilhas.length > 0 && (
+                    <div className="glass-panel" style={{ padding: '20px', borderRadius: '20px' }}>
+                      <h3 style={{ marginBottom: '6px', fontSize: '1.15rem', fontWeight: '800' }}>🌱 Trilhas de Crescimento (30 Dias)</h3>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.4' }}>
+                        Escolha uma trilha e receba uma porção diária de sabedoria teológica com ações práticas por 30 dias.
+                      </p>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {listaTrilhas.map(tema => {
+                          let detail = { desc: '', icon: '🌱', color: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' };
+                          if (tema === 'Ansiedade') detail = { desc: 'Vença a ansiedade e controle o estresse em uma jornada de paz.', icon: '🕊️', color: 'rgba(14, 165, 233, 0.1)', border: 'rgba(14, 165, 233, 0.2)' };
+                          else if (tema === 'Família') detail = { desc: 'Cultive harmonia, perdão e laços fortes no seu lar.', icon: '🏠', color: 'rgba(244, 63, 94, 0.1)', border: 'rgba(244, 63, 94, 0.2)' };
+                          else if (tema === 'Finanças') detail = { desc: 'Aprenda princípios bíblicos de prosperidade e mordomia.', icon: '💰', color: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.2)' };
+                          else if (tema === 'Propósito') detail = { desc: 'Descubra e ative seus dons para governar e frutificar.', icon: '🎯', color: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.2)' };
+                          
+                          return (
+                            <div 
+                              key={tema} 
+                              className="trilha-theme-card animate-fade-in" 
+                              onClick={() => iniciarTrilha(tema)} 
+                              style={{ 
+                                padding: '16px', 
+                                borderRadius: '16px', 
+                                display: 'flex', 
+                                gap: '14px',
+                                alignItems: 'center', 
+                                cursor: 'pointer', 
+                                border: `1px solid ${detail.border}`,
+                                background: detail.color,
+                                transition: 'all 0.25s ease'
+                              }}
+                            >
+                              <div style={{ fontSize: '2rem', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', minWidth: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {detail.icon}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>Trilha de {tema}</strong>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.3' }}>
+                                  {detail.desc}
+                                </div>
+                              </div>
+                              <span style={{ color: 'var(--orange)', fontWeight: 'bold', fontSize: '1.2rem', paddingLeft: '6px' }}>→</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
+                )}
+
+              </div>
+            )}
+
           </div>
         )}
 
@@ -1448,7 +2860,7 @@ function App() {
             </div>
 
             {/* Player de Áudio da Bíblia */}
-            {bibleAudioUrl && (
+            {bibleShowAudioPlayer && bibleAudioUrl && (
               <div style={{ padding: '0 20px 10px 20px', marginTop: '-18px', position: 'relative', zIndex: 5 }}>
                 <div className="player-container" style={{ padding: '12px 16px', flexDirection: 'row', gap: '12px', background: darkMode ? 'rgba(24, 24, 27, 0.85)' : 'rgba(255, 255, 255, 0.7)', border: darkMode ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
                   <audio ref={bibleAudioRef} src={bibleAudioUrl} onTimeUpdate={onBibleAudioTimeUpdate} onLoadedMetadata={onBibleAudioLoadedMetadata} />
@@ -1508,19 +2920,57 @@ function App() {
                   </div>
                 ) : (
                   <div style={{ padding: '16px 20px 0' }}>
-                    {bibleVerses.map(v => (
-                      <div
-                        key={v.id}
-                        className={`bible-verse-row${bibleSelectedVerse?.id === v.id ? ' selected' : ''}`}
-                        onClick={() => setBibleSelectedVerse(bibleSelectedVerse?.id === v.id ? null : v)}
-                      >
-                        <span className="bible-verse-num">{v.versiculo}</span>
-                        <span style={{ lineHeight: '1.75', fontSize: '1rem' }}>{formatVerseText(v.texto)}</span>
-                      </div>
-                    ))}
+                    {bibleVerses.map(v => {
+                      const key = `${bibleSelectedBook.livro_abrev}-${bibleSelectedChapter}-${v.versiculo}`;
+                      const highlightColor = bibleHighlights[key];
+                      const comment = bibleComments[key];
+                      return (
+                        <div
+                          key={v.id}
+                          className={`bible-verse-row${bibleSelectedVerse?.id === v.id ? ' selected' : ''}`}
+                          onClick={() => setBibleSelectedVerse(bibleSelectedVerse?.id === v.id ? null : v)}
+                          style={{
+                            backgroundColor: highlightColor || undefined,
+                            borderRadius: highlightColor ? '8px' : '0',
+                            padding: highlightColor ? '8px 10px' : '6px 0',
+                            margin: highlightColor ? '4px 0' : '0',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            gap: '10px',
+                            alignItems: 'flex-start'
+                          }}
+                        >
+                          <span className="bible-verse-num" style={{ flexShrink: 0, fontWeight: '700', fontSize: '0.85rem', color: 'var(--orange)' }}>
+                            {v.versiculo}
+                          </span>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ lineHeight: '1.75', fontSize: '1.02rem', color: 'var(--text-primary)' }}>
+                              {formatVerseText(v.texto)}
+                            </span>
+                            {comment && (
+                              <div style={{
+                                padding: '6px 10px',
+                                background: darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                                borderRadius: '8px',
+                                borderLeft: '3px solid var(--orange)',
+                                fontSize: '0.82rem',
+                                color: 'var(--text-secondary)',
+                                marginTop: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}>
+                                <span>💬</span>
+                                <span>{comment}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
-
+ 
                 {!bibleSelectedVerse && (
                   <div style={{ padding: '28px 20px', marginTop: '20px', borderTop: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.06)' }}>
                     <form onSubmit={searchBible} style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
@@ -1533,28 +2983,162 @@ function App() {
                 )}
               </>
             )}
-
+ 
             {/* Menu flutuante de versículo selecionado */}
             {bibleSelectedVerse && bibleResults.length === 0 && (
-              <div className="bible-action-menu">
+              <div 
+                className="bible-action-menu-panel animate-slide-up"
+                style={{
+                  position: 'fixed',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  backgroundColor: darkMode ? '#1c1c1e' : '#ffffff',
+                  borderTop: '1px solid var(--slate-border)',
+                  boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
+                  padding: '16px 20px',
+                  zIndex: 100,
+                  borderTopLeftRadius: '24px',
+                  borderTopRightRadius: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {/* Fileira 1: Botões de Ação */}
+                <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                  <button 
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: 'Versículo Bíblico',
+                          text: `"${bibleSelectedVerse.texto}" - ${bibleSelectedBook.livro_nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}`
+                        });
+                      } else {
+                        copyToClipboard(`"${bibleSelectedVerse.texto}" - ${bibleSelectedBook.livro_nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}`);
+                      }
+                    }}
+                    style={{ flex: 1, padding: '10px 4px', fontSize: '0.82rem', fontWeight: 'bold', borderRadius: '12px', border: '1px solid var(--slate-border)', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  >
+                    Compartilhar
+                  </button>
+                  <button 
+                    onClick={() => {
+                      alert('Link de compartilhamento copiado!');
+                      copyToClipboard(`"${bibleSelectedVerse.texto}" - ${bibleSelectedBook.livro_nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}`);
+                    }}
+                    style={{ flex: 1, padding: '10px 4px', fontSize: '0.82rem', fontWeight: 'bold', borderRadius: '12px', border: '1px solid var(--slate-border)', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  >
+                    Imagem
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setCommentText(bibleComments[`${bibleSelectedBook.livro_abrev}-${bibleSelectedChapter}-${bibleSelectedVerse.versiculo}`] || '');
+                      setCommentModalOpen(true);
+                    }}
+                    style={{ flex: 1, padding: '10px 4px', fontSize: '0.82rem', fontWeight: 'bold', borderRadius: '12px', border: '1px solid var(--slate-border)', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  >
+                    Comentário
+                  </button>
+                  <button 
+                    onClick={() => {
+                      copyToClipboard(`"${bibleSelectedVerse.texto}" - ${bibleSelectedBook.livro_nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}`);
+                    }}
+                    style={{ flex: 1, padding: '10px 4px', fontSize: '0.82rem', fontWeight: 'bold', borderRadius: '12px', border: '1px solid var(--slate-border)', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  >
+                    Copiar
+                  </button>
+                </div>
+
+                {/* Fileira 2: Círculos Coloridos de Destaque */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '0 8px' }}>
+                  {[
+                    { id: 'clear', color: 'transparent', dotColor: '#2c2c2e', label: '✕', isClear: true },
+                    { id: 'blue', color: 'rgba(59, 130, 246, 0.22)', dotColor: '#3b82f6' },
+                    { id: 'purple', color: 'rgba(139, 92, 246, 0.22)', dotColor: '#8b5cf6' },
+                    { id: 'gray', color: 'rgba(107, 114, 128, 0.22)', dotColor: '#6b7280' },
+                    { id: 'teal', color: 'rgba(20, 184, 166, 0.22)', dotColor: '#14b8a6' },
+                    { id: 'green', color: 'rgba(34, 197, 94, 0.22)', dotColor: '#22c55e' },
+                    { id: 'orange', color: 'rgba(249, 115, 22, 0.22)', dotColor: '#f97316' }
+                  ].map(colorOpt => {
+                    const key = `${bibleSelectedBook.livro_abrev}-${bibleSelectedChapter}-${bibleSelectedVerse.versiculo}`;
+                    const currentHighlight = bibleHighlights[key];
+                    const isSelected = colorOpt.isClear ? !currentHighlight : currentHighlight === colorOpt.color;
+
+                    return (
+                      <button
+                        key={colorOpt.id}
+                        onClick={() => {
+                          const newHighlights = { ...bibleHighlights };
+                          if (colorOpt.isClear) {
+                            delete newHighlights[key];
+                          } else {
+                            newHighlights[key] = colorOpt.color;
+                          }
+                          setBibleHighlights(newHighlights);
+                          localStorage.setItem('bible-highlights', JSON.stringify(newHighlights));
+                        }}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          backgroundColor: colorOpt.isClear ? (darkMode ? '#2c2c2e' : '#f4f4f5') : colorOpt.dotColor,
+                          border: isSelected ? '3px solid var(--orange)' : '2px solid transparent',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: colorOpt.isClear ? '#ef4444' : '#ffffff',
+                          fontWeight: 'bold',
+                          fontSize: '1rem',
+                          padding: 0,
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        {colorOpt.isClear && '✕'}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Salvar */}
                 <button
-                  className="btn-secondary"
-                  style={{ flex: 1, padding: '12px' }}
-                  onClick={() => { copyToClipboard(`"${bibleSelectedVerse.texto}" - ${bibleSelectedBook.livro_nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}`); setBibleSelectedVerse(null); }}
-                >
-                  📋 Copiar
-                </button>
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`*"${bibleSelectedVerse.texto}"*\n_${bibleSelectedBook.livro_nome} ${bibleSelectedChapter}:${bibleSelectedVerse.versiculo}_\n\n👉 *1Convite:* https://1convite.com.br`)}`}
-                  target="_blank" rel="noopener noreferrer"
                   className="btn-primary"
-                  style={{ flex: 2, padding: '12px', textAlign: 'center', textDecoration: 'none' }}
+                  style={{ width: '100%', padding: '12px', borderRadius: '12px', fontSize: '0.95rem' }}
                   onClick={() => setBibleSelectedVerse(null)}
                 >
-                  📲 Compartilhar
-                </a>
+                  Salvar
+                </button>
               </div>
             )}
+
+            {/* Botão Flutuante Seletor de Livros (≡) */}
+            <button
+              onClick={() => setBibleViewMode(bibleViewMode === 'select-book' ? 'reading' : 'select-book')}
+              style={{
+                position: 'fixed',
+                bottom: bibleSelectedVerse ? '180px' : '24px',
+                right: '24px',
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: '#3b82f6',
+                color: '#ffffff',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.5rem',
+                zIndex: 90,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              title="Lista de Livros/Capítulos"
+            >
+              ☰
+            </button>
           </div>
         )}
 
@@ -1733,19 +3317,54 @@ function App() {
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>ChatGPT ({chatGptUser?.plan?.toUpperCase() || 'SESSÃO'})</span>
                     </div>
                   </div>
-                  <button className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => {
-                    if (confirm('Deseja limpar o histórico do chat?')) {
-                      setChatMessages([{ role: 'assistant', content: 'Olá! Sou o Conselheiro Inteligente do 1Convite. Como posso te apoiar hoje?' }]);
-                    }
-                  }}>
-                    🧹 Limpar
-                  </button>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* Controle de Fonte */}
+                    <div style={{ display: 'flex', border: '1px solid var(--slate-border)', borderRadius: '100px', overflow: 'hidden', background: 'var(--bg-app)' }}>
+                      {[
+                        { id: 'sm', label: 'A-' },
+                        { id: 'md', label: 'A' },
+                        { id: 'lg', label: 'A+' }
+                      ].map(sz => (
+                        <button
+                          key={sz.id}
+                          onClick={() => setChatFontSize(sz.id)}
+                          style={{
+                            padding: '2px 8px',
+                            fontSize: '0.72rem',
+                            fontWeight: 'bold',
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: chatFontSize === sz.id ? 'var(--orange)' : 'transparent',
+                            color: chatFontSize === sz.id ? '#fff' : 'var(--text-secondary)',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {sz.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} onClick={() => {
+                      if (confirm('Deseja limpar o histórico do chat?')) {
+                        setChatMessages([{ role: 'assistant', content: 'Olá! Sou o Conselheiro Inteligente do 1Convite. Como posso te apoiar hoje em suas reflexões, relacionamentos ou espiritualidade?' }]);
+                      }
+                    }}>
+                      🧹 Limpar
+                    </button>
+                  </div>
                 </div>
 
                 {/* Mensagens */}
                 <div className="chat-messages">
                   {chatMessages.map((msg, index) => (
-                    <div key={index} className={`chat-bubble ${msg.role}`}>
+                    <div 
+                      key={index} 
+                      className={`chat-bubble ${msg.role}`}
+                      style={{
+                        fontSize: chatFontSize === 'sm' ? '0.825rem' : chatFontSize === 'lg' ? '1.05rem' : '0.925rem'
+                      }}
+                    >
                       {msg.content}
                     </div>
                   ))}
@@ -1890,6 +3509,40 @@ function App() {
             </div>
 
             <div className="page-content" style={{ paddingTop: '10px' }}>
+              {/* Tema & Aparência */}
+              <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'center' }}>
+                <h3 style={{ marginBottom: '12px', fontSize: '1.05rem', textAlign: 'left' }}>🎨 Tema & Aparência</h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', textAlign: 'left', lineHeight: '1.4' }}>
+                  Escolha a cor de destaque do seu aplicativo para personalizar a sua experiência:
+                </p>
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', margin: '10px 0' }}>
+                  {[
+                    { id: 'theme-orange', color: '#f97316', name: 'Laranja' },
+                    { id: 'theme-blue', color: '#3b82f6', name: 'Azul' },
+                    { id: 'theme-green', color: '#10B981', name: 'Verde' },
+                    { id: 'theme-purple', color: '#8b5cf6', name: 'Roxo' },
+                    { id: 'theme-sepia', color: '#b58900', name: 'Sépia' }
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setTheme(t.id)}
+                      title={t.name}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        backgroundColor: t.color,
+                        border: theme === t.id ? '3px solid var(--text-primary)' : '2px solid rgba(0,0,0,0.1)',
+                        cursor: 'pointer',
+                        transform: theme === t.id ? 'scale(1.15)' : 'scale(1)',
+                        transition: 'all 0.2s ease',
+                        boxShadow: theme === t.id ? '0 4px 10px rgba(0,0,0,0.15)' : 'none'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
               {/* Login com o Google */}
               <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'center' }}>
                 <h3 style={{ marginBottom: '14px', fontSize: '1.05rem', textAlign: 'left' }}>🔑 Autenticação do Google</h3>
@@ -2046,34 +3699,6 @@ function App() {
         )}
 
       </main>
-
-      {/* ── BOTTOM NAV ────────────────────────── */}
-      {activeTab !== 'pedagio' && activeTab !== 'simular-pagamento' && (
-        <nav className="nav-tabs">
-          {[
-            { id: 'sabado', label: 'Sabático', path: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' },
-            { id: 'biblia', label: 'Bíblia', path: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-            { id: 'contatos', label: 'Contatos', path: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
-            { id: 'historico', label: 'Histórico', path: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-            { id: 'chat', label: 'Conselheiro', path: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
-            { id: 'conta', label: 'Conta', path: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              className={`tab-item${activeTab === tab.id ? ' active' : ''}`}
-              onClick={() => {
-                setActiveTab(tab.id);
-                if (tab.id === 'biblia') { setBibleViewMode('reading'); setBibleSelectedVerse(null); }
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={activeTab === tab.id ? 2.2 : 1.8} d={tab.path} />
-              </svg>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      )}
     </div>
   );
 }

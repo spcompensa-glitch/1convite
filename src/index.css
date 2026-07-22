@@ -49,6 +49,68 @@
   color-scheme: light;
 }
 
+/* ── Temas de Cores Personalizados ── */
+body.theme-orange {
+  --orange:         #f97316;
+  --orange-dark:    #ea580c;
+  --orange-light:   #fff7ed;
+  --orange-mid:     #ffedd5;
+  --orange-glow:    rgba(249, 115, 22, 0.20);
+  --grad-orange:    linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --shadow-orange:  0 8px 24px rgba(249, 115, 22, 0.15);
+  --glass-shadow:   0 8px 32px rgba(249, 115, 22, 0.04);
+}
+
+body.theme-blue {
+  --orange:         #3b82f6;
+  --orange-dark:    #2563eb;
+  --orange-light:   #eff6ff;
+  --orange-mid:     #dbeafe;
+  --orange-glow:    rgba(59, 130, 246, 0.20);
+  --grad-orange:    linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --shadow-orange:  0 8px 24px rgba(59, 130, 246, 0.15);
+  --glass-shadow:   0 8px 32px rgba(59, 130, 246, 0.04);
+}
+
+body.theme-green {
+  --orange:         #10B981;
+  --orange-dark:    #059669;
+  --orange-light:   #ECFDF5;
+  --orange-mid:     #D1FAE5;
+  --orange-glow:    rgba(16, 185, 129, 0.20);
+  --grad-orange:    linear-gradient(135deg, #10B981 0%, #059669 100%);
+  --shadow-orange:  0 8px 24px rgba(16, 185, 129, 0.15);
+  --glass-shadow:   0 8px 32px rgba(16, 185, 129, 0.04);
+}
+
+body.theme-purple {
+  --orange:         #8b5cf6;
+  --orange-dark:    #7c3aed;
+  --orange-light:   #f5f3ff;
+  --orange-mid:     #ede9fe;
+  --orange-glow:    rgba(139, 92, 246, 0.20);
+  --grad-orange:    linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --shadow-orange:  0 8px 24px rgba(139, 92, 246, 0.15);
+  --glass-shadow:   0 8px 32px rgba(139, 92, 246, 0.04);
+}
+
+body.theme-sepia {
+  --bg-app:         #fdf6e3;
+  --white:          #f4ebd0;
+  --slate-light:    #eee8d5;
+  --slate-border:   #decba4;
+  --text-primary:   #586e75;
+  --text-secondary: #657b83;
+  --orange:         #b58900;
+  --orange-dark:    #cb4b16;
+  --orange-light:   #fcfcf3;
+  --orange-mid:     #eee8d5;
+  --orange-glow:    rgba(181, 137, 0, 0.20);
+  --grad-orange:    linear-gradient(135deg, #b58900 0%, #cb4b16 100%);
+  --shadow-orange:  0 8px 24px rgba(181, 137, 0, 0.15);
+  --glass-shadow:   0 8px 32px rgba(181, 137, 0, 0.04);
+}
+
 /* ═══════════════════════════════════════════════════
    RESET E BASE
 ═══════════════════════════════════════════════════ */
@@ -2299,4 +2361,103 @@ body.dark-mode .lwc-card {
 body.dark-mode .lwc-code-box {
   background: rgba(255, 255, 255, 0.04);
   color: #fff;
+}
+
+/* ── Estilos do Dashboard Principal ── */
+.dashboard-card {
+  background-color: var(--white) !important;
+  border: 1px solid var(--slate-border) !important;
+  border-radius: 20px !important;
+  padding: 24px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  cursor: pointer !important;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: var(--orange) !important;
+  box-shadow: 0 10px 20px var(--orange-glow), var(--shadow-md) !important;
+}
+
+.dashboard-card-icon {
+  color: var(--orange) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.25s ease !important;
+}
+
+.dashboard-card:hover .dashboard-card-icon {
+  transform: scale(1.1) rotate(2deg) !important;
+}
+
+.dashboard-card-label {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  text-align: center !important;
+}
+
+/* Suporte ao Modo Escuro para o Dashboard */
+body.dark-mode .dashboard-card {
+  background-color: #1c1c1e !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.dark-mode .dashboard-card:hover {
+  border-color: var(--orange) !important;
+}
+
+/* Ajuste fino no cabeçalho */
+.back-btn:hover {
+  background: var(--slate-light) !important;
+}
+body.dark-mode .back-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Animação slide-up para o menu de ações do versículo */
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Efeito de seleção de versículo na Bíblia */
+.bible-verse-row {
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 6px 10px;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.bible-verse-row:hover {
+  background-color: var(--slate-light);
+}
+body.dark-mode .bible-verse-row:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.bible-verse-row.selected {
+  background-color: var(--orange-light) !important;
+  outline: 1.5px dashed var(--orange) !important;
+}
+body.dark-mode .bible-verse-row.selected {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+  outline: 1.5px dashed var(--orange) !important;
 }
