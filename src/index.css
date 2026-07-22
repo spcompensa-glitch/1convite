@@ -1563,6 +1563,21 @@ body.dark-mode .lp-portal-frame {
   }
 }
 
+.lp-scroll-text-card.lp-card-wide {
+  max-width: 720px;
+}
+
+@media (max-width: 768px) {
+  .lp-grid-mobile-single {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .lp-scroll-text-card.lp-card-wide {
+    max-width: none;
+    padding: 20px;
+  }
+}
+
 /* Badges Flutuantes (Woodnest/Harmont Style) */
 .lp-floating-badge {
   position: absolute;

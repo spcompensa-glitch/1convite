@@ -208,7 +208,7 @@ function App() {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
-      const heroSectionHeight = windowHeight * 4; 
+      const heroSectionHeight = windowHeight * 7; 
       const progress = Math.max(0, Math.min(1, scrollY / (heroSectionHeight - windowHeight)));
       
       setScrollPercent(progress * 100);
@@ -841,7 +841,10 @@ function App() {
                 <span className="lp-dock-label">👥 Contatos</span>
                 <span className="lp-dock-value">Alerta 48h</span>
               </div>
-              <button className="lp-dock-btn" onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}>
+              <button className="lp-dock-btn" onClick={() => {
+                const windowHeight = window.innerHeight;
+                window.scrollTo({ top: windowHeight * 6.5, behavior: 'smooth' });
+              }}>
                 Entrar no App 🚀
               </button>
             </div>
@@ -849,11 +852,11 @@ function App() {
             {/* Gradientes de escurecimento para legibilidade */}
             <div className="lp-canvas-overlay-gradient"></div>
 
-            {/* Overlays de Texto Dinâmicos que reagem ao Scroll */}
+            {/* Overlays de Conteúdo Dinâmico que reagem ao Scroll */}
             <div className="lp-scroll-text-overlay-wrapper">
               
-              {/* Frase 1: Introdução */}
-              <div className={`lp-scroll-text-card ${scrollPercent < 22 ? 'visible' : ''}`}>
+              {/* Estágio 1: Introdução Hero (0% a 15%) */}
+              <div className={`lp-scroll-text-card ${scrollPercent < 15 ? 'visible' : ''}`}>
                 <span className="lp-badge">Jornada Espiritual Ativa</span>
                 <h1 className="lp-title" style={{ marginTop: '12px' }}>
                   Desacelere sua mente. <span>Conecte-se com Deus.</span>
@@ -864,21 +867,24 @@ function App() {
                 <div style={{ display: 'flex', gap: '12px', marginTop: '18px' }}>
                   <button 
                     className="lp-hero-cta"
-                    onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={() => {
+                      const windowHeight = window.innerHeight;
+                      window.scrollTo({ top: windowHeight * 6.5, behavior: 'smooth' });
+                    }}
                   >
                     Começar Agora 🚀
                   </button>
                   <button 
                     className="lp-hero-cta-outline"
-                    onClick={() => window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' })}
+                    onClick={() => window.scrollBy({ top: window.innerHeight * 0.9, behavior: 'smooth' })}
                   >
                     Ver Conceito 🖱️
                   </button>
                 </div>
               </div>
 
-              {/* Frase 2: Passado (10% Biblioteca) */}
-              <div className={`lp-scroll-text-card ${scrollPercent >= 22 && scrollPercent < 47 ? 'visible' : ''}`}>
+              {/* Estágio 2: Passado (15% a 30%) */}
+              <div className={`lp-scroll-text-card ${scrollPercent >= 15 && scrollPercent < 30 ? 'visible' : ''}`}>
                 <span className="lp-badge" style={{ background: 'rgba(255,255,255,0.08)', color: '#fafafa', borderColor: 'rgba(255,255,255,0.15)' }}>Passado 10%</span>
                 <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
                   A Biblioteca da <span>Palavra</span>
@@ -888,8 +894,8 @@ function App() {
                 </p>
               </div>
 
-              {/* Frase 3: Presente (70% O Eterno Agora) */}
-              <div className={`lp-scroll-text-card ${scrollPercent >= 47 && scrollPercent < 72 ? 'visible' : ''}`}>
+              {/* Estágio 3: Presente (30% a 45%) */}
+              <div className={`lp-scroll-text-card ${scrollPercent >= 30 && scrollPercent < 45 ? 'visible' : ''}`}>
                 <span className="lp-badge">Presente 70%</span>
                 <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
                   O Eterno <span>Agora</span>
@@ -899,8 +905,8 @@ function App() {
                 </p>
               </div>
 
-              {/* Frase 4: Futuro (20% A Bússola) */}
-              <div className={`lp-scroll-text-card ${scrollPercent >= 72 && scrollPercent < 90 ? 'visible' : ''}`}>
+              {/* Estágio 4: Futuro (45% a 60%) */}
+              <div className={`lp-scroll-text-card ${scrollPercent >= 45 && scrollPercent < 60 ? 'visible' : ''}`}>
                 <span className="lp-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', borderColor: 'rgba(16, 185, 129, 0.2)' }}>Futuro 20%</span>
                 <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem' }}>
                   A Bússola da <span>Missão</span>
@@ -910,201 +916,165 @@ function App() {
                 </p>
               </div>
 
-              {/* Frase 5: CTA de Login */}
+              {/* Estágio 5: Recursos (60% a 75%) */}
+              <div className={`lp-scroll-text-card lp-card-wide ${scrollPercent >= 60 && scrollPercent < 75 ? 'visible' : ''}`}>
+                <span className="lp-badge">O que oferecemos</span>
+                <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2.1rem' }}>Recursos do <span>1Convite</span></h2>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginTop: '20px' }} className="lp-grid-mobile-single">
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '1.4rem' }}>🎧</span>
+                    <h4 style={{ margin: '4px 0', fontSize: '0.92rem' }}>Meditação Cristã</h4>
+                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>Áudios diários guiados focados em alinhar a mente com Jesus.</p>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '1.4rem' }}>🌀</span>
+                    <h4 style={{ margin: '4px 0', fontSize: '0.92rem' }}>Respiração Ativa</h4>
+                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>Técnicas respiratórias guiadas para aliviar estresse e ansiedade.</p>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '1.4rem' }}>📖</span>
+                    <h4 style={{ margin: '4px 0', fontSize: '0.92rem' }}>Bíblia ACF Narrada</h4>
+                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>Leitura bíblica em áudio e dicionário teológico integrado.</p>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '1.4rem' }}>👥</span>
+                    <h4 style={{ margin: '4px 0', fontSize: '0.92rem' }}>Cultivar Contatos</h4>
+                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', margin: 0 }}>Alertas a cada 48h para cultivar relacionamentos prioritários.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Estágio 6: Comparativo de Planos (75% a 90%) */}
+              <div className={`lp-scroll-text-card lp-card-wide ${scrollPercent >= 75 && scrollPercent < 90 ? 'visible' : ''}`}>
+                <span className="lp-badge">Acesso Livre</span>
+                <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2.1rem' }}>Escolha o seu <span>Plano</span></h2>
+                
+                <div style={{ marginTop: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '12px 18px', background: 'rgba(255,255,255,0.04)', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                    <span>Recurso</span>
+                    <span style={{ textAlign: 'center' }}>FREE</span>
+                    <span style={{ color: '#10B981', textAlign: 'center' }}>PREMIUM</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.78rem' }}>
+                    <span>Bíblia & Dicionário</span>
+                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
+                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.78rem' }}>
+                    <span>Respiração Controlada</span>
+                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
+                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.78rem' }}>
+                    <span>Contatos (Alertas)</span>
+                    <span style={{ textAlign: 'center' }}>Até 3</span>
+                    <span style={{ color: '#10B981', textAlign: 'center' }}>Ilimitados</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', padding: '10px 18px', fontSize: '0.78rem' }}>
+                    <span>Áudios de Meditação</span>
+                    <span style={{ color: '#dc2626', textAlign: 'center' }}>✕</span>
+                    <span style={{ color: '#10B981', textAlign: 'center' }}>✓</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Estágio 7: Formulário de Login Integrado (90% a 100%) */}
               <div className={`lp-scroll-text-card ${scrollPercent >= 90 ? 'visible' : ''}`}>
                 <span className="lp-badge">Mateus 24:14</span>
-                <h1 className="lp-title" style={{ marginTop: '12px', fontSize: '2.3rem' }}>
-                  Sua Jornada <span>Começa Aqui</span>
-                </h1>
-                <p className="lp-description" style={{ marginTop: '12px' }}>
-                  Dê o seu primeiro passo na jornada de meditação diária. Role para baixo e acesse o aplicativo gratuitamente.
-                </p>
-                <button 
-                  className="lp-hero-cta"
-                  style={{ marginTop: '18px' }}
-                  onClick={() => document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  Ir para o Login 🔑
-                </button>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* ── SEÇÃO DE RECURSOS (FEATURES) ────────────────────────── */}
-        <section className="lp-section">
-          <h2 className="lp-section-title">O que você vai encontrar no <span>1Convite</span></h2>
-          <div className="lp-features-grid">
-            <div className="lp-feature-card">
-              <span className="lp-feature-icon">🎧</span>
-              <h3 className="lp-feature-title">Meditação Cristã Guiada</h3>
-              <p className="lp-feature-desc">Áudios diários focados em alinhar sua mente com os ensinamentos de Jesus e acalmar as preocupações.</p>
-            </div>
-            <div className="lp-feature-card">
-              <span className="lp-feature-icon">🌀</span>
-              <h3 className="lp-feature-title">Exercício de Respiração Ativa</h3>
-              <p className="lp-feature-desc">Técnica clínica de relaxamento baseada na respiração guiada para aliviar estresse e ansiedade.</p>
-            </div>
-            <div className="lp-feature-card">
-              <span className="lp-feature-icon">📖</span>
-              <h3 className="lp-feature-title">Bíblia Narrada com Dicionário</h3>
-              <p className="lp-feature-desc">Leitura bíblica ACF com áudio narrado e explicações etimológicas instantâneas de palavras teológicas complexas.</p>
-            </div>
-            <div className="lp-feature-card">
-              <span className="lp-feature-icon">👥</span>
-              <h3 className="lp-feature-title">Cultivo de Relacionamentos</h3>
-              <p className="lp-feature-desc">Lembrete ativo com alertas de 48h para interagir com seus contatos prioritários (cafés, convites e mensagens).</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── SEÇÃO COMPARATIVA DE PREÇOS ────────────────────────── */}
-        <section className="lp-section">
-          <h2 className="lp-section-title">Escolha o seu <span>Plano</span></h2>
-          <div className="lp-pricing-table">
-            <div className="lp-pricing-header">
-              <span className="lp-badge" style={{ fontSize: '0.7rem' }}>Acesso Vitalício Livre</span>
-              <div className="lp-price">1Convite</div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Seja livre com o plano grátis ou expanda sua jornada com o Premium.
-              </p>
-            </div>
-            
-            <div className="lp-pricing-row" style={{ fontWeight: 'bold', background: 'var(--slate-light)' }}>
-              <span>Funcionalidade</span>
-              <span>Plano FREE</span>
-              <span style={{ color: 'var(--orange)' }}>Plano PREMIUM</span>
-            </div>
-            <div className="lp-pricing-row">
-              <span>Leitura Bíblica & Dicionário</span>
-              <span className="lp-check-icon">✓</span>
-              <span className="lp-check-icon">✓</span>
-            </div>
-            <div className="lp-pricing-row">
-              <span>Respiração Controlada</span>
-              <span className="lp-check-icon">✓</span>
-              <span className="lp-check-icon">✓</span>
-            </div>
-            <div className="lp-pricing-row">
-              <span>Cultivo de Contatos</span>
-              <span>Até 3 pessoas</span>
-              <span style={{ fontWeight: 'bold' }}>Ilimitados</span>
-            </div>
-            <div className="lp-pricing-row">
-              <span>Áudios de Meditação Guiada</span>
-              <span className="lp-cross-icon">✕</span>
-              <span className="lp-check-icon">✓</span>
-            </div>
-            <div className="lp-pricing-row">
-              <span>Histórico de Dias Anteriores</span>
-              <span className="lp-cross-icon">✕</span>
-              <span className="lp-check-icon">✓</span>
-            </div>
-            <div className="lp-pricing-row" style={{ borderBottom: 'none' }}>
-              <span>Valor Mensal</span>
-              <strong>R$ 0,00</strong>
-              <strong style={{ color: 'var(--orange)' }}>R$ 19,90</strong>
-            </div>
-          </div>
-        </section>
-
-        {/* ── SEÇÃO DE CTA & LOGIN INTEGRADO ────────────────────────── */}
-        <section id="login-section" className="lp-cta-block">
-          <h2 className="lp-cta-title">Comece sua Jornada Hoje</h2>
-          <p className="lp-cta-subtitle">
-            Crie sua conta ou entre gratuitamente no aplicativo para liberar o seu primeiro devocional diário.
-          </p>
-
-          <div className="login-card" style={{ margin: '0 auto', background: 'var(--white)' }}>
-            <h3 style={{ marginBottom: '14px', fontSize: '1.05rem', textAlign: 'center' }}>🔑 Acessar o Aplicativo</h3>
-            
-            <div style={{ display: 'flex', borderRadius: '10px', background: 'var(--slate-light)', padding: '4px', marginBottom: '20px' }}>
-              <button
-                onClick={() => { setLoginMethod('google'); setLoginError(''); }}
-                style={{
-                  flex: 1,
-                  background: loginMethod === 'google' ? 'var(--orange)' : 'transparent',
-                  color: loginMethod === 'google' ? '#fff' : 'var(--text-secondary)',
-                  border: 'none', borderRadius: '8px', padding: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                Google Sign-In
-              </button>
-              <button
-                onClick={() => { setLoginMethod('email'); setLoginError(''); }}
-                style={{
-                  flex: 1,
-                  background: loginMethod === 'email' ? 'var(--orange)' : 'transparent',
-                  color: loginMethod === 'email' ? '#fff' : 'var(--text-secondary)',
-                  border: 'none', borderRadius: '8px', padding: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                E-mail Comum
-              </button>
-            </div>
-
-            {loginMethod === 'google' ? (
-              <div className="flex-column gap-sm">
-                <div id="google-login-screen-container" style={{ width: '100%', minHeight: '44px', display: 'flex', justifyContent: 'center' }}></div>
-
-                <button className="btn-google-signin" onClick={handleSimularLoginGoogle} style={{ marginTop: '4px' }}>
-                  <svg width="18" height="18" viewBox="0 0 18 18">
-                    <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
-                    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
-                    <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
-                    <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
-                  </svg>
-                  Testar/Simular Login Google
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleEmailLogin} className="flex-column gap-sm" style={{ textAlign: 'left' }}>
-                <div className="input-group">
-                  <label>Seu Nome</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={loginNome}
-                    onChange={(e) => setLoginNome(e.target.value)}
-                    placeholder="Nome de Exibição"
-                    required
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Seu E-mail</label>
-                  <input
-                    type="email"
-                    className="input-field"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="seu.email@exemplo.com"
-                    required
-                  />
-                </div>
-
-                {loginError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 'bold', margin: '4px 0' }}>
-                    {loginError}
+                <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2rem', textAlign: 'center' }}>Acesse o <span>1Convite</span></h2>
+                
+                <div className="login-card" style={{ margin: '16px auto 0', background: 'rgba(24, 24, 27, 0.8)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'none', padding: '20px' }}>
+                  <div style={{ display: 'flex', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', padding: '3px', marginBottom: '14px' }}>
+                    <button
+                      onClick={() => { setLoginMethod('google'); setLoginError(''); }}
+                      style={{
+                        flex: 1,
+                        background: loginMethod === 'google' ? '#10B981' : 'transparent',
+                        color: '#fff',
+                        border: 'none', borderRadius: '6px', padding: '6px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
+                      }}
+                    >
+                      Google
+                    </button>
+                    <button
+                      onClick={() => { setLoginMethod('email'); setLoginError(''); }}
+                      style={{
+                        flex: 1,
+                        background: loginMethod === 'email' ? '#10B981' : 'transparent',
+                        color: '#fff',
+                        border: 'none', borderRadius: '6px', padding: '6px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
+                      }}
+                    >
+                      E-mail
+                    </button>
                   </div>
-                )}
 
-                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '8px' }}>
-                  🚀 Acessar com E-mail
-                </button>
-              </form>
-            )}
+                  {loginMethod === 'google' ? (
+                    <div className="flex-column gap-sm">
+                      <button className="btn-google-signin" onClick={handleSimularLoginGoogle} style={{ marginTop: '0', width: '100%', padding: '10px' }}>
+                        <svg width="18" height="18" viewBox="0 0 18 18" style={{ marginRight: '8px' }}>
+                          <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7v2.24h2.9c1.69-1.55 2.69-3.84 2.69-6.57z"/>
+                          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.23l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.35-1.59-5.06-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
+                          <path fill="#FBBC05" d="M3.94 10.67c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72v-2.3H.95C.34 6.16 0 7.54 0 9s.34 2.84.95 4.07l2.99-2.3z"/>
+                          <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.07l2.99 2.3c.71-2.14 2.71-3.79 5.06-3.79z"/>
+                        </svg>
+                        Acessar com o Google
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleEmailLogin} className="flex-column gap-xs" style={{ textAlign: 'left' }}>
+                      <div className="input-group">
+                        <label style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Nome</label>
+                        <input
+                          type="text"
+                          className="input-field"
+                          value={loginNome}
+                          onChange={(e) => setLoginNome(e.target.value)}
+                          placeholder="Nome"
+                          style={{ padding: '8px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                          required
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label style={{ fontSize: '0.7rem', color: '#9ca3af' }}>E-mail</label>
+                        <input
+                          type="email"
+                          className="input-field"
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          placeholder="E-mail"
+                          style={{ padding: '8px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                          required
+                        />
+                      </div>
 
-            <div className="login-separator">ou</div>
+                      {loginError && (
+                        <div style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                          {loginError}
+                        </div>
+                      )}
 
-            <button className="btn-secondary" style={{ width: '100%' }} onClick={handleGuestLogin}>
-              🔓 Entrar sem Login (Modo Convidado)
-            </button>
+                      <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '6px', padding: '10px', fontSize: '0.82rem' }}>
+                        🚀 Entrar com E-mail
+                      </button>
+                    </form>
+                  )}
+
+                  <div className="login-separator" style={{ margin: '8px 0', fontSize: '0.72rem', color: '#6b7280' }}>ou</div>
+
+                  <button className="btn-secondary" style={{ width: '100%', padding: '8px', fontSize: '0.78rem' }} onClick={handleGuestLogin}>
+                    🔓 Modo Convidado (Rápido)
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
         </section>
 
         {/* ── FOOTER DA LP ────────────────────────── */}
-        <footer style={{ textAlign: 'center', padding: '40px 24px', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(249, 115, 22, 0.08)' }}>
+        <footer style={{ textAlign: 'center', padding: '40px 24px', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(16, 185, 129, 0.08)', background: '#09090b', zIndex: 10, position: 'relative' }}>
           <p>© {new Date().getFullYear()} Movimento 1Convite. Todos os direitos reservados.</p>
           <p style={{ marginTop: '4px', opacity: 0.7 }}>Desenvolvido com foco no bem-estar espiritual cristão.</p>
         </footer>
