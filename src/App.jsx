@@ -480,6 +480,15 @@ function App() {
   const [voiceSpeed, setVoiceSpeed] = useState(() => parseFloat(localStorage.getItem('app-voice-speed') || '1.0'));
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
 
+  // CONFIGURAÇÃO DO WHATSAPP COMERCIAL (FUNIL DE VENDAS)
+  const COMMERCIAL_WHATSAPP_NUMBER = '5511999999999'; // Modifique aqui com o seu número de WhatsApp comercial
+
+  const iniciarCheckoutWhatsApp = () => {
+    const text = `Olá! Quero assinar o Plano Premium do 1Convite para o e-mail: ${profileEmail}`;
+    const url = `https://wa.me/${COMMERCIAL_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   const getBestVoiceForGender = (gender) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
     const voices = window.speechSynthesis.getVoices();
@@ -4352,8 +4361,9 @@ Importante: O JSON deve ser 100% válido.`;
                   <span style={{ fontSize: '1.5rem', fontWeight: '800', color: '#C2550A' }}>,90</span>
                   <span style={{ fontSize: '0.85rem', color: '#A8A29E', alignSelf: 'flex-end', marginBottom: '6px' }}>/mês</span>
                 </div>
-                <button className="btn-primary" onClick={iniciarCheckoutMercadoPago} disabled={isPaying}>
-                  {isPaying ? '⏳ Gerando...' : '🚀 Assinar com Mercado Pago'}
+                <button className="btn-primary" onClick={iniciarCheckoutWhatsApp} style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)', color: '#fff', border: 'none', boxShadow: '0 8px 24px rgba(37,211,102,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                  Ativar no WhatsApp (Pix/Cartão)
                 </button>
                 <p style={{ fontSize: '0.78rem', color: '#A8A29E', marginTop: '12px' }}>Cancele quando quiser • Pagamento seguro</p>
               </div>
