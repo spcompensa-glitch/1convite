@@ -163,7 +163,7 @@ function App() {
   const [unlockedItems, setUnlockedItems] = useState(() => JSON.parse(localStorage.getItem('unlocked-items') || '[]'));
   
   // --- RESTORED ARCADE STATES ---
-  const [arcadeActiveGame, setArcadeActiveGame] = useState('menu');
+  const [arcadeActiveGame, setArcadeActiveGame] = useState('lobby');
   const [arcadeSelectedGame, setArcadeSelectedGame] = useState(null);
   const [arcadeDifficulty, setArcadeDifficulty] = useState('facil');
   const [arcadeQuizList, setArcadeQuizList] = useState([]);
@@ -4682,7 +4682,7 @@ Importante: O JSON deve ser 100% válido.`;
           <div className="page-enter" style={{ padding: '20px', paddingBottom: '40px' }}>
             {arcadeActiveGame === 'lobby' && (
               <>
-                {/* Cabeçalho do Arcade */}
+                {/* Cabeçalho do Arcade com ChaminhaCoin */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div>
                     <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)' }}>Seu Progresso</h2>
@@ -4690,9 +4690,28 @@ Importante: O JSON deve ser 100% válido.`;
                   </div>
                   <div style={{ display: 'flex', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(249,115,22,0.1)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(249,115,22,0.2)' }}>
-                      <span style={{ fontSize: '1.2rem' }}>🪙</span>
+                      <ChaminhaCoin size={20} />
                       <strong style={{ color: 'var(--orange)', fontSize: '1.1rem' }}>{userCoins}</strong>
                     </div>
+                  </div>
+                </div>
+
+                {/* Chaminha no lobby de jogos com fala */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+                  <ChaminhaVideo size={110} />
+                  <div className="glass-panel animate-fade-in" style={{
+                    marginTop: '16px',
+                    padding: '12px 20px',
+                    borderRadius: '16px',
+                    fontSize: '0.92rem',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    position: 'relative',
+                    textAlign: 'center',
+                    maxWidth: '360px',
+                    background: 'rgba(255, 255, 255, 0.02)'
+                  }}>
+                    🎮 <strong>Chaminha:</strong> "Vamos testar sua sabedoria? Escolha um jogo abaixo e ganhe muitas Chaminhas!"
                   </div>
                 </div>
 
@@ -5402,6 +5421,25 @@ Importante: O JSON deve ser 100% válido.`;
 
         {activeTab === 'lojinha' && (
           <div className="lojinha-container" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto', paddingBottom: '100px' }}>
+            
+            {/* Chaminha no topo da lojinha com fala */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+              <ChaminhaVideo size={110} />
+              <div className="glass-panel animate-fade-in" style={{
+                marginTop: '16px',
+                padding: '12px 20px',
+                borderRadius: '16px',
+                fontSize: '0.92rem',
+                color: 'var(--text-secondary)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                position: 'relative',
+                textAlign: 'center',
+                maxWidth: '360px',
+                background: 'rgba(255, 255, 255, 0.02)'
+              }}>
+                🔥 <strong>Chaminha:</strong> "Bem-vindo à minha Lojinha! Use suas Chaminhas para liberar fundos lindos e fontes incríveis!"
+              </div>
+            </div>
             <div style={{ textAlign: 'center', marginBottom: '32px' }}>
               <h2 style={{ fontSize: '2rem', color: 'var(--orange)', marginBottom: '8px' }}>Lojinha 1Convite 🛒</h2>
               <p style={{ color: 'var(--text-secondary)' }}>Use suas moedas ganhas para desbloquear itens exclusivos para o Studio de Cards!</p>
