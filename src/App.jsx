@@ -3078,36 +3078,7 @@ Importante: O JSON deve ser 100% válido.`;
                       </div>
                     )}
 
-                    {/* Seletor de Voz do Narrador (pt-BR) */}
-                    {availableVoices.length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
-                        <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>🗣️ Voz Narrador:</span>
-                        <select
-                          value={selectedVoiceName}
-                          onChange={(e) => {
-                            setSelectedVoiceName(e.target.value);
-                            localStorage.setItem('preferred_voice', e.target.value);
-                          }}
-                          style={{
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '10px',
-                            padding: '4px 8px',
-                            color: '#ffffff',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            flex: 1,
-                            outline: 'none'
-                          }}
-                        >
-                          {availableVoices.map(v => (
-                            <option key={v.name} value={v.name} style={{ background: '#0f0a1c', color: '#fff' }}>
-                              {v.name.replace('Microsoft', '').replace('Google', '').replace('Desktop', '').trim()}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+
                   </div>
 
                   {/* Mensagem de Conclusão da Oração de Ação de Graças */}
