@@ -48,6 +48,8 @@ function ChaminhaVideo({ size = 100 }) {
 
     video.addEventListener('play', handlePlay);
     video.addEventListener('playing', handlePlay);
+    video.addEventListener('loadedmetadata', handlePlay);
+    video.addEventListener('canplay', handlePlay);
 
     if (!video.paused) {
       processFrame();
@@ -77,8 +79,7 @@ function ChaminhaVideo({ size = 100 }) {
         loop
         muted
         playsInline
-        style={{ display: 'none' }}
-        crossOrigin="anonymous"
+        style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none' }}
       />
       <canvas
         ref={canvasRef}
