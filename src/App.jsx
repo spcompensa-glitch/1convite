@@ -4759,21 +4759,24 @@ Importante: O JSON deve ser 100% válido.`;
                   </div>
                 </div>
 
-                {/* Chaminha no lobby de jogos com fala */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-                  <ChaminhaVideo size={110} />
+                {/* Chaminha no lobby de jogos com layout horizontal */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '32px', padding: '0 12px' }}>
+                  <ChaminhaVideo size={80} style={{ flexShrink: 0 }} />
                   <div className="glass-panel animate-fade-in" style={{
-                    marginTop: '16px',
-                    padding: '12px 20px',
+                    padding: '12px 18px',
                     borderRadius: '16px',
-                    fontSize: '0.92rem',
+                    fontSize: '0.9rem',
                     color: 'var(--text-secondary)',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     position: 'relative',
-                    textAlign: 'center',
                     maxWidth: '360px',
                     background: 'rgba(255, 255, 255, 0.02)'
                   }}>
+                    <div style={{
+                      position: 'absolute', top: '50%', left: '-6px', transform: 'translateY(-50%) rotate(45deg)',
+                      width: '10px', height: '10px', background: 'var(--bg-app)', borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)', zIndex: 1
+                    }} />
                     🎮 <strong>Chaminha:</strong> "Vamos testar sua sabedoria? Escolha um jogo abaixo e ganhe muitas Chaminhas!"
                   </div>
                 </div>
@@ -5485,21 +5488,24 @@ Importante: O JSON deve ser 100% válido.`;
         {activeTab === 'lojinha' && (
           <div className="lojinha-container" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto', paddingBottom: '100px' }}>
             
-            {/* Chaminha no topo da lojinha com fala */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-              <ChaminhaVideo size={110} />
+            {/* Chaminha no topo da lojinha com layout horizontal */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '32px', padding: '0 12px' }}>
+              <ChaminhaVideo size={80} style={{ flexShrink: 0 }} />
               <div className="glass-panel animate-fade-in" style={{
-                marginTop: '16px',
-                padding: '12px 20px',
+                padding: '12px 18px',
                 borderRadius: '16px',
-                fontSize: '0.92rem',
+                fontSize: '0.9rem',
                 color: 'var(--text-secondary)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 position: 'relative',
-                textAlign: 'center',
                 maxWidth: '360px',
                 background: 'rgba(255, 255, 255, 0.02)'
               }}>
+                <div style={{
+                  position: 'absolute', top: '50%', left: '-6px', transform: 'translateY(-50%) rotate(45deg)',
+                  width: '10px', height: '10px', background: 'var(--bg-app)', borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)', zIndex: 1
+                }} />
                 🔥 <strong>Chaminha:</strong> "Bem-vindo à minha Lojinha! Use suas Chaminhas para liberar fundos lindos e fontes incríveis!"
               </div>
             </div>
