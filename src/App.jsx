@@ -33,36 +33,7 @@ function RewardPopup({ amount, title, message, onClose }) {
 
         {/* Chaminha Animado */}
         <div style={{ animation: 'bounceChaminha 0.8s infinite alternate ease-in-out' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="90" height="90">
-            <defs>
-              <radialGradient id="popFlame" cx="50%" cy="65%" r="55%">
-                <stop offset="0%" stopColor="#FFF0A0"/>
-                <stop offset="40%" stopColor="#FFB300"/>
-                <stop offset="100%" stopColor="#E85500"/>
-              </radialGradient>
-              <linearGradient id="popTip" x1="50%" y1="0%" x2="50%" y2="100%">
-                <stop offset="0%" stopColor="#FF6000"/>
-                <stop offset="100%" stopColor="#FFB300"/>
-              </linearGradient>
-            </defs>
-            <ellipse cx="50" cy="85" rx="30" ry="6" fill="rgba(0,0,0,0.12)"/>
-            <path d="M50 15 C46 22 40 26 40 35 C40 44 46 48 50 50 C54 48 60 44 60 35 C60 26 54 22 50 15Z" fill="url(#popTip)"/>
-            <ellipse cx="50" cy="55" rx="20" ry="24" fill="url(#popFlame)"/>
-            <ellipse cx="44" cy="48" rx="6" ry="7" fill="rgba(255,255,200,0.35)" transform="rotate(-10,44,48)"/>
-            
-            <ellipse cx="44" cy="53" rx="4" ry="4.5" fill="#3D1A00"/>
-            <ellipse cx="56" cy="53" rx="4" ry="4.5" fill="#3D1A00"/>
-            <circle cx="42.5" cy="51" r="1.2" fill="white"/>
-            <circle cx="54.5" cy="51" r="1.2" fill="white"/>
-            
-            <ellipse cx="38" cy="58" rx="4" ry="2.5" fill="#FF7B00" opacity="0.45"/>
-            <ellipse cx="62" cy="58" rx="4" ry="2.5" fill="#FF7B00" opacity="0.45"/>
-            
-            <path d="M44 61 Q50 67 56 61" fill="none" stroke="#3D1A00" strokeWidth="2" strokeLinecap="round"/>
-            
-            <ellipse cx="42" cy="78" rx="7" ry="4" fill="#E8720A"/>
-            <ellipse cx="58" cy="78" rx="7" ry="4" fill="#E8720A"/>
-          </svg>
+          <ChaminhaVideo size={100} />
         </div>
 
         <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>{title}</h3>
@@ -85,6 +56,39 @@ function RewardPopup({ amount, title, message, onClose }) {
 }
 
 // ═══ COMPONENTE CHAMINHA COIN ═══
+
+// ═══ COMPONENTE CHAMINHA VIDEO (MASCOTE 3D) ═══
+function ChaminhaVideo({ size = 100, style = {} }) {
+  return (
+    <div style={{
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      border: '3px solid var(--orange)',
+      backgroundColor: '#fbfbfb',
+      overflow: 'hidden',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: 'var(--shadow-md)',
+      ...style
+    }}>
+      <video
+        src="/Imagens/Chaminha.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          width: '140%',
+          height: '140%',
+          objectFit: 'cover'
+        }}
+      />
+    </div>
+  );
+}
+
 function ChaminhaCoin({ size = 22, style = {} }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"

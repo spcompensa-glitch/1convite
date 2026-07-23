@@ -1,5 +1,37 @@
 import React, { useState } from 'react';
 
+
+// Componente de vídeo local
+function ChaminhaVideo({ size = 100 }) {
+  return (
+    <div style={{
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      border: '3px solid var(--orange)',
+      backgroundColor: '#fbfbfb',
+      overflow: 'hidden',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: 'var(--shadow-md)'
+    }}>
+      <video
+        src="/Imagens/Chaminha.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          width: '140%',
+          height: '140%',
+          objectFit: 'cover'
+        }}
+      />
+    </div>
+  );
+}
+
 export default function Onboarding({ onComplete }) {
   const [step, setStep] = useState(0);
   const [respostas, setRespostas] = useState({
@@ -92,34 +124,7 @@ export default function Onboarding({ onComplete }) {
         {step === 0 && (
           <div className="flex-column gap-md text-center" style={{ animation: 'fadeIn 0.2s' }}>
             <div style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="90" height="90">
-                <defs>
-                  <radialGradient id="obFlame" cx="50%" cy="65%" r="55%">
-                    <stop offset="0%" stopColor="#FFF0A0"/>
-                    <stop offset="40%" stopColor="#FFB300"/>
-                    <stop offset="100%" stopColor="#E85500"/>
-                  </radialGradient>
-                  <linearGradient id="obTip" x1="50%" y1="0%" x2="50%" y2="100%">
-                    <stop offset="0%" stopColor="#FF6000"/>
-                    <stop offset="100%" stopColor="#FFB300"/>
-                  </linearGradient>
-                </defs>
-                <ellipse cx="50" cy="85" rx="30" ry="6" fill="rgba(0,0,0,0.12)"/>
-                <path d="M50 15 C46 22 40 26 40 35 C40 44 46 48 50 50 C54 48 60 44 60 35 C60 26 54 22 50 15Z" fill="url(#obTip)"/>
-                <path d="M44 28 C41 32 40 37 42 40 C44 37 45 34 47 32Z" fill="#FF8C00" opacity="0.7"/>
-                <path d="M56 28 C59 32 60 37 58 40 C56 37 55 34 53 32Z" fill="#FF8C00" opacity="0.7"/>
-                <ellipse cx="50" cy="55" rx="20" ry="24" fill="url(#obFlame)"/>
-                <ellipse cx="44" cy="48" rx="6" ry="7" fill="rgba(255,255,200,0.35)" transform="rotate(-10,44,48)"/>
-                <ellipse cx="44" cy="53" rx="4.5" ry="5" fill="#3D1A00"/>
-                <ellipse cx="56" cy="53" rx="4.5" ry="5" fill="#3D1A00"/>
-                <circle cx="42.5" cy="51" r="1.5" fill="white"/>
-                <circle cx="54.5" cy="51" r="1.5" fill="white"/>
-                <ellipse cx="38" cy="58" rx="4" ry="2.5" fill="#FF7B00" opacity="0.45"/>
-                <ellipse cx="62" cy="58" rx="4" ry="2.5" fill="#FF7B00" opacity="0.45"/>
-                <path d="M45 61 Q50 65 55 61" fill="none" stroke="#3D1A00" strokeWidth="2" strokeLinecap="round"/>
-                <ellipse cx="42" cy="78" rx="7" ry="4" fill="#E8720A"/>
-                <ellipse cx="58" cy="78" rx="7" ry="4" fill="#E8720A"/>
-              </svg>
+              <ChaminhaVideo size={100} />
             </div>
             <h1 style={{ fontSize: '1.6rem', fontWeight: '800', color: 'var(--text-primary)' }}>Bem-vindo ao 1Convite</h1>
             <p style={{ fontSize: '0.925rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
@@ -305,42 +310,10 @@ export default function Onboarding({ onComplete }) {
         {/* Passo 5: Conclusão */}
         {step === 5 && (
           <div className="flex-column gap-md text-center" style={{ animation: 'fadeIn 0.2s' }}>
-            <div style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="90" height="90">
-                <defs>
-                  <radialGradient id="finFlame" cx="50%" cy="65%" r="55%">
-                    <stop offset="0%" stopColor="#FFF0A0"/>
-                    <stop offset="40%" stopColor="#FFB300"/>
-                    <stop offset="100%" stopColor="#E85500"/>
-                  </radialGradient>
-                  <linearGradient id="finTip" x1="50%" y1="0%" x2="50%" y2="100%">
-                    <stop offset="0%" stopColor="#FF6000"/>
-                    <stop offset="100%" stopColor="#FFB300"/>
-                  </linearGradient>
-                </defs>
-                <ellipse cx="50" cy="85" rx="30" ry="6" fill="rgba(0,0,0,0.12)"/>
-                
-                {/* Chapéu de festa */}
-                <polygon points="50,18 43,5 57,5" fill="#FF4500" stroke="#FFD700" strokeWidth="1" transform="rotate(15 50 15)"/>
-                <circle cx="53" cy="2" r="3" fill="#FFD700" />
-                
-                <path d="M50 15 C46 22 40 26 40 35 C40 44 46 48 50 50 C54 48 60 44 60 35 C60 26 54 22 50 15Z" fill="url(#finTip)"/>
-                <ellipse cx="50" cy="55" rx="20" ry="24" fill="url(#finFlame)"/>
-                <ellipse cx="44" cy="48" rx="6" ry="7" fill="rgba(255,255,200,0.35)" transform="rotate(-10,44,48)"/>
-                
-                {/* Olhos piscando de alegria */}
-                <path d="M41 53 Q44 50 47 53" fill="none" stroke="#3D1A00" strokeWidth="2.5" strokeLinecap="round"/>
-                <path d="M53 53 Q56 50 59 53" fill="none" stroke="#3D1A00" strokeWidth="2.5" strokeLinecap="round"/>
-                
-                <ellipse cx="38" cy="58" rx="4" ry="2.5" fill="#FF7B00" opacity="0.45"/>
-                <ellipse cx="62" cy="58" rx="4" ry="2.5" fill="#FF7B00" opacity="0.45"/>
-                
-                {/* Super sorriso */}
-                <path d="M44 61 Q50 67 56 61" fill="none" stroke="#3D1A00" strokeWidth="2" strokeLinecap="round"/>
-                
-                <ellipse cx="42" cy="78" rx="7" ry="4" fill="#E8720A"/>
-                <ellipse cx="58" cy="78" rx="7" ry="4" fill="#E8720A"/>
-              </svg>
+            <div style={{ margin: '15px 0', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+              <ChaminhaVideo size={100} />
+              {/* Adicionar chapéu de festa por cima do vídeo */}
+              <div style={{ position: 'absolute', top: '-10px', fontSize: '2rem', transform: 'rotate(15deg)' }}>🎉</div>
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)' }}>Tudo Pronto!</h2>
             <p style={{ fontSize: '0.925rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
