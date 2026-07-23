@@ -3,6 +3,87 @@ import Onboarding from './components/Onboarding';
 import html2canvas from 'html2canvas';
 
 
+
+// ═══ COMPONENTE REWARD POPUP (CHAMINHA) ═══
+function RewardPopup({ amount, title, message, onClose }) {
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(5px)',
+      zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px', animation: 'fadeIn 0.2s ease-out'
+    }}>
+      <div className="glass-panel text-center" style={{
+        maxWidth: '320px', width: '100%', padding: '32px 24px', borderRadius: '24px',
+        border: '1px solid var(--slate-border)', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: '16px', backgroundColor: 'var(--bg-app)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.4)', animation: 'scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      }}>
+        {/* Estilo local para animações */}
+        <style>{`
+          @keyframes bounceChaminha {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-12px); }
+          }
+          @keyframes scaleUp {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
+
+        {/* Chaminha Animado */}
+        <div style={{ animation: 'bounceChaminha 0.8s infinite alternate ease-in-out' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="90" height="90">
+            <defs>
+              <radialGradient id="popFlame" cx="50%" cy="65%" r="55%">
+                <stop offset="0%" stopColor="#FFF0A0"/>
+                <stop offset="40%" stopColor="#FFB300"/>
+                <stop offset="100%" stopColor="#E85500"/>
+              </radialGradient>
+              <linearGradient id="popTip" x1="50%" y1="0%" x2="50%" y2="100%">
+                <stop offset="0%" stopColor="#FF6000"/>
+                <stop offset="100%" stopColor="#FFB300"/>
+              </linearGradient>
+            </defs>
+            <ellipse cx="50" cy="85" rx="30" ry="6" fill="rgba(0,0,0,0.12)"/>
+            <path d="M50 15 C46 22 40 26 40 35 C40 44 46 48 50 50 C54 48 60 44 60 35 C60 26 54 22 50 15Z" fill="url(#popTip)"/>
+            <ellipse cx="50" cy="55" rx="20" ry="24" fill="url(#popFlame)"/>
+            <ellipse cx="44" cy="48" rx="6" ry="7" fill="rgba(255,255,200,0.35)" transform="rotate(-10,44,48)"/>
+            
+            <ellipse cx="44" cy="53" rx="4" ry="4.5" fill="#3D1A00"/>
+            <ellipse cx="56" cy="53" rx="4" ry="4.5" fill="#3D1A00"/>
+            <circle cx="42.5" cy="51" r="1.2" fill="white"/>
+            <circle cx="54.5" cy="51" r="1.2" fill="white"/>
+            
+            <ellipse cx="38" cy="58" rx="4" ry="2.5" fill="#FF7B00" opacity="0.45"/>
+            <ellipse cx="62" cy="58" rx="4" ry="2.5" fill="#FF7B00" opacity="0.45"/>
+            
+            <path d="M44 61 Q50 67 56 61" fill="none" stroke="#3D1A00" strokeWidth="2" strokeLinecap="round"/>
+            
+            <ellipse cx="42" cy="78" rx="7" ry="4" fill="#E8720A"/>
+            <ellipse cx="58" cy="78" rx="7" ry="4" fill="#E8720A"/>
+          </svg>
+        </div>
+
+        <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>{title}</h3>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>{message}</p>
+        
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(245,158,11,0.1)',
+          padding: '8px 18px', borderRadius: '30px', border: '1px solid var(--orange)', margin: '4px 0'
+        }}>
+          <span style={{ fontSize: '1.05rem', fontWeight: 'bold', color: 'var(--orange)' }}>+{amount}</span>
+          <ChaminhaCoin size={22} />
+        </div>
+
+        <button className="btn-primary" style={{ width: '100%', marginTop: '8px' }} onClick={onClose}>
+          Glória a Deus!
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ═══ COMPONENTE CHAMINHA COIN ═══
 function ChaminhaCoin({ size = 22, style = {} }) {
   return (
@@ -324,6 +405,7 @@ function App() {
 
 
   // Customização de Temas & Cores
+  const [rewardPopup, setRewardPopup] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'theme-green');
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('onboarding-completed'));
 
@@ -3482,7 +3564,7 @@ Importante: O JSON deve ser 100% válido.`;
                             localStorage.setItem('app-coins', val);
                             return val;
                           });
-                          alert('Amém! Você ganhou +10 Chaminhas por concluir este capítulo!');
+                          setRewardPopup({ amount: 10, title: 'Capítulo Concluído!', message: 'Amém! Você meditou na Palavra e seu coração foi aquecido.' });
                           setBibleSelectedChapter(prev => prev + 1);
                         }}
                         style={{
