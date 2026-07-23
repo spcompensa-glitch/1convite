@@ -2467,3 +2467,117 @@ body.dark-mode .bible-verse-row.selected {
   background-color: rgba(249, 115, 22, 0.15) !important;
   outline: 1.5px dashed var(--orange) !important;
 }
+
+
+/* ═══ MIGRATED & OVERRIDING THEMES FOR DARK MODE & LIGHT MODE SPECIFICITY ═══ */
+
+/* Laranja */
+body.theme-orange {
+  --orange:         #f97316;
+  --orange-dark:    #ea580c;
+  --orange-light:   #fff7ed;
+  --orange-mid:     #ffedd5;
+  --orange-glow:    rgba(249, 115, 22, 0.20);
+  --grad-orange:    linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --shadow-orange:  0 8px 24px rgba(249, 115, 22, 0.15);
+}
+body.dark-mode.theme-orange {
+  --orange:         #f97316;
+  --orange-dark:    #ea580c;
+  --orange-light:   rgba(249, 115, 22, 0.12);
+  --orange-mid:     rgba(249, 115, 22, 0.25);
+  --orange-glow:    rgba(249, 115, 22, 0.45);
+  --grad-orange:    linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+/* Azul */
+body.theme-blue {
+  --orange:         #3b82f6;
+  --orange-dark:    #2563eb;
+  --orange-light:   #eff6ff;
+  --orange-mid:     #dbeafe;
+  --orange-glow:    rgba(59, 130, 246, 0.20);
+  --grad-orange:    linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --shadow-orange:  0 8px 24px rgba(59, 130, 246, 0.15);
+}
+body.dark-mode.theme-blue {
+  --orange:         #3b82f6;
+  --orange-dark:    #2563eb;
+  --orange-light:   rgba(59, 130, 246, 0.12);
+  --orange-mid:     rgba(59, 130, 246, 0.25);
+  --orange-glow:    rgba(59, 130, 246, 0.45);
+  --grad-orange:    linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* Verde */
+body.theme-green {
+  --orange:         #10B981;
+  --orange-dark:    #059669;
+  --orange-light:   #ECFDF5;
+  --orange-mid:     #D1FAE5;
+  --orange-glow:    rgba(16, 185, 129, 0.20);
+  --grad-orange:    linear-gradient(135deg, #10B981 0%, #059669 100%);
+  --shadow-orange:  0 8px 24px rgba(16, 185, 129, 0.15);
+}
+body.dark-mode.theme-green {
+  --orange:         #10B981;
+  --orange-dark:    #059669;
+  --orange-light:   rgba(16, 185, 129, 0.12);
+  --orange-mid:     rgba(16, 185, 129, 0.25);
+  --orange-glow:    rgba(16, 185, 129, 0.45);
+  --grad-orange:    linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+
+/* Roxo */
+body.theme-purple {
+  --orange:         #8b5cf6;
+  --orange-dark:    #7c3aed;
+  --orange-light:   #f5f3ff;
+  --orange-mid:     #ede9fe;
+  --orange-glow:    rgba(139, 92, 246, 0.20);
+  --grad-orange:    linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --shadow-orange:  0 8px 24px rgba(139, 92, 246, 0.15);
+}
+body.dark-mode.theme-purple {
+  --orange:         #8b5cf6;
+  --orange-dark:    #7c3aed;
+  --orange-light:   rgba(139, 92, 246, 0.12);
+  --orange-mid:     rgba(139, 92, 246, 0.25);
+  --orange-glow:    rgba(139, 92, 246, 0.45);
+  --grad-orange:    linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+/* Sépia */
+body.theme-sepia {
+  --bg-app:         #fdf6e3;
+  --white:          #f4ebd0;
+  --slate-light:    #eee8d5;
+  --slate-border:   #decba4;
+  --text-primary:   #586e75;
+  --text-secondary: #657b83;
+  --orange:         #b58900;
+  --orange-dark:    #cb4b16;
+  --orange-light:   #fcfcf3;
+  --orange-mid:     #eee8d5;
+  --orange-glow:    rgba(181, 137, 0, 0.20);
+  --grad-orange:    linear-gradient(135deg, #b58900 0%, #cb4b16 100%);
+  --shadow-orange:  0 8px 24px rgba(181, 137, 0, 0.15);
+}
+body.dark-mode.theme-sepia {
+  --bg-app:         #1a150c;
+  --white:          #2a2215;
+  --slate-light:    #3a3020;
+  --slate-border:   #4a3f2b;
+  --text-primary:   #ebd7b2;
+  --text-secondary: #d2c19e;
+  --orange:         #b58900;
+  --orange-dark:    #cb4b16;
+  --orange-light:   rgba(181, 137, 0, 0.12);
+  --orange-mid:     rgba(181, 137, 0, 0.25);
+  --orange-glow:    rgba(181, 137, 0, 0.45);
+}
+
+/* Ajustes para a seleção de versículos no modo escuro respeitando o tema */
+body.dark-mode .bible-verse-row.selected {
+  background-color: var(--orange-light) !important;
+}
