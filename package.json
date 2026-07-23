@@ -15,6 +15,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
     "@opencoredev/loginwithchatgpt-server": "^0.2.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

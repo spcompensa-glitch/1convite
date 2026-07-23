@@ -478,6 +478,7 @@ function App() {
   const [enableCustomFontSize, setEnableCustomFontSize] = useState(() => localStorage.getItem('app-enable-font-size') === 'true');
   const [voiceGender, setVoiceGender] = useState(() => localStorage.getItem('app-voice-gender') || 'feminino');
   const [voiceSpeed, setVoiceSpeed] = useState(() => parseFloat(localStorage.getItem('app-voice-speed') || '1.0'));
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
 
   const getBestVoiceForGender = (gender) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
@@ -1914,6 +1915,125 @@ Importante: O JSON deve ser 100% válido.`;
       </div>
     );
   }
+
+  if (currentPath === '/baixar' || currentPath === '/app') {
+    return (
+      <div style={{
+        background: '#09090b',
+        color: '#fafafa',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '24px 16px',
+        fontFamily: "'Inter', sans-serif"
+      }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginTop: '40px', marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '2.2rem', color: 'var(--orange)', marginBottom: '8px', fontWeight: '900' }}>1Convite</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Instale o aplicativo oficial no seu celular</p>
+        </div>
+
+        {/* Mascote Chaminha conversando com o usuário */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px', maxWidth: '480px', width: '100%', padding: '0 8px' }}>
+          <ChaminhaVideo size={70} style={{ flexShrink: 0 }} />
+          <div className="glass-panel" style={{
+            padding: '12px 18px',
+            borderRadius: '16px',
+            fontSize: '0.9rem',
+            color: 'var(--text-secondary)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            position: 'relative',
+            background: 'rgba(255, 255, 255, 0.02)',
+            flex: 1,
+            textAlign: 'left'
+          }}>
+            <div style={{
+              position: 'absolute', top: '50%', left: '-6px', transform: 'translateY(-50%) rotate(45deg)',
+              width: '10px', height: '10px', background: '#09090b', borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)', zIndex: 1
+            }} />
+            🔥 <strong>Chaminha:</strong> "Leve o seu círculo de influência e devocionais diários para qualquer lugar instalando o app direto no celular!"
+          </div>
+        </div>
+
+        {/* Card Principal de Download */}
+        <div className="glass-panel" style={{ maxWidth: '480px', width: '100%', padding: '28px 20px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.02)', marginBottom: '24px', boxSizing: 'border-box' }}>
+          
+          {/* Botão de Download */}
+          <a href="/1convite.apk" download style={{ textDecoration: 'none' }}>
+            <button className="btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1.05rem', background: 'var(--grad-orange)', color: '#fff', fontWeight: 'bold', border: 'none', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: 'var(--shadow-orange)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Baixar Aplicativo Android (.APK)
+            </button>
+          </a>
+
+          {/* Instruções Android */}
+          <div style={{ marginTop: '28px', textAlign: 'left' }}>
+            <h3 style={{ fontSize: '1.05rem', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+              🤖 Como instalar no seu Android:
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <span style={{ background: 'var(--orange)', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem', flexShrink: 0 }}>1</span>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                  Clique no botão acima para iniciar o download do arquivo <strong>1convite.apk</strong>.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <span style={{ background: 'var(--orange)', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem', flexShrink: 0 }}>2</span>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                  Quando concluir, clique no arquivo para abrir. Se surgir um alerta do sistema, toque em <strong>Configurações</strong>.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <span style={{ background: 'var(--orange)', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem', flexShrink: 0 }}>3</span>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                  Habilite a permissão **"Permitir desta fonte"** (ou "Fontes Desconhecidas") para o seu navegador.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <span style={{ background: 'var(--orange)', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem', flexShrink: 0 }}>4</span>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+                  Volte para a tela de instalação, clique em <strong>Instalar</strong> e depois em <strong>Abrir</strong>. Pronto!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Instruções iOS */}
+          <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)', textAlign: 'left' }}>
+            <h3 style={{ fontSize: '1.05rem', color: '#fff', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+              🍎 Usuários de iPhone (iOS):
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.45', margin: '0 0 12px 0' }}>
+              O iOS não aceita instalações fora da loja oficial. Mas você pode instalar o app instantaneamente como um <strong>Atalho na Tela de Início</strong>:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                1. Abra <strong>1convite.com.br</strong> no navegador **Safari**.
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                2. Toque no ícone de <strong>Compartilhar</strong> (quadrado com seta para cima).
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                3. Role e selecione a opção <strong>"Adicionar à Tela de Início"</strong>.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Voltar para Web */}
+        <button onClick={() => {
+          window.location.href = '/';
+        }} style={{ background: 'transparent', border: 'none', color: 'var(--orange)', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600', textDecoration: 'underline', marginBottom: '40px' }}>
+          Acessar a Versão Web
+        </button>
+      </div>
+    );
+  }
+
 
   if (profileEmail === 'membro@1convite.com') {
     return (
