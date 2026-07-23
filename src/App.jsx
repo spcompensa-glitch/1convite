@@ -59,30 +59,92 @@ function RewardPopup({ amount, title, message, onClose }) {
 
 // ═══ COMPONENTE CHAMINHA VIDEO (MASCOTE 3D) ═══
 function ChaminhaVideo({ size = 100, style = {} }) {
+  const videoRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+
+    const processFrame = () => {
+      if (video.paused || video.ended) {
+        animationFrameId = requestAnimationFrame(processFrame);
+        return;
+      }
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      try {
+        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = frame.data;
+        const length = data.length;
+
+        for (let i = 0; i < length; i += 4) {
+          const r = data[i + 0];
+          const g = data[i + 1];
+          const b = data[i + 2];
+
+          // Detecção de tela verde (Chroma Key)
+          if (g > 90 && g > r * 1.15 && g > b * 1.15) {
+            data[i + 3] = 0; // Torna o pixel transparente
+          }
+        }
+        ctx.putImageData(frame, 0, 0);
+      } catch (e) {}
+
+      animationFrameId = requestAnimationFrame(processFrame);
+    };
+
+    const handlePlay = () => {
+      processFrame();
+    };
+
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('playing', handlePlay);
+
+    if (!video.paused) {
+      processFrame();
+    }
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('playing', handlePlay);
+    };
+  }, []);
+
   return (
     <div style={{
       width: size,
       height: size,
-      borderRadius: '50%',
-      border: '3px solid var(--orange)',
-      backgroundColor: '#fbfbfb',
-      overflow: 'hidden',
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: 'var(--shadow-md)',
+      position: 'relative',
+      overflow: 'visible',
       ...style
     }}>
       <video
+        ref={videoRef}
         src="/Imagens/Chaminha.mp4"
         autoPlay
         loop
         muted
         playsInline
+        style={{ display: 'none' }}
+        crossOrigin="anonymous"
+      />
+      <canvas
+        ref={canvasRef}
+        width={160}
+        height={160}
         style={{
-          width: '140%',
-          height: '140%',
-          objectFit: 'cover'
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain'
         }}
       />
     </div>
