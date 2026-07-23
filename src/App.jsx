@@ -2,6 +2,58 @@ import React, { useState, useEffect, useRef } from 'react';
 import Onboarding from './components/Onboarding';
 import html2canvas from 'html2canvas';
 
+
+// ═══ COMPONENTE CHAMINHA COIN ═══
+function ChaminhaCoin({ size = 22, style = {} }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"
+      width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }}>
+      <defs>
+        <radialGradient id="cgCoin" cx="40%" cy="35%" r="60%">
+          <stop offset="0%" stopColor="#FFE566"/>
+          <stop offset="40%" stopColor="#F5C842"/>
+          <stop offset="100%" stopColor="#C8860A"/>
+        </radialGradient>
+        <linearGradient id="cgRim" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFD700"/>
+          <stop offset="50%" stopColor="#B8860B"/>
+          <stop offset="100%" stopColor="#FFD700"/>
+        </linearGradient>
+        <radialGradient id="cgFlame" cx="50%" cy="65%" r="55%">
+          <stop offset="0%" stopColor="#FFF0A0"/>
+          <stop offset="40%" stopColor="#FFB300"/>
+          <stop offset="100%" stopColor="#E85500"/>
+        </radialGradient>
+        <linearGradient id="cgTip" x1="50%" y1="0%" x2="50%" y2="100%">
+          <stop offset="0%" stopColor="#FF6000"/>
+          <stop offset="100%" stopColor="#FFB300"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="60" cy="114" rx="28" ry="5" fill="rgba(0,0,0,0.18)"/>
+      <circle cx="60" cy="62" r="48" fill="url(#cgRim)"/>
+      <circle cx="60" cy="62" r="42" fill="url(#cgCoin)"/>
+      <ellipse cx="48" cy="45" rx="14" ry="8" fill="rgba(255,255,255,0.25)" transform="rotate(-20,48,45)"/>
+      <circle cx="60" cy="62" r="46" fill="none" stroke="#C8860A" strokeWidth="1" strokeDasharray="3,3.7" opacity="0.5"/>
+      <path d="M60 24 C56 30 50 33 50 40 C50 47 55 50 60 52 C65 50 70 47 70 40 C70 33 64 30 60 24Z" fill="url(#cgTip)"/>
+      <path d="M54 35 C51 39 50 44 52 47 C54 44 55 41 57 39Z" fill="#FF8C00" opacity="0.7"/>
+      <path d="M66 35 C69 39 70 44 68 47 C66 44 65 41 63 39Z" fill="#FF8C00" opacity="0.7"/>
+      <ellipse cx="60" cy="72" rx="14" ry="18" fill="url(#cgFlame)"/>
+      <ellipse cx="55" cy="65" rx="4" ry="5" fill="rgba(255,255,200,0.35)" transform="rotate(-10,55,65)"/>
+      <ellipse cx="55.5" cy="70" rx="3.5" ry="3.8" fill="#3D1A00"/>
+      <ellipse cx="64.5" cy="70" rx="3.5" ry="3.8" fill="#3D1A00"/>
+      <circle cx="54.2" cy="68.5" r="1.2" fill="white" opacity="0.9"/>
+      <circle cx="63.2" cy="68.5" r="1.2" fill="white" opacity="0.9"/>
+      <ellipse cx="51" cy="73.5" rx="3" ry="1.8" fill="#FF7B00" opacity="0.45"/>
+      <ellipse cx="69" cy="73.5" rx="3" ry="1.8" fill="#FF7B00" opacity="0.45"/>
+      <path d="M56 75.5 Q60 79 64 75.5" fill="none" stroke="#3D1A00" strokeWidth="1.4" strokeLinecap="round"/>
+      <ellipse cx="54" cy="88.5" rx="5" ry="3" fill="#E8720A"/>
+      <ellipse cx="66" cy="88.5" rx="5" ry="3" fill="#E8720A"/>
+      <text x="60" y="106" textAnchor="middle" fontFamily="'Arial Black', Arial, sans-serif"
+        fontSize="8" fontWeight="900" letterSpacing="1.5" fill="#7A4500">CHAMINHA</text>
+    </svg>
+  );
+}
+
 const LOJINHA_ITEMS = [
   { id: 'font-premium-1', type: 'font', name: 'Fonte Cursiva Elegante', price: 200, icon: '🔤', desc: 'Desbloqueia uma linda fonte manuscrita no Studio de Cards.' },
   { id: 'font-premium-2', type: 'font', name: 'Fonte Papiro Antigo', price: 300, icon: '📜', desc: 'Desbloqueia uma fonte estilo épico medieval.' },
@@ -2419,7 +2471,7 @@ Importante: O JSON deve ser 100% válido.`;
                   id: 'lojinha', 
                   label: 'Lojinha 🛒', 
                   icon: (
-                    <span style={{ fontSize: '1.8rem' }}>⭐</span>
+                    <ChaminhaCoin size={36} />
                   )
                 }
               ].map(card => (
@@ -3430,7 +3482,7 @@ Importante: O JSON deve ser 100% válido.`;
                             localStorage.setItem('app-coins', val);
                             return val;
                           });
-                          alert('Amém! Você ganhou +10 ⭐ por concluir este capítulo!');
+                          alert('Amém! Você ganhou +10 Chaminhas por concluir este capítulo!');
                           setBibleSelectedChapter(prev => prev + 1);
                         }}
                         style={{
@@ -3450,7 +3502,7 @@ Importante: O JSON deve ser 100% válido.`;
                           gap: '8px'
                         }}
                       >
-                        Concluir Capítulo (+10 ⭐)
+                        Concluir Capítulo (+10 🔥)
                       </button>
                     )}
                   </div>
@@ -3825,7 +3877,7 @@ Importante: O JSON deve ser 100% válido.`;
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Converse com personalidades históricas para guiar sua jornada.</p>
                     <div style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(245,158,11,0.15)', padding: '8px 20px', borderRadius: '30px', border: '1px solid var(--orange)' }}>
                       <span style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>Seu saldo:</span>
-                      <strong style={{ fontSize: '1.2rem', color: 'var(--orange)' }}>{userCoins} ⭐</strong>
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:'6px', fontSize:'1.2rem', fontWeight:'bold', color:'var(--orange)' }}><ChaminhaCoin size={24}/> {userCoins}</span>
                     </div>
                   </div>
 
@@ -3838,7 +3890,7 @@ Importante: O JSON deve ser 100% válido.`;
                             setActiveCounselor(counselor.id);
                           } else {
                             if (userCoins >= counselor.price) {
-                              if (confirm(`Deseja desbloquear ${counselor.name} por ${counselor.price} ⭐?`)) {
+                              if (confirm(`Deseja desbloquear ${counselor.name} por $<span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><ChaminhaCoin size={16}/> {counselor.price}</span>?`)) {
                                 setUserCoins(prev => {
                                   const val = prev - counselor.price;
                                   localStorage.setItem('app-coins', val);
@@ -5269,7 +5321,7 @@ Importante: O JSON deve ser 100% válido.`;
               <p style={{ color: 'var(--text-secondary)' }}>Use suas moedas ganhas para desbloquear itens exclusivos para o Studio de Cards!</p>
               <div style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(245,158,11,0.15)', padding: '12px 24px', borderRadius: '30px', border: '1px solid var(--orange)' }}>
                 <span style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>Seu saldo:</span>
-                <strong style={{ fontSize: '1.5rem', color: 'var(--orange)' }}>{userCoins} ⭐</strong>
+                <span style={{ display:'inline-flex', alignItems:'center', gap:'6px', fontSize:'1.5rem', fontWeight:'bold', color:'var(--orange)' }}><ChaminhaCoin size={28}/> {userCoins}</span>
               </div>
             </div>
 
@@ -5334,7 +5386,7 @@ Importante: O JSON deve ser 100% válido.`;
                         gap: '8px'
                       }}
                     >
-                      {isUnlocked ? 'Já Possui' : <>Comprar por {item.price} ⭐</>}
+                      {isUnlocked ? 'Já Possui' : <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><ChaminhaCoin size={16}/> {item.price}</span>}
                     </button>
                   </div>
                 );
