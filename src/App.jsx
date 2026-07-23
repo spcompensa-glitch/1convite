@@ -5657,30 +5657,30 @@ Importante: O JSON deve ser 100% válido.`;
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
               {LOJINHA_ITEMS.map(item => {
                 const isUnlocked = unlockedItems.includes(item.id);
                 return (
                   <div key={item.id} style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: isUnlocked ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '16px',
-                    padding: '24px',
+                    borderRadius: '12px',
+                    padding: '16px 10px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '12px',
+                    gap: '8px',
                     transition: 'transform 0.2s',
                     position: 'relative',
                     overflow: 'hidden'
                   }}>
                     {isUnlocked && (
-                      <div style={{ position: 'absolute', top: 12, right: 12, background: 'var(--primary)', color: '#fff', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                        ADQUIRIDO ✓
+                      <div style={{ position: 'absolute', top: 6, right: 6, background: 'var(--primary)', color: '#fff', padding: '2px 8px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                        ADQUIRIDO
                       </div>
                     )}
-                    <div style={{ fontSize: '3rem', textAlign: 'center' }}>{item.icon}</div>
-                    <h3 style={{ fontSize: '1.2rem', margin: 0, textAlign: 'center', color: 'var(--text-primary)' }}>{item.name}</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textAlign: 'center', flex: 1, margin: 0 }}>{item.desc}</p>
+                    <div style={{ fontSize: '2.2rem', textAlign: 'center', marginTop: isUnlocked ? '10px' : '0' }}>{item.icon}</div>
+                    <h3 style={{ fontSize: '0.95rem', margin: 0, textAlign: 'center', color: 'var(--text-primary)', fontWeight: 'bold' }}>{item.name}</h3>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center', flex: 1, margin: 0, lineHeight: '1.3' }}>{item.desc}</p>
                     
                     <button
                       onClick={() => {
@@ -5703,22 +5703,23 @@ Importante: O JSON deve ser 100% válido.`;
                       }}
                       disabled={isUnlocked}
                       style={{
-                        marginTop: '12px',
+                        marginTop: '8px',
                         width: '100%',
-                        padding: '12px',
-                        borderRadius: '12px',
+                        padding: '10px 6px',
+                        borderRadius: '10px',
                         border: 'none',
                         background: isUnlocked ? 'rgba(255,255,255,0.1)' : (userCoins >= item.price ? 'var(--orange)' : 'rgba(255,255,255,0.05)'),
                         color: isUnlocked ? 'var(--text-secondary)' : (userCoins >= item.price ? '#fff' : 'var(--text-secondary)'),
                         fontWeight: 'bold',
+                        fontSize: '0.8rem',
                         cursor: isUnlocked ? 'default' : (userCoins >= item.price ? 'pointer' : 'not-allowed'),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px'
+                        gap: '6px'
                       }}
                     >
-                      {isUnlocked ? 'Já Possui' : <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><ChaminhaCoin size={16}/> {item.price}</span>}
+                      {isUnlocked ? 'Já Possui' : <span style={{display:'inline-flex',alignItems:'center',gap:'4px'}}><ChaminhaCoin size={14}/> {item.price}</span>}
                     </button>
                   </div>
                 );
