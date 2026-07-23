@@ -474,6 +474,8 @@ function App() {
   // Customização de Temas & Cores
   const [rewardPopup, setRewardPopup] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'theme-green');
+  const [fontSizeScale, setFontSizeScale] = useState(() => parseInt(localStorage.getItem('app-font-size') || '16'));
+  const [enableCustomFontSize, setEnableCustomFontSize] = useState(() => localStorage.getItem('app-enable-font-size') === 'true');
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('onboarding-completed'));
 
   useEffect(() => {
@@ -481,6 +483,14 @@ function App() {
     document.body.classList.add(theme);
     localStorage.setItem('app-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (enableCustomFontSize) {
+      document.documentElement.style.fontSize = `${fontSizeScale}px`;
+    } else {
+      document.documentElement.style.fontSize = '16px';
+    }
+  }, [enableCustomFontSize, fontSizeScale]);
 
   // Login com ChatGPT
   const [chatFontSize, setChatFontSize] = useState('md');
@@ -4308,6 +4318,70 @@ Importante: O JSON deve ser 100% válido.`;
                     />
                   ))}
                 </div>
+              </div>
+
+              {/* Ajuste de Tamanho da Fonte (Modelo da Imagem) */}
+              <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary)' }}>Aa</span>
+                    <h3 style={{ fontSize: '1.05rem', margin: 0 }}>Alterar tamanho da letra</h3>
+                  </div>
+                  {/* Toggle Switch */}
+                  <label style={{ position: 'relative', display: 'inline-block', width: '42px', height: '22px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={enableCustomFontSize}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setEnableCustomFontSize(checked);
+                        localStorage.setItem('app-enable-font-size', checked);
+                      }}
+                      style={{ opacity: 0, width: 0, height: 0 }}
+                    />
+                    <span style={{
+                      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                      backgroundColor: enableCustomFontSize ? 'var(--orange)' : 'rgba(255,255,255,0.1)',
+                      border: enableCustomFontSize ? 'none' : '1px solid var(--slate-border)',
+                      transition: 'all 0.3s ease', borderRadius: '22px'
+                    }}>
+                      <span style={{
+                        position: 'absolute', content: '""', height: '16px', width: '16px', left: enableCustomFontSize ? '23px' : '2px', bottom: enableCustomFontSize ? '3px' : '2px',
+                        backgroundColor: enableCustomFontSize ? 'white' : 'var(--text-secondary)', transition: 'all 0.3s ease', borderRadius: '50%'
+                      }} />
+                    </span>
+                  </label>
+                </div>
+
+                {enableCustomFontSize && (
+                  <div className="animate-fade-in" style={{ marginTop: '16px', padding: '0 4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '0.85rem', opacity: 0.6, fontWeight: '500' }}>Aa</span>
+                      <input
+                        type="range"
+                        min="13"
+                        max="22"
+                        value={fontSizeScale}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          setFontSizeScale(val);
+                          localStorage.setItem('app-font-size', val);
+                        }}
+                        style={{
+                          flex: 1,
+                          accentColor: 'var(--orange)',
+                          height: '5px',
+                          borderRadius: '3px',
+                          cursor: 'pointer'
+                        }}
+                      />
+                      <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Aa</span>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '12px 0 0', textAlign: 'center', opacity: 0.9 }}>
+                      Clique e arraste a barra para alterar o tamanho da letra.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Logout da Conta */}
