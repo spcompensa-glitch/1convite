@@ -476,6 +476,28 @@ function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'theme-green');
   const [fontSizeScale, setFontSizeScale] = useState(() => parseInt(localStorage.getItem('app-font-size') || '16'));
   const [enableCustomFontSize, setEnableCustomFontSize] = useState(() => localStorage.getItem('app-enable-font-size') === 'true');
+  const [voiceGender, setVoiceGender] = useState(() => localStorage.getItem('app-voice-gender') || 'feminino');
+  const [voiceSpeed, setVoiceSpeed] = useState(() => parseFloat(localStorage.getItem('app-voice-speed') || '1.0'));
+
+  const getBestVoiceForGender = (gender) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices();
+    const ptVoices = voices.filter(v => v.lang.startsWith('pt'));
+    if (ptVoices.length === 0) return null;
+
+    const maleKeywords = ['daniel', 'antonio', 'felipe', 'antónio', 'ricardo', 'helio', 'thiago', 'antônio'];
+    const femaleKeywords = ['maria', 'francisca', 'luciana', 'joana', 'helena', 'zira', 'google', 'lecia', 'solene'];
+
+    if (gender === 'masculino') {
+      const maleVoice = ptVoices.find(v => maleKeywords.some(keyword => v.name.toLowerCase().includes(keyword)));
+      if (maleVoice) return maleVoice;
+    } else {
+      const femaleVoice = ptVoices.find(v => femaleKeywords.some(keyword => v.name.toLowerCase().includes(keyword)));
+      if (femaleVoice) return femaleVoice;
+    }
+
+    return ptVoices.find(v => v.name.includes('Natural')) || ptVoices.find(v => v.name.includes('Google')) || ptVoices[0];
+  };
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('onboarding-completed'));
 
   useEffect(() => {
@@ -1461,19 +1483,12 @@ function App() {
     const texto = `${codigoDia.codigo_verbal}. Versículo chave: ${codigoDia.versiculo_chave}. Reflexão: ${codigoDia.texto_reflexao.replace(/\n/g, ' ')}`;
     const utterance = new SpeechSynthesisUtterance(texto);
     utterance.lang = 'pt-BR';
-    utterance.rate = 1.05;
+    utterance.rate = voiceSpeed * 1.05;
 
     if ('speechSynthesis' in window) {
-      const voices = window.speechSynthesis.getVoices();
-      let selectedVoice = voices.find(v => v.lang.startsWith('pt') && v.name.includes('Natural'));
-      if (!selectedVoice) {
-        selectedVoice = voices.find(v => v.lang.startsWith('pt') && v.name.includes('Google'));
-      }
-      if (!selectedVoice) {
-        selectedVoice = voices.find(v => v.lang.startsWith('pt'));
-      }
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
+      const voice = getBestVoiceForGender(voiceGender);
+      if (voice) {
+        utterance.voice = voice;
       }
     }
 
@@ -1707,11 +1722,11 @@ Importante: O JSON deve ser 100% válido.`;
       } else {
         const utterance = new SpeechSynthesisUtterance(seg.text);
         utterance.lang = 'pt-BR';
-        utterance.rate = seg.rate;
+        utterance.rate = seg.rate * voiceSpeed;
         utterance.pitch = 0.95;
 
         if ('speechSynthesis' in window) {
-          const voice = window.speechSynthesis.getVoices().find(v => v.name === selectedVoiceName);
+          const voice = getBestVoiceForGender(voiceGender);
           if (voice) {
             utterance.voice = voice;
           }
@@ -4382,6 +4397,85 @@ Importante: O JSON deve ser 100% válido.`;
                     </p>
                   </div>
                 )}
+              </div>
+
+              {/* Configurações de Voz (Modelo da Imagem) */}
+              <div className="glass-panel" style={{ marginBottom: '16px', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0 }}>Voz</h3>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {/* Opção Masculina */}
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Masculina</span>
+                    <input
+                      type="radio"
+                      name="voiceGender"
+                      checked={voiceGender === 'masculino'}
+                      onChange={() => {
+                        setVoiceGender('masculino');
+                        localStorage.setItem('app-voice-gender', 'masculino');
+                      }}
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        accentColor: 'var(--orange)',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </label>
+
+                  {/* Opção Feminina */}
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Feminina</span>
+                    <input
+                      type="radio"
+                      name="voiceGender"
+                      checked={voiceGender === 'feminino'}
+                      onChange={() => {
+                        setVoiceGender('feminino');
+                        localStorage.setItem('app-voice-gender', 'feminino');
+                      }}
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        accentColor: 'var(--orange)',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </label>
+
+                  {/* Velocidade de Reprodução */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px', borderTop: '1px solid var(--slate-border)', paddingTop: '12px' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Velocidade de reprodução</span>
+                    <select
+                      value={voiceSpeed}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setVoiceSpeed(val);
+                        localStorage.setItem('app-voice-speed', val);
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--slate-border)',
+                        backgroundColor: 'var(--white)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.85rem',
+                        fontWeight: '500',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="0.8">0.8x</option>
+                      <option value="1.0">1x</option>
+                      <option value="1.2">1.2x</option>
+                      <option value="1.5">1.5x</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* Logout da Conta */}
