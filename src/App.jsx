@@ -3918,10 +3918,26 @@ Importante: O JSON deve ser 100% válido.`;
 
               {/* Lista */}
               {contatos.length === 0 && !showAddContato ? (
-                <div className="glass-panel" style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🤝</div>
-                  <h3 style={{ marginBottom: '8px' }}>Nenhum Próximo ainda</h3>
-                  <p>Adicione pessoas do seu convívio diário para começar a notá-las com intenção.</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', margin: '24px 0', padding: '0 12px' }}>
+                  <ChaminhaVideo size={80} style={{ flexShrink: 0 }} />
+                  <div className="glass-panel animate-fade-in" style={{
+                    padding: '12px 18px',
+                    borderRadius: '16px',
+                    fontSize: '0.9rem',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    position: 'relative',
+                    maxWidth: '360px',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: '50%', left: '-6px', transform: 'translateY(-50%) rotate(45deg)',
+                      width: '10px', height: '10px', background: 'var(--bg-app)', borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)', zIndex: 1
+                    }} />
+                    🔥 <strong>Chaminha:</strong> "Nenhum Próximo adicionado ainda! Adicione pessoas do seu convívio diário aqui para começar a notá-las e interagir com intenção!"
+                  </div>
                 </div>
               ) : (
                 contatos.map(c => (
