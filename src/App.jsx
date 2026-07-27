@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Onboarding from './components/Onboarding';
 import html2canvas from 'html2canvas';
+import LandingPage from './components/LandingPage/LandingPage';
+import { ARCADE_QUIZ_QUESTIONS, ARCADE_CHARADAS_QUESTIONS, ARCADE_FORCA_WORDS, ARCADE_CACA_PALAVRAS_LIST, generateCacaPalavrasGrid } from './data/arcadeData';
 
 
 
@@ -252,6 +254,7 @@ function App() {
   const [arcadeCacaGrade, setArcadeCacaGrade] = useState([]);
   const [arcadeCacaFound, setArcadeCacaFound] = useState([]);
   const [arcadeCacaSelected, setArcadeCacaSelected] = useState([]);
+  const [arcadeCacaScore, setArcadeCacaScore] = useState(0);
   const [arcadeCacaGameOver, setArcadeCacaGameOver] = useState(false);
   // --- END RESTORED ARCADE STATES ---
 
@@ -685,7 +688,19 @@ function App() {
   const [trilhaLoading, setTrilhaLoading] = useState(false);
 
   // Modo Escuro & Perfil
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('1convite_dark_mode') === 'true');
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('1convite_dark_mode');
+    if (saved !== null) return saved === 'true';
+    return true;
+  });
+
+  useEffect(() => {
+    document.body.style.cssText = '';
+    document.body.classList.remove('dark-mode');
+    const rootEl = document.getElementById('root');
+    if (rootEl) rootEl.style.cssText = '';
+  }, []);
+
   const [profileName, setProfileName] = useState('Membro Convidado');
   const [profileEmail, setProfileEmail] = useState('membro@1convite.com');
   const [profileAvatar, setProfileAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80');
@@ -751,8 +766,10 @@ function App() {
   };
 
   useEffect(() => {
-    if (profileEmail !== 'membro@1convite.com') return;
-
+    // DESABILITADO: só deve rodar para a LandingPage da Techla
+    // if (profileEmail !== 'membro@1convite.com') return;
+    return;
+    
     // Forçar fundo preto no body e transparente no root para o vídeo de background aparecer
     const originalBodyBg = document.body.style.backgroundColor;
     document.body.style.backgroundColor = '#030303';
@@ -811,6 +828,13 @@ function App() {
   }, [profileEmail]);
 
   useEffect(() => {
+    document.body.style.removeProperty('background-color');
+    document.body.style.removeProperty('backgroundColor');
+    const rootEl = document.getElementById('root');
+    if (rootEl) {
+      rootEl.style.removeProperty('background-color');
+      rootEl.style.removeProperty('backgroundColor');
+    }
     localStorage.setItem('1convite_dark_mode', darkMode);
     if (darkMode) {
       document.body.classList.add('dark-mode');
@@ -999,6 +1023,61 @@ function App() {
   const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
     ? 'http://localhost:3001/api/v1' 
     : '/api/v1';
+
+  // ── TIMERS DOS JOGOS ──────────────────────────────────────
+  // Timer do Quiz
+  useEffect(() => {
+    if (arcadeActiveGame !== 'quiz' || arcadeQuizGameOver || arcadeQuizFeedback || arcadeQuizTimer <= 0) return;
+    const interval = setInterval(() => {
+      setArcadeQuizTimer(prev => {
+        if (prev <= 1) {
+          // Tempo esgotado - avança para próxima pergunta ou game over
+          clearInterval(interval);
+          setArcadeQuizFeedback('wrong');
+          setTimeout(() => {
+            setArcadeQuizFeedback(null);
+            const resetTime = arcadeDifficulty === 'facil' ? 30 : (arcadeDifficulty === 'avancado' ? 7 : 15);
+            setArcadeQuizTimer(resetTime);
+            if (arcadeQuizCurrentQuestion + 1 < arcadeQuizList.length) {
+              setArcadeQuizCurrentQuestion(prev => prev + 1);
+            } else {
+              setArcadeQuizGameOver(true);
+            }
+          }, 1500);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [arcadeActiveGame, arcadeQuizGameOver, arcadeQuizFeedback, arcadeQuizTimer, arcadeQuizCurrentQuestion, arcadeQuizList.length, arcadeDifficulty]);
+
+  // Timer das Charadas
+  useEffect(() => {
+    if (arcadeActiveGame !== 'charadas' || arcadeCharadasGameOver || arcadeCharadasFeedback || arcadeCharadasTimer === null || arcadeCharadasTimer <= 0) return;
+    const interval = setInterval(() => {
+      setArcadeCharadasTimer(prev => {
+        if (prev <= 1) {
+          // Tempo esgotado - avança ou game over
+          clearInterval(interval);
+          setArcadeCharadasFeedback('wrong');
+          setTimeout(() => {
+            setArcadeCharadasFeedback(null);
+            if (arcadeCharadasCurrent + 1 < arcadeCharadasList.length) {
+              setArcadeCharadasCurrent(prev => prev + 1);
+              const resetTime = arcadeDifficulty === 'facil' ? null : (arcadeDifficulty === 'avancado' ? 7 : 15);
+              setArcadeCharadasTimer(resetTime);
+            } else {
+              setArcadeCharadasGameOver(true);
+            }
+          }, 1500);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [arcadeActiveGame, arcadeCharadasGameOver, arcadeCharadasFeedback, arcadeCharadasTimer, arcadeCharadasCurrent, arcadeCharadasList.length, arcadeDifficulty]);
 
   // ── ChatGPT Integration & Chat IA ──────────────────────────
   useEffect(() => {
@@ -2044,227 +2123,9 @@ Importante: O JSON deve ser 100% válido.`;
   }
 
 
-  if (profileEmail === 'membro@1convite.com') {
-    return (
-      <div className="lp-container">
-        {/* Video em Background controlado pelo ScrollTrigger */}
-        <video 
-          id="lp-bg-video"
-          src="/Imagens/video.mp4.mp4"
-          preload="auto"
-          playsInline
-          webkit-playsinline="true"
-          muted
-          loop
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            zIndex: -2,
-            pointerEvents: 'none'
-          }}
-        />
-        {/* Overlay escuro para contraste e legibilidade */}
-        <div className="lp-video-overlay" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0, 0, 0, 0.45)',
-          zIndex: -1,
-          pointerEvents: 'none'
-        }} />
-
-        {/* ── HEADER DA LANDING PAGE ────────────────────────── */}
-        <header className="lp-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 40px', background: 'rgba(3, 3, 3, 0.45)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', zIndex: 100, width: '100%', position: 'sticky', top: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
-            <img src="/LOGOMARCA.png" alt="1Convite Logo" style={{ height: '30px', objectFit: 'contain' }} />
-            <button 
-              className="btn-secondary" 
-              onClick={() => {
-                const loginEl = document.getElementById('secao-login');
-                if (loginEl) loginEl.scrollIntoView({ behavior: 'smooth' });
-              }}
-              style={{ padding: '8px 20px', fontSize: '0.85rem', fontWeight: 'bold', background: 'transparent', color: '#00f08f', border: '1.5px solid rgba(0, 240, 143, 0.4)', borderRadius: '9999px', cursor: 'pointer', transition: 'all 0.3s' }}
-              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(0, 240, 143, 0.08)'; }}
-              onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              Acessar App 🔑
-            </button>
-          </div>
-        </header>
-
-        {/* ── SEÇÃO 1: HERO (100vh) ────────────────────────── */}
-        <section className="lp-section">
-          <div style={{ maxWidth: '800px', width: '100%', padding: '0 24px', zIndex: 5, textAlign: 'center' }}>
-            <span className="lp-badge">Jornada Espiritual Ativa</span>
-            <h1 className="lp-title" style={{ marginTop: '24px', fontSize: '3.5rem', lineHeight: '1.1', color: '#ffffff' }}>
-              Desacelere sua mente. <br /><span>Conecte-se com Deus.</span>
-            </h1>
-            <p className="lp-description" style={{ marginTop: '20px', fontSize: '1.15rem', color: '#e4e4e7', margin: '20px auto 30px' }}>
-              11 minutos diários de meditação cristã orientada, respiração controlada contra ansiedade e leitura da Bíblia narrada.
-            </p>
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-              <button 
-                className="lp-hero-cta"
-                onClick={() => {
-                  const loginEl = document.getElementById('secao-login');
-                  if (loginEl) loginEl.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Começar Agora 🚀
-              </button>
-              <button 
-                className="lp-hero-cta-outline"
-                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: '1.05rem', fontWeight: '700', padding: '16px 36px', borderRadius: '9999px', textDecoration: 'none', border: '1.5px solid rgba(255, 255, 255, 0.25)', cursor: 'pointer', transition: 'all 0.3s' }}
-                onClick={() => {
-                  const nextEl = document.getElementById('secao-escritura');
-                  if (nextEl) nextEl.scrollIntoView({ behavior: 'smooth' });
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-              >
-                Descobrir Roots 📖
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── SEÇÃO 2: ESCRITURA (100vh) ────────────────────────── */}
-        <section id="secao-escritura" className="lp-section">
-          <div className="lp-scroll-text-card" style={{ background: 'rgba(10, 10, 12, 0.55)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
-            <div className="lp-giant-bg-text" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.04 }}>ESCRITURA</div>
-            <span className="lp-badge" style={{ background: 'rgba(255,255,255,0.04)', color: '#fafafa', borderColor: 'rgba(255,255,255,0.15)' }}>Passado 10%</span>
-            <h2 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem', textAlign: 'left' }}>
-              A Biblioteca da <span>Palavra</span>
-            </h2>
-            <p className="lp-description" style={{ marginTop: '12px', textAlign: 'left', maxWidth: '640px', color: '#e4e4e7' }}>
-              O conhecimento acumulado ao longo da história cristã. 10% da nossa mente é moldada pelas lições e escrituras antigas que pavimentam o nosso caminho com verdade.
-            </p>
-          </div>
-        </section>
-
-        {/* ── SEÇÃO 3: PRESENÇA (100vh) ────────────────────────── */}
-        <section className="lp-section">
-          <div className="lp-scroll-text-card" style={{ background: 'rgba(10, 10, 12, 0.55)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
-            <div className="lp-giant-bg-text" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.04 }}>PRESENÇA</div>
-            <span className="lp-badge">Presente 70%</span>
-            <h2 className="lp-title" style={{ marginTop: '12px', fontSize: '2.5rem', textAlign: 'left' }}>
-              O Eterno <span>Agora</span>
-            </h2>
-            <p className="lp-description" style={{ marginTop: '12px', textAlign: 'left', maxWidth: '640px', color: '#e4e4e7' }}>
-              70% de nossa vida espiritual ativa acontece no dia de hoje. A quietude silenciosa para orar, meditar e sentir a presença do Criador no único tempo que realmente existe: o Agora.
-            </p>
-          </div>
-        </section>
-
-        {/* ── SEÇÃO 4: RECURSOS & PREÇOS (100vh) ────────────────────────── */}
-        <section className="lp-section">
-          <div className="lp-scroll-text-card lp-card-wide" style={{ background: 'rgba(10, 10, 12, 0.55)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
-            <span className="lp-badge">O que oferecemos</span>
-            <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2.1rem', textAlign: 'left' }}>Recursos do <span>1Convite</span></h2>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginTop: '20px' }} className="lp-grid-mobile-single">
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 240, 143, 0.15)', transition: 'all 0.3s' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00f08f'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 240, 143, 0.15)'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 240, 143, 0.15)'; e.currentTarget.style.boxShadow = 'none'; }}>
-                <span style={{ fontSize: '1.6rem' }}>🎧</span>
-                <h4 style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#00f08f' }}>Meditação Cristã</h4>
-                <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Áudios diários guiados focados em alinhar a mente com Jesus.</p>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 240, 143, 0.15)', transition: 'all 0.3s' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00f08f'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 240, 143, 0.15)'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 240, 143, 0.15)'; e.currentTarget.style.boxShadow = 'none'; }}>
-                <span style={{ fontSize: '1.6rem' }}>🌀</span>
-                <h4 style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#00f08f' }}>Respiração Ativa</h4>
-                <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Técnicas respiratórias guiadas para aliviar estresse e ansiedade.</p>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 240, 143, 0.15)', transition: 'all 0.3s' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00f08f'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 240, 143, 0.15)'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 240, 143, 0.15)'; e.currentTarget.style.boxShadow = 'none'; }}>
-                <span style={{ fontSize: '1.6rem' }}>📖</span>
-                <h4 style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#00f08f' }}>Bíblia ACF Narrada</h4>
-                <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Leitura bíblica em áudio e dicionário teológico integrado.</p>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 240, 143, 0.15)', transition: 'all 0.3s' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00f08f'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 240, 143, 0.15)'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 240, 143, 0.15)'; e.currentTarget.style.boxShadow = 'none'; }}>
-                <span style={{ fontSize: '1.6rem' }}>👥</span>
-                <h4 style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#00f08f' }}>Cultivar Contatos</h4>
-                <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: 0 }}>Alertas a cada 48h para cultivar relacionamentos prioritários.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── SEÇÃO 5: ACESSO / LOGIN (100vh) ────────────────────────── */}
-        <section id="secao-login" className="lp-section">
-          <div className="lp-scroll-text-card" style={{ maxWidth: '480px', background: 'rgba(10, 10, 12, 0.7)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
-            <span className="lp-badge">Mateus 24:14</span>
-            <h2 className="lp-title" style={{ marginTop: '8px', fontSize: '2rem', textAlign: 'center' }}>Acesse o <span>1Convite</span></h2>
-            
-            <div className="login-card" style={{ margin: '20px auto 0', background: 'rgba(10, 10, 12, 0.85)', border: '1.5px solid rgba(0, 240, 143, 0.25)', backdropFilter: 'none', padding: '24px', borderRadius: '18px', width: '100%', boxSizing: 'border-box' }}>
-              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00f08f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px' }}>
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <h3 style={{ fontSize: '1.2rem', color: '#fff', margin: 0, fontWeight: '700' }}>Acesso ao Sistema</h3>
-                <p style={{ fontSize: '0.85rem', color: '#9ca3af', margin: '4px 0 0 0' }}>Entre com seu e-mail para continuar</p>
-              </div>
-
-              <form onSubmit={handleEmailLogin} className="flex-column gap-xs" style={{ textAlign: 'left' }}>
-                <div className="input-group">
-                  <label style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: '500' }}>Nome Completo</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={loginNome}
-                    onChange={(e) => setLoginNome(e.target.value)}
-                    placeholder="Seu nome"
-                    style={{ padding: '12px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', width: '100%', boxSizing: 'border-box', marginTop: '4px', outline: 'none' }}
-                    required
-                  />
-                </div>
-                <div className="input-group" style={{ marginTop: '12px' }}>
-                  <label style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: '500' }}>Endereço de E-mail</label>
-                  <input
-                    type="email"
-                    className="input-field"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    style={{ padding: '12px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', width: '100%', boxSizing: 'border-box', marginTop: '4px', outline: 'none' }}
-                    required
-                  />
-                </div>
-
-                {loginError && (
-                  <div style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: '500', margin: '8px 0 0' }}>
-                    {loginError}
-                  </div>
-                )}
-
-                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '20px', padding: '14px', fontSize: '0.9rem', background: '#00f08f', color: '#030303', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-                  Entrar na Conta
-                </button>
-              </form>
-
-              <div className="login-separator" style={{ margin: '20px 0', fontSize: '0.75rem', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>ou</div>
-
-              <button className="btn-secondary" style={{ width: '100%', padding: '12px', fontSize: '0.85rem', background: 'transparent', color: '#fafafa', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onClick={handleGuestLogin}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                Acessar como Visitante
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── FOOTER DA LP ────────────────────────── */}
-        <footer style={{ textAlign: 'center', padding: '30px 24px', fontSize: '0.78rem', color: '#71717a', borderTop: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(3, 3, 3, 0.45)', zIndex: 10, position: 'relative', marginTop: 'auto' }}>
-          <p>© {new Date().getFullYear()} Movimento 1Convite. Todos os direitos reservados.</p>
-          <p style={{ marginTop: '4px', opacity: 0.7 }}>Desenvolvido com foco no bem-estar espiritual cristão.</p>
-        </footer>
-      </div>
-    );
-}
+  // if (profileEmail === 'membro@1convite.com') {
+  //   return <LandingPage />;
+  // }
 
   return (
     <div className="app-container">
@@ -4163,7 +4024,7 @@ Importante: O JSON deve ser 100% válido.`;
                 /* GRID DE CONSELHEIROS */
                 <div style={{ flex: 1, overflowY: 'auto', padding: '24px', paddingBottom: '100px' }}>
                   <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <h2 style={{ fontSize: '1.8rem', color: 'var(--primary)', marginBottom: '8px' }}>Escolha seu Conselheiro</h2>
+                    <h2 style={{ fontSize: '1.8rem', color: 'var(--orange)', marginBottom: '8px' }}>Escolha seu Conselheiro</h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Converse com personalidades históricas para guiar sua jornada.</p>
                     <div style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(245,158,11,0.15)', padding: '8px 20px', borderRadius: '30px', border: '1px solid var(--orange)' }}>
                       <span style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>Seu saldo:</span>
@@ -4205,7 +4066,7 @@ Importante: O JSON deve ser 100% válido.`;
                           <div className="dashboard-card-icon" style={{
                             width: '50px', height: '50px', borderRadius: '50%', background: isUnlocked ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', margin: '0 auto',
-                            color: isUnlocked ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: 'bold'
+                            color: isUnlocked ? 'var(--orange)' : 'var(--text-secondary)', fontWeight: 'bold'
                           }}>
                             {counselor.name.substring(0,2).toUpperCase()}
                           </div>
@@ -4229,7 +4090,7 @@ Importante: O JSON deve ser 100% válido.`;
                     </button>
                     
                     <div style={{ fontSize: '4.5rem', filter: 'drop-shadow(0 0 10px rgba(16, 185, 129, 0.2))' }}>
-                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5">
+                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" strokeWidth="1.5">
                         <rect x="3" y="11" width="18" height="10" rx="2"></rect>
                         <circle cx="12" cy="5" r="2"></circle>
                         <path d="M12 7v4"></path>
@@ -5131,7 +4992,7 @@ Importante: O JSON deve ser 100% válido.`;
                       setArcadeQuizCurrentQuestion(0); setArcadeQuizScore(0); setArcadeQuizGameOver(false); setArcadeQuizFeedback(null);
                     } else if (arcadeSelectedGame === 'cacapalavras') {
                       const filtered = ARCADE_CACA_PALAVRAS_LIST.filter(q => q.difficulty === 'facil');
-                      const { grid, words } = generateCacaPalavrasGrid(filtered, 8, 3);
+                      const { grid, words } = generateCacaPalavrasGrid(filtered, 10, 5);
                       setArcadeCacaGrade(grid); setArcadeCacaWords(words); setArcadeCacaFound([]); setArcadeCacaSelected([]); setArcadeCacaScore(0); setArcadeCacaGameOver(false);
                     } else if (arcadeSelectedGame === 'charadas') {
                       setArcadeCharadasList(ARCADE_CHARADAS_QUESTIONS.filter(q => q.difficulty === 'facil').sort(() => Math.random() - 0.5));
@@ -5155,7 +5016,7 @@ Importante: O JSON deve ser 100% válido.`;
                       setArcadeQuizCurrentQuestion(0); setArcadeQuizScore(0); setArcadeQuizGameOver(false); setArcadeQuizFeedback(null);
                     } else if (arcadeSelectedGame === 'cacapalavras') {
                       const filtered = ARCADE_CACA_PALAVRAS_LIST.filter(q => q.difficulty === 'medio');
-                      const { grid, words } = generateCacaPalavrasGrid(filtered, 10, 4);
+                      const { grid, words } = generateCacaPalavrasGrid(filtered, 12, 6);
                       setArcadeCacaGrade(grid); setArcadeCacaWords(words); setArcadeCacaFound([]); setArcadeCacaSelected([]); setArcadeCacaScore(0); setArcadeCacaGameOver(false);
                     } else if (arcadeSelectedGame === 'charadas') {
                       setArcadeCharadasList(ARCADE_CHARADAS_QUESTIONS.filter(q => q.difficulty === 'medio').sort(() => Math.random() - 0.5));
@@ -5179,7 +5040,7 @@ Importante: O JSON deve ser 100% válido.`;
                       setArcadeQuizCurrentQuestion(0); setArcadeQuizScore(0); setArcadeQuizGameOver(false); setArcadeQuizFeedback(null);
                     } else if (arcadeSelectedGame === 'cacapalavras') {
                       const filtered = ARCADE_CACA_PALAVRAS_LIST.filter(q => q.difficulty === 'avancado');
-                      const { grid, words } = generateCacaPalavrasGrid(filtered, 12, 6);
+                      const { grid, words } = generateCacaPalavrasGrid(filtered, 14, 8);
                       setArcadeCacaGrade(grid); setArcadeCacaWords(words); setArcadeCacaFound([]); setArcadeCacaSelected([]); setArcadeCacaScore(0); setArcadeCacaGameOver(false);
                     } else if (arcadeSelectedGame === 'charadas') {
                       setArcadeCharadasList(ARCADE_CHARADAS_QUESTIONS.filter(q => q.difficulty === 'avancado').sort(() => Math.random() - 0.5));
@@ -5243,7 +5104,8 @@ Importante: O JSON deve ser 100% válido.`;
                       setArcadeQuizCurrentQuestion(0);
                       setArcadeQuizScore(0);
                       setArcadeQuizGameOver(false);
-                      setArcadeQuizTimer(15);
+                      const resetTime = arcadeDifficulty === 'facil' ? 30 : (arcadeDifficulty === 'avancado' ? 7 : 15);
+                      setArcadeQuizTimer(resetTime);
                     }} style={{ padding: '16px 32px', fontSize: '1.1rem', borderRadius: '12px', width: '100%' }}>
                       Voltar ao Lobby
                     </button>
@@ -5424,7 +5286,7 @@ Importante: O JSON deve ser 100% válido.`;
             })()}
 
             {arcadeActiveGame === 'forca' && (() => {
-              const currentWordObj = ARCADE_FORCA_WORDS[arcadeForcaCurrent];
+              const currentWordObj = arcadeForcaList[arcadeForcaCurrent];
               const word = currentWordObj ? currentWordObj.word.toUpperCase() : '';
               
               // Verifica se a palavra inteira já foi adivinhada
@@ -5432,13 +5294,6 @@ Importante: O JSON deve ser 100% válido.`;
               const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
               
               const maxMistakes = arcadeDifficulty === 'facil' ? 8 : (arcadeDifficulty === 'avancado' ? 4 : 6);
-              
-              // Processar término natural ou falha no próprio render
-              if (isWordGuessed && !arcadeForcaFeedback) {
-                setTimeout(() => setArcadeForcaFeedback('won'), 500);
-              } else if (arcadeForcaMistakes >= maxMistakes && !arcadeForcaFeedback) {
-                setTimeout(() => setArcadeForcaFeedback('lost'), 500);
-              }
 
               const handleGuess = (letter) => {
                 if (arcadeForcaFeedback || arcadeForcaGuesses.includes(letter)) return;
@@ -5447,7 +5302,21 @@ Importante: O JSON deve ser 100% válido.`;
                 setArcadeForcaGuesses(newGuesses);
                 
                 if (!word.includes(letter)) {
-                  setArcadeForcaMistakes(prev => prev + 1);
+                  setArcadeForcaMistakes(prev => {
+                    const newMistakes = prev + 1;
+                    // Verifica se perdeu após esta tentativa
+                    if (newMistakes >= maxMistakes) {
+                      setTimeout(() => setArcadeForcaFeedback('lost'), 600);
+                    }
+                    return newMistakes;
+                  });
+                } else {
+                  // Verifica se ganhou após esta tentativa
+                  const updatedWord = word.split('');
+                  const willBeGuessed = updatedWord.every(char => char === ' ' || newGuesses.includes(char));
+                  if (willBeGuessed) {
+                    setTimeout(() => setArcadeForcaFeedback('won'), 600);
+                  }
                 }
               };
 
@@ -5585,7 +5454,7 @@ Importante: O JSON deve ser 100% válido.`;
             })()}
 
             {arcadeActiveGame === 'cacapalavras' && (() => {
-              const size = 10;
+              const size = Math.sqrt(arcadeCacaGrade.length) || 10;
               
               const handleLetterClick = (id, r, c, char) => {
                 if (arcadeCacaGameOver) return;
@@ -5606,8 +5475,10 @@ Importante: O JSON deve ser 100% válido.`;
                   const rDiff = second.r - first.r;
                   const cDiff = second.c - first.c;
                   
-                  // Deve ser horizontal ou vertical apenas por enquanto (simplificado no gerador)
-                  if (first.r === second.r || first.c === second.c) {
+                  // Deve ser horizontal, vertical ou diagonal
+                  const absR = Math.abs(rDiff);
+                  const absC = Math.abs(cDiff);
+                  if (first.r === second.r || first.c === second.c || absR === absC) {
                     const stepR = rDiff === 0 ? 0 : rDiff / Math.abs(rDiff);
                     const stepC = cDiff === 0 ? 0 : cDiff / Math.abs(cDiff);
                     
@@ -5627,14 +5498,15 @@ Importante: O JSON deve ser 100% válido.`;
                     }
                     
                     // Checa se a palavra (ou o reverso dela) está na lista
-                    const wordObj = arcadeCacaWords.find(w => w.word === formedWord || w.word === formedWord.split('').reverse().join(''));
+                    const normalize = s => s.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const wordObj = arcadeCacaWords.find(w => normalize(w.word) === formedWord || normalize(w.word) === formedWord.split('').reverse().join(''));
                     
                     if (wordObj && !wordObj.found) {
                       // Achou!
                       const newFound = [...arcadeCacaFound, ...formedIndices];
                       setArcadeCacaFound(newFound);
                       
-                      const newWords = arcadeCacaWords.map(w => w.word === wordObj.word ? { ...w, found: true } : w);
+                      const newWords = arcadeCacaWords.map(w => normalize(w.word) === normalize(wordObj.word) ? { ...w, found: true } : w);
                       setArcadeCacaWords(newWords);
                       
                       const allFound = newWords.every(w => w.found);
@@ -5809,7 +5681,7 @@ Importante: O JSON deve ser 100% válido.`;
                 return (
                   <div key={item.id} style={{
                     background: 'rgba(255,255,255,0.03)',
-                    border: isUnlocked ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
+                    border: isUnlocked ? '1px solid var(--orange)' : '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '12px',
                     padding: '16px 10px',
                     display: 'flex',
@@ -5820,7 +5692,7 @@ Importante: O JSON deve ser 100% válido.`;
                     overflow: 'hidden'
                   }}>
                     {isUnlocked && (
-                      <div style={{ position: 'absolute', top: 6, right: 6, background: 'var(--primary)', color: '#fff', padding: '2px 8px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                      <div style={{ position: 'absolute', top: 6, right: 6, background: 'var(--orange)', color: '#fff', padding: '2px 8px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 'bold' }}>
                         ADQUIRIDO
                       </div>
                     )}
