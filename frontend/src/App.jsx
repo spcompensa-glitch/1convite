@@ -629,7 +629,7 @@ function App() {
   const isChapterRead = (bookAbrev, chapter) => !!(bibleProgress[bookAbrev]?.[chapter]);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
-  const [bibleShowAudioPlayer, setBibleShowAudioPlayer] = useState(false);
+  const [bibleShowAudioPlayer, setBibleShowAudioPlayer] = useState(true);
   const [activeSabadoBlock, setActiveSabadoBlock] = useState('menu');
   const [isNarrating, setIsNarrating] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -1358,7 +1358,7 @@ function App() {
         const ra = await fetch(`${API_BASE}/biblia/audio/${bibleSelectedBook.livro_abrev}/${bibleSelectedChapter}`);
         if (ra.ok) {
           const dataAudio = await ra.json();
-          setBibleAudioUrl(dataAudio.url);
+          setBibleAudioUrl(dataAudio.proxy || dataAudio.url);
         }
       } catch (e) { console.error(e); } finally { setBibleLoading(false); }
     };

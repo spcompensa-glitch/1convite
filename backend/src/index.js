@@ -987,9 +987,24 @@ app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
     const capNumero = String(capitulo).padStart(3, '0');
     const audioUrl = `https://beblia.bible:81/BibleAudio/portuguese/${bookName}/${capNumero}.mp3`;
 
-    res.json({ url: audioUrl });
+    res.json({ url: audioUrl, proxy: `/api/v1/biblia/audio-stream/${bookName}/${capNumero}.mp3` });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/v1/biblia/audio-stream/:book/:chapter.mp3', async (req, res) => {
+  try {
+    const { book, chapter } = req.params;
+    const upstream = `https://beblia.bible:81/BibleAudio/portuguese/${book}/${chapter}`;
+    const response = await fetch(upstream, { signal: AbortSignal.timeout(15000) });
+    if (!response.ok) return res.status(response.status).json({ error: 'Audio not found upstream' });
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Accept-Ranges', 'bytes');
+    const buffer = Buffer.from(await response.arrayBuffer());
+    res.send(buffer);
+  } catch (err) {
+    res.status(502).json({ error: 'Falha ao buscar áudio upstream: ' + err.message });
   }
 });
 
