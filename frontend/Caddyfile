@@ -1,0 +1,8 @@
+:8080 {
+	root * /app/dist
+	file_server
+	try_files {path} /index.html
+
+	@api path /api/*
+	reverse_proxy @api http://invigorating-expression-production-d4df.up.railway.app
+}
