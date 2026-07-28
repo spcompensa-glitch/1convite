@@ -1,38 +1,43 @@
 import express from 'express';
 import cors from 'cors';
-import sqlite3 from 'sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
 import { createChatGPTHandler } from '@opencoredev/loginwithchatgpt-server';
+import pool from './database/pool.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());
 
-// Configuração do Login with ChatGPT
 const chatGptHandler = createChatGPTHandler({
   secret: process.env.LWC_SECRET || 'a-very-stable-secret-for-development-1convite-32-chars-long!',
   basePath: '/api/v1/chatgpt',
-  // Permitimos exportar tokens caso o frontend precise diretamente (opcional, para flexibilidade)
   dangerouslyAllowTokenExport: true,
-  allowedOrigins: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  allowedOrigins,
 });
 
-// Adaptadores para converter Express <-> Web Request/Response
 async function toWebRequest(req) {
   const protocol = req.protocol;
   const host = req.get('host');
   const originalUrl = req.originalUrl;
   const url = `${protocol}://${host}${originalUrl}`;
-  
+
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
     if (value) {
@@ -76,15 +81,13 @@ async function fromWebResponse(webRes, res) {
   }
 }
 
-// Roteamento do Login with ChatGPT no Express
 app.all('/api/v1/chatgpt/*splat', async (req, res) => {
   console.log(`[ChatGPT Request] ${req.method} ${req.originalUrl}`);
   try {
     const webReq = await toWebRequest(req);
     const webRes = await chatGptHandler.handler(webReq);
     console.log(`[ChatGPT Request] Response: ${webRes.status}`);
-    
-    // Se a resposta não for bem-sucedida, vamos ler e logar o corpo para ajudar no diagnóstico
+
     if (!webRes.ok) {
       const clone = webRes.clone();
       const text = await clone.text();
@@ -100,91 +103,26 @@ app.all('/api/v1/chatgpt/*splat', async (req, res) => {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const dbPath = join(__dirname, 'database.sqlite');
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Erro ao conectar ao banco de dados:', err.message);
-  } else {
-    console.log('Conectado ao banco de dados SQLite.');
-  }
-});
-
-// Helper para queries em Promise
-const dbRun = (query, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.run(query, params, function (err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
+// Helper wrappers around pool.query
+const dbRun = (query, params = []) => pool.query(query, params);
+const dbGet = async (query, params = []) => {
+  const { rows } = await pool.query(query, params);
+  return rows[0] || null;
+};
+const dbAll = async (query, params = []) => {
+  const { rows } = await pool.query(query, params);
+  return rows;
 };
 
-const dbGet = (query, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.get(query, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-};
-
-const dbAll = (query, params = []) => {
-  return new Promise((resolve, reject) => {
-    db.all(query, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
-};
-
-// Inicialização do Banco de Dados
-async function initDb() {
-  await dbRun(`
-    CREATE TABLE IF NOT EXISTS tb_matriz_diaria (
-      dia_id INTEGER PRIMARY KEY,
-      pilar_origem TEXT CHECK(pilar_origem IN ('PROPÓSITO_M2414', 'RECOMPENSA_AP321')) NOT NULL,
-      codigo_verbal TEXT NOT NULL,
-      versiculo_chave TEXT NOT NULL,
-      texto_reflexao TEXT NOT NULL,
-      texto_meditacao TEXT,
-      url_audio_meditacao TEXT NOT NULL
-    )
-  `);
-
-  await dbRun(`
-    CREATE TABLE IF NOT EXISTS tb_usuario_progresso (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      dia_atual INTEGER DEFAULT 1,
-      checkpoint_completado INTEGER DEFAULT 0,
-      checkpoint_started_at INTEGER DEFAULT 0,
-      status_plano TEXT DEFAULT 'FREE',
-      nome TEXT,
-      email TEXT,
-      avatar TEXT
-    )
-  `);
-
-  // Migrações dinâmicas para adicionar colunas se o banco já existia
-  try { await dbRun('ALTER TABLE tb_usuario_progresso ADD COLUMN nome TEXT'); } catch (_) {}
-  try { await dbRun('ALTER TABLE tb_usuario_progresso ADD COLUMN email TEXT'); } catch (_) {}
-  try { await dbRun('ALTER TABLE tb_usuario_progresso ADD COLUMN avatar TEXT'); } catch (_) {}
-
-  await dbRun(`
-    CREATE TABLE IF NOT EXISTS tb_contatos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT NOT NULL,
-      relacao TEXT NOT NULL,
-      prioritario INTEGER DEFAULT 0,
-      ultimo_convite_timestamp INTEGER DEFAULT 0,
-      historico_acoes TEXT DEFAULT '[]'
-    )
-  `);
-
+// Seed data (runs only when tables are empty)
+async function seedData() {
   // Insere o progresso inicial se não existir
   const user = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
   if (!user) {
-    await dbRun('INSERT INTO tb_usuario_progresso (dia_atual, checkpoint_completado, status_plano, nome, email, avatar) VALUES (1, 0, "FREE", "Membro Convidado", "membro@1convite.com", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80")');
+    await dbRun(
+      "INSERT INTO tb_usuario_progresso (dia_atual, checkpoint_completado, status_plano, nome, email, avatar) VALUES (1, false, 'FREE', 'Membro Convidado', 'membro@1convite.com', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80')"
+    );
   }
 
   // Preenche a tabela tb_matriz_diaria (sempre limpamos no início do desenvolvimento para aplicar atualizações das sementes)
@@ -619,14 +557,16 @@ Amém!"`,
       }
     ];
 
-    // Gerador programático dos outros 358 dias
+    const insertDiaria = 'INSERT INTO tb_matriz_diaria (dia_id, pilar_origem, codigo_verbal, versiculo_chave, texto_reflexao, texto_meditacao, url_audio_meditacao) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+
     for (let i = 1; i <= 365; i++) {
       const realDay = reais.find(r => r.dia_id === i);
       if (realDay) {
-        await dbRun(
-          'INSERT INTO tb_matriz_diaria (dia_id, pilar_origem, codigo_verbal, versiculo_chave, texto_reflexao, texto_meditacao, url_audio_meditacao) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [realDay.dia_id, realDay.pilar_origem, realDay.codigo_verbal, realDay.versiculo_chave, realDay.texto_reflexao, realDay.texto_meditacao, realDay.url_audio_meditacao]
-        );
+        await dbRun(insertDiaria, [
+          realDay.dia_id, realDay.pilar_origem, realDay.codigo_verbal,
+          realDay.versiculo_chave, realDay.texto_reflexao, realDay.texto_meditacao,
+          realDay.url_audio_meditacao
+        ]);
       } else {
         const isProposito = i % 2 !== 0;
         const pilar = isProposito ? 'PROPÓSITO_M2414' : 'RECOMPENSA_AP321';
@@ -634,30 +574,19 @@ Amém!"`,
           ? `Código ${String(i).padStart(2, '0')}: Conexão intencional gera o fruto da eternidade.`
           : `Código ${String(i).padStart(2, '0')}: Seu valor não está na sua pressa, mas na sua herança.`;
         const versiculo = isProposito
-          ? `E disse-lhes: Ide por todo o mundo, pregai o evangelho a toda criatura. - Marcos 16:15`
-          : `Aquele que vencer herdará todas as coisas; e eu serei seu Deus, e ele será meu filho. - Apocalipse 21:7`;
+          ? 'E disse-lhes: Ide por todo o mundo, pregai o evangelho a toda criatura. - Marcos 16:15'
+          : 'Aquele que vencer herdará todas as coisas; e eu serei seu Deus, e ele será meu filho. - Apocalipse 21:7';
         const reflexao = isProposito
           ? `O dia ${i} convida você a ir além do seu círculo de conforto. Notar as pessoas e fazer convites de coração aberto é trazer o Reino de Deus à terra em gestos simples.`
           : `Hoje, no dia ${i}, lembre-se de que sentar no trono significa reinar em paz. Pare, respire no silêncio e desfrute da abundância do amor que já preenche a sua identidade.`;
         const meditacao_gen = `Respire fundo... e concentre-se na presença divina do Dia ${i}. Deixe de lado os ruídos e conecte-se com o pilar de hoje. Faça uma pausa de respiração guiada, sintonize seu coração com as promessas eternas e peça a Deus força para colocar essa palavra em prática no seu caminhar diário.`;
         const audio = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(i % 15) + 1}.mp3`;
 
-        await dbRun(
-          'INSERT INTO tb_matriz_diaria (dia_id, pilar_origem, codigo_verbal, versiculo_chave, texto_reflexao, texto_meditacao, url_audio_meditacao) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [i, pilar, codigo, versiculo, reflexao, meditacao_gen, audio]
-        );
+        await dbRun(insertDiaria, [i, pilar, codigo, versiculo, reflexao, meditacao_gen, audio]);
       }
     }
     console.log('Matriz diária populada com sucesso!');
   }
-
-  // Criar tabela de dicionário
-  await dbRun(`
-    CREATE TABLE IF NOT EXISTS tb_dicionario (
-      termo TEXT PRIMARY KEY,
-      significado TEXT NOT NULL
-    )
-  `);
 
   // Popular dicionário se vazio
   const dicCount = await dbGet('SELECT COUNT(*) as count FROM tb_dicionario');
@@ -674,32 +603,9 @@ Amém!"`,
       { termo: 'justiça', significado: 'Retidão moral e conformidade com a vontade de Deus. Estar em posição correta perante o Criador.' }
     ];
     for (const t of termos) {
-      await dbRun('INSERT INTO tb_dicionario (termo, significado) VALUES (?, ?)', [t.termo, t.significado]);
+      await dbRun('INSERT INTO tb_dicionario (termo, significado) VALUES ($1, $2)', [t.termo, t.significado]);
     }
   }
-
-  // Criar tabela de trilhas de crescimento
-  await dbRun(`
-    CREATE TABLE IF NOT EXISTS tb_trilhas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tema TEXT NOT NULL,
-      dia_trilha INTEGER NOT NULL,
-      titulo TEXT NOT NULL,
-      versiculo TEXT NOT NULL,
-      reflexao TEXT NOT NULL,
-      acao_pratica TEXT NOT NULL
-    )
-  `);
-
-  // Criar tabela de progresso de trilhas do usuário
-  await dbRun(`
-    CREATE TABLE IF NOT EXISTS tb_usuario_trilha_progresso (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      trilha_ativa TEXT DEFAULT NULL,
-      dia_progresso INTEGER DEFAULT 1,
-      atualizado_em INTEGER DEFAULT 0
-    )
-  `);
 
   // Adicionar registro inicial de progresso se vazio
   const trProg = await dbGet('SELECT * FROM tb_usuario_trilha_progresso LIMIT 1');
@@ -712,12 +618,13 @@ Amém!"`,
   if (trilhaCount.count === 0) {
     console.log('Populando Trilhas de Crescimento (30 dias para cada tema)...');
     const temas = ['Ansiedade', 'Família', 'Finanças', 'Propósito'];
-    
-    // Gerar 30 dias para cada tema
+
+    const insertTrilha = 'INSERT INTO tb_trilhas (tema, dia_trilha, titulo, versiculo, reflexao, acao_pratica) VALUES ($1, $2, $3, $4, $5, $6)';
+
     for (const tema of temas) {
       for (let dia = 1; dia <= 30; dia++) {
         let titulo, versiculo, reflexao, acao_pratica;
-        
+
         if (tema === 'Ansiedade') {
           titulo = `Dia ${dia}: Entregando o Controle`;
           versiculo = 'Não andeis ansiosos por coisa alguma... - Filipenses 4:6';
@@ -740,17 +647,13 @@ Amém!"`,
           acao_pratica = 'Escreva em um papel três talentos que você tem e como pode usá-los para servir ao próximo.';
         }
 
-        await dbRun(
-          'INSERT INTO tb_trilhas (tema, dia_trilha, titulo, versiculo, reflexao, acao_pratica) VALUES (?, ?, ?, ?, ?, ?)',
-          [tema, dia, titulo, versiculo, reflexao, acao_pratica]
-        );
+        await dbRun(insertTrilha, [tema, dia, titulo, versiculo, reflexao, acao_pratica]);
       }
     }
   }
 }
 
-// Inicializa Tabelas
-initDb().catch(console.error);
+seedData().catch(console.error);
 
 // ---------------- ROTAS DO CORE ----------------
 
@@ -763,12 +666,13 @@ app.get('/api/v1/usuario', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 // Atualizar dados de perfil do usuário manualmente
 app.post('/api/v1/usuario/perfil', async (req, res) => {
   try {
     const { nome, email, avatar } = req.body;
     await dbRun(
-      'UPDATE tb_usuario_progresso SET nome = ?, email = ?, avatar = ?',
+      'UPDATE tb_usuario_progresso SET nome = $1, email = $2, avatar = $3',
       [nome, email, avatar]
     );
     const updated = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
@@ -782,13 +686,12 @@ app.post('/api/v1/usuario/perfil', async (req, res) => {
 app.post('/api/v1/auth/google', async (req, res) => {
   try {
     const { nome, email, avatar } = req.body;
-    
-    // Como há apenas 1 usuário local simulado por banco SQLite, atualizamos os dados dele.
+
     await dbRun(
-      'UPDATE tb_usuario_progresso SET nome = ?, email = ?, avatar = ?',
+      'UPDATE tb_usuario_progresso SET nome = $1, email = $2, avatar = $3',
       [nome, email, avatar]
     );
-    
+
     const user = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
     res.json({ success: true, user });
   } catch (err) {
@@ -802,7 +705,7 @@ app.get('/api/v1/codigo-dia', async (req, res) => {
     const user = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
-    const code = await dbGet('SELECT * FROM tb_matriz_diaria WHERE dia_id = ?', [user.dia_atual]);
+    const code = await dbGet('SELECT * FROM tb_matriz_diaria WHERE dia_id = $1', [user.dia_atual]);
     res.json({ user, code });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -816,15 +719,15 @@ app.post('/api/v1/codigo-dia/save', async (req, res) => {
     if (!dia_id || !codigo_verbal || !versiculo_chave || !texto_reflexao) {
       return res.status(400).json({ error: 'Parâmetros ausentes' });
     }
-    
+
     if (texto_meditacao) {
       await dbRun(
-        'UPDATE tb_matriz_diaria SET codigo_verbal = ?, versiculo_chave = ?, texto_reflexao = ?, texto_meditacao = ? WHERE dia_id = ?',
+        'UPDATE tb_matriz_diaria SET codigo_verbal = $1, versiculo_chave = $2, texto_reflexao = $3, texto_meditacao = $4 WHERE dia_id = $5',
         [codigo_verbal, versiculo_chave, texto_reflexao, texto_meditacao, dia_id]
       );
     } else {
       await dbRun(
-        'UPDATE tb_matriz_diaria SET codigo_verbal = ?, versiculo_chave = ?, texto_reflexao = ? WHERE dia_id = ?',
+        'UPDATE tb_matriz_diaria SET codigo_verbal = $1, versiculo_chave = $2, texto_reflexao = $3 WHERE dia_id = $4',
         [codigo_verbal, versiculo_chave, texto_reflexao, dia_id]
       );
     }
@@ -838,7 +741,7 @@ app.post('/api/v1/codigo-dia/save', async (req, res) => {
 app.post('/api/v1/checkpoint/start', async (req, res) => {
   try {
     const now = Date.now();
-    await dbRun('UPDATE tb_usuario_progresso SET checkpoint_started_at = ?, checkpoint_completado = 0', [now]);
+    await dbRun('UPDATE tb_usuario_progresso SET checkpoint_started_at = $1, checkpoint_completado = false', [now]);
     res.json({ success: true, startedAt: now });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -854,16 +757,14 @@ app.post('/api/v1/sync-checkpoint', async (req, res) => {
     const now = Date.now();
     const elapsedSeconds = (now - user.checkpoint_started_at) / 1000;
 
-    // Se o cronômetro não foi iniciado ou foi burlado
-    if (user.checkpoint_started_at === 0 || elapsedSeconds < 11.5) { // Tolerância pequena de rede
+    if (user.checkpoint_started_at === 0 || elapsedSeconds < 11.5) {
       return res.status(400).json({
         success: false,
         error: 'Pedágio espiritual incompleto. Você deve meditar no código por no mínimo 12 segundos.'
       });
     }
 
-    // Libera o acesso ao aplicativo e avança para o próximo dia no check-in subsequente
-    await dbRun('UPDATE tb_usuario_progresso SET checkpoint_completado = 1, checkpoint_started_at = 0');
+    await dbRun('UPDATE tb_usuario_progresso SET checkpoint_completado = true, checkpoint_started_at = 0');
     res.json({ success: true, message: 'O Agora foi destravado com sucesso!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -876,15 +777,15 @@ app.post('/api/v1/avancar-dia', async (req, res) => {
     const user = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
-    if (user.checkpoint_completado !== 1) {
+    if (user.checkpoint_completado !== true) {
       return res.status(400).json({ error: 'Você precisa concluir o Pedágio Espiritual primeiro.' });
     }
 
     const proximoDia = user.dia_atual >= 365 ? 1 : user.dia_atual + 1;
-    await dbRun('UPDATE tb_usuario_progresso SET dia_atual = ?, checkpoint_completado = 0, checkpoint_started_at = 0', [proximoDia]);
+    await dbRun('UPDATE tb_usuario_progresso SET dia_atual = $1, checkpoint_completado = false, checkpoint_started_at = 0', [proximoDia]);
 
     const updatedUser = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
-    const updatedCode = await dbGet('SELECT * FROM tb_matriz_diaria WHERE dia_id = ?', [updatedUser.dia_atual]);
+    const updatedCode = await dbGet('SELECT * FROM tb_matriz_diaria WHERE dia_id = $1', [updatedUser.dia_atual]);
     res.json({ user: updatedUser, code: updatedCode });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -894,7 +795,7 @@ app.post('/api/v1/avancar-dia', async (req, res) => {
 // Reiniciar Jornada (Para testes)
 app.post('/api/v1/reiniciar-jornada', async (req, res) => {
   try {
-    await dbRun('UPDATE tb_usuario_progresso SET dia_atual = 1, checkpoint_completado = 0, checkpoint_started_at = 0');
+    await dbRun('UPDATE tb_usuario_progresso SET dia_atual = 1, checkpoint_completado = false, checkpoint_started_at = 0');
     res.json({ success: true, message: 'Jornada resetada para o Dia 1' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -906,11 +807,10 @@ app.post('/api/v1/reiniciar-jornada', async (req, res) => {
 app.get('/api/v1/contatos', async (req, res) => {
   try {
     const contatos = await dbAll('SELECT * FROM tb_contatos');
-    // Desserializar logs de ações
     const parseContatos = contatos.map(c => ({
       ...c,
       prioritario: !!c.prioritario,
-      historico_acoes: JSON.parse(c.historico_acoes || '[]')
+      historico_acoes: c.historico_acoes || []
     }));
     res.json(parseContatos);
   } catch (err) {
@@ -922,8 +822,7 @@ app.post('/api/v1/contatos', async (req, res) => {
   try {
     const { nome, relacao, prioritario } = req.body;
     const user = await dbGet('SELECT status_plano FROM tb_usuario_progresso LIMIT 1');
-    
-    // Validar limite de 3 contatos para plano Free
+
     if (user.status_plano === 'FREE') {
       const countRow = await dbGet('SELECT COUNT(*) as count FROM tb_contatos');
       if (countRow.count >= 3) {
@@ -933,13 +832,12 @@ app.post('/api/v1/contatos', async (req, res) => {
       }
     }
 
-    const priorityVal = prioritario ? 1 : 0;
     const result = await dbRun(
-      'INSERT INTO tb_contatos (nome, relacao, prioritario, historico_acoes) VALUES (?, ?, ?, ?)',
-      [nome, relacao, priorityVal, '[]']
+      'INSERT INTO tb_contatos (nome, relacao, prioritario, historico_acoes) VALUES ($1, $2, $3, $4) RETURNING id',
+      [nome, relacao, prioritario || false, '[]']
     );
 
-    res.json({ success: true, id: result.lastID });
+    res.json({ success: true, id: result.rows[0].id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -949,17 +847,17 @@ app.post('/api/v1/contatos', async (req, res) => {
 app.post('/api/v1/contatos/:id/acao', async (req, res) => {
   try {
     const { id } = req.params;
-    const { tipoAcao } = req.body; // 'mensagem', 'cafe', 'casa_igreja'
-    const contato = await dbGet('SELECT * FROM tb_contatos WHERE id = ?', [id]);
-    
+    const { tipoAcao } = req.body;
+    const contato = await dbGet('SELECT * FROM tb_contatos WHERE id = $1', [id]);
+
     if (!contato) return res.status(404).json({ error: 'Contato não encontrado' });
 
-    const acoes = JSON.parse(contato.historico_acoes || '[]');
+    const acoes = contato.historico_acoes || [];
     const now = Date.now();
     acoes.push({ tipo: tipoAcao, timestamp: now });
 
     await dbRun(
-      'UPDATE tb_contatos SET ultimo_convite_timestamp = ?, historico_acoes = ? WHERE id = ?',
+      'UPDATE tb_contatos SET ultimo_convite_timestamp = $1, historico_acoes = $2 WHERE id = $3',
       [now, JSON.stringify(acoes), id]
     );
 
@@ -973,7 +871,7 @@ app.post('/api/v1/contatos/:id/acao', async (req, res) => {
 app.delete('/api/v1/contatos/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await dbRun('DELETE FROM tb_contatos WHERE id = ?', [id]);
+    await dbRun('DELETE FROM tb_contatos WHERE id = $1', [id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -987,7 +885,7 @@ app.get('/api/v1/historico', async (req, res) => {
     const user = await dbGet('SELECT * FROM tb_usuario_progresso LIMIT 1');
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
-    const rows = await dbAll('SELECT * FROM tb_matriz_diaria WHERE dia_id <= ?', [user.dia_atual]);
+    const rows = await dbAll('SELECT * FROM tb_matriz_diaria WHERE dia_id <= $1', [user.dia_atual]);
     res.json({ rows, premium: user.status_plano === 'PREMIUM' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -996,7 +894,6 @@ app.get('/api/v1/historico', async (req, res) => {
 
 // ---------------- BÍBLIA (NVI) ----------------
 
-// Obter todos os livros
 app.get('/api/v1/biblia/livros', async (req, res) => {
   try {
     const livros = await dbAll('SELECT DISTINCT livro_nome, livro_abrev FROM tb_biblia');
@@ -1006,22 +903,20 @@ app.get('/api/v1/biblia/livros', async (req, res) => {
   }
 });
 
-// Obter total de capítulos de um livro
 app.get('/api/v1/biblia/capitulos/:abrev', async (req, res) => {
   try {
     const { abrev } = req.params;
-    const row = await dbGet('SELECT MAX(capitulo) as total FROM tb_biblia WHERE livro_abrev = ?', [abrev]);
+    const row = await dbGet('SELECT MAX(capitulo) as total FROM tb_biblia WHERE livro_abrev = $1', [abrev]);
     res.json({ total: row.total || 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Obter texto de um capítulo específico
 app.get('/api/v1/biblia/texto/:abrev/:capitulo', async (req, res) => {
   try {
     const { abrev, capitulo } = req.params;
-    const versiculos = await dbAll('SELECT * FROM tb_biblia WHERE livro_abrev = ? AND capitulo = ? ORDER BY versiculo ASC', [abrev, capitulo]);
+    const versiculos = await dbAll('SELECT * FROM tb_biblia WHERE livro_abrev = $1 AND capitulo = $2 ORDER BY versiculo ASC', [abrev, capitulo]);
     res.json(versiculos);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1035,7 +930,7 @@ app.get('/api/v1/biblia/busca', async (req, res) => {
     if (!q || q.length < 3) {
       return res.status(400).json({ error: 'Termo de busca deve ter pelo menos 3 caracteres.' });
     }
-    const versiculos = await dbAll('SELECT * FROM tb_biblia WHERE texto LIKE ? LIMIT 50', [`%${q}%`]);
+    const versiculos = await dbAll('SELECT * FROM tb_biblia WHERE texto LIKE $1 LIMIT 50', [`%${q}%`]);
     res.json(versiculos);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1056,18 +951,17 @@ app.get('/api/v1/biblia/aleatorio', async (req, res) => {
 app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
   try {
     const { abrev, capitulo } = req.params;
-    
-    // Os 66 livros da Bíblia na ordem exata (1 a 66)
+
     const ordemLivros = [
-      'gn', 'ex', 'lv', 'nm', 'dt', 'js', 'jz', 'rt', '1sm', '2sm', 
-      '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'jó', 'sl', 'pv', 
-      'ec', 'ct', 'is', 'jr', 'lm', 'ez', 'dn', 'os', 'jl', 'am', 
-      'ob', 'jn', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml', 'mt', 'mc', 
-      'lc', 'jo', 'atos', 'rm', '1co', '2co', 'gl', 'ef', 'fp', 'cl', 
-      '1ts', '2ts', '1tm', '2tm', 'tt', 'fm', 'hb', 'tg', '1pe', '2pe', 
+      'gn', 'ex', 'lv', 'nm', 'dt', 'js', 'jz', 'rt', '1sm', '2sm',
+      '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'jó', 'sl', 'pv',
+      'ec', 'ct', 'is', 'jr', 'lm', 'ez', 'dn', 'os', 'jl', 'am',
+      'ob', 'jn', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml', 'mt', 'mc',
+      'lc', 'jo', 'atos', 'rm', '1co', '2co', 'gl', 'ef', 'fp', 'cl',
+      '1ts', '2ts', '1tm', '2tm', 'tt', 'fm', 'hb', 'tg', '1pe', '2pe',
       '1jo', '2jo', '3jo', 'jd', 'ap'
     ];
-    
+
     const englishBooks = [
       "genesis", "exodus", "leviticus", "numbers", "deuteronomy", "joshua", "judges", "ruth",
       "1samuel", "2samuel", "1kings", "2kings", "1chronicles", "2chronicles", "ezra", "nehemiah",
@@ -1079,20 +973,20 @@ app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
       "titus", "philemon", "hebrews", "james", "1peter", "2peter", "1john", "2john", "3john",
       "jude", "revelation"
     ];
-    
+
     let searchAbrev = abrev.toLowerCase();
     if (searchAbrev === 'job') searchAbrev = 'jó';
     if (searchAbrev === 'at') searchAbrev = 'atos';
-    
+
     let index = ordemLivros.indexOf(searchAbrev);
     if (index === -1) {
       return res.status(404).json({ error: 'Livro não suportado para áudio' });
     }
-    
+
     const bookName = englishBooks[index];
     const capNumero = String(capitulo).padStart(3, '0');
     const audioUrl = `https://beblia.bible:81/BibleAudio/portuguese/${bookName}/${capNumero}.mp3`;
-    
+
     res.json({ url: audioUrl });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1103,7 +997,6 @@ app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
 app.get('/api/v1/dicionario/termos', async (req, res) => {
   try {
     const termos = await dbAll('SELECT * FROM tb_dicionario');
-    // Retorna como objeto chave-valor para facilitar o parse no frontend
     const dicMap = {};
     termos.forEach(t => {
       dicMap[t.termo.toLowerCase()] = t.significado;
@@ -1129,8 +1022,8 @@ app.post('/api/v1/trilhas/iniciar', async (req, res) => {
   try {
     const { tema } = req.body;
     if (!tema) return res.status(400).json({ error: 'Tema da trilha é obrigatório' });
-    
-    await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = ?, dia_progresso = 1, atualizado_em = ?', [tema, Date.now()]);
+
+    await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = $1, dia_progresso = 1, atualizado_em = $2', [tema, Date.now()]);
     res.json({ success: true, tema, dia_progresso: 1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1154,12 +1047,12 @@ app.get('/api/v1/trilhas/ativa', async (req, res) => {
     if (!progresso || !progresso.trilha_ativa) {
       return res.json({ ativa: false });
     }
-    
+
     const conteudo = await dbGet(
-      'SELECT * FROM tb_trilhas WHERE tema = ? AND dia_trilha = ?', 
+      'SELECT * FROM tb_trilhas WHERE tema = $1 AND dia_trilha = $2',
       [progresso.trilha_ativa, progresso.dia_progresso]
     );
-    
+
     res.json({
       ativa: true,
       tema: progresso.trilha_ativa,
@@ -1178,16 +1071,15 @@ app.post('/api/v1/trilhas/completar-dia', async (req, res) => {
     if (!progresso || !progresso.trilha_ativa) {
       return res.status(400).json({ error: 'Nenhuma trilha ativa no momento' });
     }
-    
+
     const novoDia = progresso.dia_progresso + 1;
-    
+
     if (novoDia > 30) {
-      // Concluiu a trilha inteira!
       await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = NULL, dia_progresso = 1');
       res.json({ success: true, concluida: true });
     } else {
       await dbRun(
-        'UPDATE tb_usuario_trilha_progresso SET dia_progresso = ?, atualizado_em = ?', 
+        'UPDATE tb_usuario_trilha_progresso SET dia_progresso = $1, atualizado_em = $2',
         [novoDia, Date.now()]
       );
       res.json({ success: true, concluida: false, novoDia });
@@ -1199,7 +1091,6 @@ app.post('/api/v1/trilhas/completar-dia', async (req, res) => {
 
 // ---------------- INTEGRACAO MERCADO PAGO ----------------
 
-// Criação de Preferência de Pagamento
 app.post('/api/v1/pagamentos/criar-preferencia', async (req, res) => {
   try {
     const preferenceId = `pref_1convite_${Math.random().toString(36).substr(2, 9)}`;
@@ -1212,22 +1103,20 @@ app.post('/api/v1/pagamentos/criar-preferencia', async (req, res) => {
   }
 });
 
-// Webhook para Ativação Premium (IPN / Webhook do Mercado Pago)
 app.post('/api/v1/pagamentos/webhook', async (req, res) => {
   try {
     const { action, data, pref_id } = req.body;
-    await dbRun('UPDATE tb_usuario_progresso SET status_plano = "PREMIUM"');
+    await dbRun("UPDATE tb_usuario_progresso SET status_plano = 'PREMIUM'");
     res.json({ success: true, message: 'Plano ativado para PREMIUM via webhook do Mercado Pago!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Endpoint extra para alterar o plano manualmente nos testes
 app.post('/api/v1/admin/definir-plano', async (req, res) => {
   try {
     const { plano } = req.body;
-    await dbRun('UPDATE tb_usuario_progresso SET status_plano = ?', [plano]);
+    await dbRun('UPDATE tb_usuario_progresso SET status_plano = $1', [plano]);
     res.json({ success: true, plano });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1235,7 +1124,7 @@ app.post('/api/v1/admin/definir-plano', async (req, res) => {
 });
 
 // Servir arquivos estáticos do React em produção
-const distPath = join(__dirname, '../dist');
+const distPath = join(__dirname, '../../frontend/dist');
 app.use(express.static(distPath));
 
 app.get(/.*/, (req, res) => {
@@ -1245,4 +1134,13 @@ app.get(/.*/, (req, res) => {
 // Inicia o Servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+});
+
+process.on('SIGTERM', async () => {
+  await pool.end();
+  process.exit(0);
+});
+process.on('SIGINT', async () => {
+  await pool.end();
+  process.exit(0);
 });
