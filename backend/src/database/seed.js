@@ -1,4 +1,4 @@
-import pool from './src/database/pool.js';
+import pool from './pool.js';
 
 async function seed() {
   const client = await pool.connect();

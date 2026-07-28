@@ -125,10 +125,9 @@ async function seedData() {
     );
   }
 
-  // Preenche a tabela tb_matriz_diaria (sempre limpamos no início do desenvolvimento para aplicar atualizações das sementes)
-  await dbRun('DELETE FROM tb_matriz_diaria');
+  // Preenche a tabela tb_matriz_diaria (se vazio)
   const countRow = await dbGet('SELECT COUNT(*) as count FROM tb_matriz_diaria');
-  if (countRow.count === 0) {
+  if (Number(countRow.count) === 0) {
     console.log('Populando tabela de 365 dias...');
     const reais = [
       {
@@ -590,7 +589,7 @@ Amém!"`,
 
   // Popular dicionário se vazio
   const dicCount = await dbGet('SELECT COUNT(*) as count FROM tb_dicionario');
-  if (dicCount.count === 0) {
+  if (Number(dicCount.count) === 0) {
     console.log('Populando dicionário teológico...');
     const termos = [
       { termo: 'graça', significado: 'Favor imerecido concedido por Deus ao homem. O amor ativo que resgata sem exigir méritos.' },
@@ -615,7 +614,7 @@ Amém!"`,
 
   // Popular trilhas de 30 dias se vazio
   const trilhaCount = await dbGet('SELECT COUNT(*) as count FROM tb_trilhas');
-  if (trilhaCount.count === 0) {
+  if (Number(trilhaCount.count) === 0) {
     console.log('Populando Trilhas de Crescimento (30 dias para cada tema)...');
     const temas = ['Ansiedade', 'Família', 'Finanças', 'Propósito'];
 
@@ -825,7 +824,7 @@ app.post('/api/v1/contatos', async (req, res) => {
 
     if (user.status_plano === 'FREE') {
       const countRow = await dbGet('SELECT COUNT(*) as count FROM tb_contatos');
-      if (countRow.count >= 3) {
+      if (Number(countRow.count) >= 3) {
         return res.status(403).json({
           error: 'Limite de 3 contatos atingido no plano Gratuito. Atualize para o Premium para contatos ilimitados!'
         });
@@ -852,7 +851,7 @@ app.post('/api/v1/contatos/:id/acao', async (req, res) => {
 
     if (!contato) return res.status(404).json({ error: 'Contato não encontrado' });
 
-    const acoes = contato.historico_acoes || [];
+    const acoes = [...(contato.historico_acoes || [])];
     const now = Date.now();
     acoes.push({ tipo: tipoAcao, timestamp: now });
 
@@ -1038,7 +1037,12 @@ app.post('/api/v1/trilhas/iniciar', async (req, res) => {
     const { tema } = req.body;
     if (!tema) return res.status(400).json({ error: 'Tema da trilha é obrigatório' });
 
-    await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = $1, dia_progresso = 1, atualizado_em = $2', [tema, Date.now()]);
+    const existing = await dbGet('SELECT id FROM tb_usuario_trilha_progresso LIMIT 1');
+    if (existing) {
+      await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = $1, dia_progresso = 1, atualizado_em = $2', [tema, Date.now()]);
+    } else {
+      await dbRun('INSERT INTO tb_usuario_trilha_progresso (trilha_ativa, dia_progresso, atualizado_em) VALUES ($1, 1, $2)', [tema, Date.now()]);
+    }
     res.json({ success: true, tema, dia_progresso: 1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1048,7 +1052,10 @@ app.post('/api/v1/trilhas/iniciar', async (req, res) => {
 // Cancelar/Finalizar a trilha ativa
 app.post('/api/v1/trilhas/cancelar', async (req, res) => {
   try {
-    await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = NULL, dia_progresso = 1');
+    const existing = await dbGet('SELECT id FROM tb_usuario_trilha_progresso LIMIT 1');
+    if (existing) {
+      await dbRun('UPDATE tb_usuario_trilha_progresso SET trilha_ativa = NULL, dia_progresso = 1');
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
