@@ -42,16 +42,22 @@ Monorepo com dois serviços independentes deployados no Railway:
 │   │   ├── data/arcadeData.js   # Dados dos jogos
 │   │   └── services/            # webhookService.js
 │   ├── public/                  # Assets estáticos, áudios, imagens, frames
+│   │   ├── favicon.png          # Favicon (chama sobre livro)
+│   │   ├── LOGO.png             # Logo (chama, sem texto)
+│   │   ├── LOGOMARCA.png        # Logomarca completa
+│   │   ├── manifest.json        # Manifest PWA
+│   │   ├── sw.js                # Service Worker (self-destructing)
+│   │   ├── icons.svg            # Ícones SVG
+│   │   └── intro_scroll/        # Frames da intro scroll
 │   ├── android/                 # Capacitor Android (APK nativo)
 │   ├── vite.config.js           # Proxy /api → localhost:3001 (dev)
 │   ├── capacitor.config.json    # Configuração Capacitor
-│   ├── Caddyfile                # Proxy /api → backend (produção Railway)
 │   ├── railway.toml             # Config Railway (frontend)
 │   └── package.json             # Deps: React, Vite, html2canvas
 │
 ├── backend/                     # Express + PostgreSQL
 │   ├── src/
-│   │   ├── index.js             # Servidor Express (~1159 linhas, todas as rotas)
+│   │   ├── index.js             # Servidor Express (~1270 linhas, todas as rotas)
 │   │   └── database/
 │   │       ├── pool.js          # Conexão PostgreSQL (pg)
 │   │       ├── migrations.js    # Runner de migrations
@@ -78,11 +84,11 @@ Monorepo com dois serviços independentes deployados no Railway:
 | Banco | PostgreSQL 16 (Railway Plugin) |
 | IA | ChatGPT via `@opencoredev/loginwithchatgpt-server` |
 | Mobile | Capacitor 8 (Android, JDK 21) |
-| Deploy Frontend | Railway (Caddy + static files) |
+| Deploy Frontend | Railway (npx serve, static files) |
 | Deploy Backend | Railway (Node.js) |
 | CI/CD | GitHub Actions (APK build automático) |
 | Proxy (dev) | Vite dev server → localhost:3001 |
-| Proxy (prod) | Caddyfile reverse proxy → backend Railway |
+| Proxy (prod) | Frontend aponta direto ao backend Railway (URL absoluta) |
 
 ## Variáveis de Ambiente
 
@@ -97,7 +103,19 @@ Monorepo com dois serviços independentes deployados no Railway:
 
 ### Frontend (Railway)
 
-Nenhuma variável necessária. O `Caddyfile` faz proxy de `/api` para o backend automaticamente.
+Nenhuma variável necessária. O frontend aponta direto ao backend via URL absoluta.
+
+## PWA (Progressive Web App)
+
+| Asset | Arquivo | Descrição |
+|---|---|---|
+| Favicon | `public/favicon.png` | Chama sobre livro (ícone principal) |
+| Logomarca | `public/LOGOMARCA.png` | Logo completa "chaminha PALAVRA VIVA" |
+| Logo | `public/LOGO.png` | Ícone da chama (sem texto) |
+| Manifest | `public/manifest.json` | Configuração PWA (ícones, cores, display) |
+| Service Worker | `public/sw.js` | SW de limpeza de cache (self-destructing) |
+
+Meta tags PWA no `index.html`: apple-touch-icon, theme-color, og:image, msapplication.
 
 ## Instalação e Execução
 
@@ -160,7 +178,7 @@ npm run dev
 1. Criar serviço no Railway conectando ao repositório
 2. **Root Directory:** `frontend`
 3. Nenhuma variável necessária
-4. O `Caddyfile` faz proxy de `/api/*` para o backend automaticamente
+4. O `railway.toml` usa `npx serve -s dist -l 8080` para servir arquivos estáticos
 
 ## Build do APK (Android)
 
@@ -192,10 +210,12 @@ Para baixar o APK: Actions → build mais recente → seção Artifacts → `1co
 ### Migrations e Seed
 
 ```bash
-npm run migrate      # Cria tabelas
-npm run seed         # Popula dicionário, trilhas e progresso
-npm run import-bible # Importa Bíblia (~31 mil versículos)
+npm run migrate      # Cria tabelas (standalone)
+npm run seed         # Popula dicionário, trilhas e progresso (standalone)
+npm run import-bible # Importa Bíblia (~31 mil versículos, standalone)
 ```
+
+> **Nota:** Em produção (Railway), o backend cria as tabelas automaticamente no startup via `ensureTables()` e importa a Bíblia se a tabela `tb_biblia` estiver vazia.
 
 ## API (Backend Rotas)
 
@@ -218,7 +238,9 @@ npm run import-bible # Importa Bíblia (~31 mil versículos)
 | GET | `/api/v1/biblia/texto/:abrev/:cap` | Versículos de um capítulo |
 | GET | `/api/v1/biblia/busca?q=` | Busca full-text |
 | GET | `/api/v1/biblia/aleatorio` | Versículo aleatório |
-| GET | `/api/v1/biblia/audio/:abrev/:cap` | URL de áudio |
+| GET | `/api/v1/biblia/audio/:abrev/:cap` | URL de áudio (proxy streaming) |
+| GET | `/api/v1/biblia/audio-stream/:book/:chapter.mp3` | Proxy de áudio da Bíblia (streaming) |
+| GET | `/api/v1/health` | Health check (status + DB connection) |
 | GET | `/api/v1/dicionario/termos` | Dicionário teológico |
 | GET | `/api/v1/trilhas/lista` | Lista trilhas disponíveis |
 | GET | `/api/v1/trilhas/ativa` | Trilha ativa do usuário |
@@ -250,22 +272,34 @@ O app usa CSS custom properties definidas em `index.css` com suporte a dark mode
 - Estrutura reorganizada em `frontend/` (React + Vite) e `backend/` (Express + PostgreSQL).
 - Migrado de SQLite para PostgreSQL (placeholders `$1,$2,...`, `SERIAL`, JSONB, `ILIKE`, `gin` full-text index).
 - Deploy no Railway: dois serviços (frontend + backend) + plugin PostgreSQL.
-- Frontend servido via Caddy com reverse proxy `/api` → backend.
+- Frontend servido via `npx serve` com API_BASE apontando direto ao backend (URL absoluta).
 - GitHub Actions para build automático de APK Android (Capacitor 8, JDK 21).
 
 **Backend**
 - Criado `pool.js` com conexão PostgreSQL (SSL para Railway).
 - Criado `migrations/001_initial.sql` com 8 tabelas + índices.
+- `ensureTables()` cria tabelas automaticamente no startup (não precisa rodar migrate manualmente).
+- `seedData()` importa Bíblia ACF automaticamente se tabela `tb_biblia` estiver vazia.
 - Criado `seed.js` para popular dicionário, trilhas e progresso.
-- Criado `import-bible.js` para importar Bíblia via API.
+- Criado `import-bible.js` para importar Bíblia via API (standalone).
 - Adicionada rota `POST /api/v1/leads` para captura de leads.
 - Tabela `tb_leads` criada na migration.
+- Rota `GET /api/v1/health` para health check.
+- Proxy de áudio da Bíblia com streaming (não buffer completo).
 
 **Frontend**
 - Criado `services/webhookService.js` para envio de leads.
 - `vite.config.js` com proxy `/api` → `localhost:3001` (dev).
-- `Caddyfile` para proxy `/api` → backend Railway (produção).
 - `capacitor.config.json` e projeto Android restaurados.
+- `API_BASE` aponta direto ao backend Railway em produção.
+
+**PWA**
+- Favicon: chama sobre livro (`favicon.png`).
+- Removido `favicon.svg` (era bolt do Vite, incorreto).
+- Manifest atualizado com ícones `any` e `maskable`.
+- Meta tags Apple (apple-touch-icon, apple-mobile-web-app).
+- Meta tags Open Graph (og:title, og:image, og:description).
+- Service Worker de limpeza de cache (self-destructing).
 
 **Tema & UI**
 - Tema padrão: dark mode.
