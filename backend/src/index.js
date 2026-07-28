@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
 import { createChatGPTHandler } from '@opencoredev/loginwithchatgpt-server';
 import pool from './database/pool.js';
@@ -105,6 +106,20 @@ app.all('/api/v1/chatgpt/*splat', async (req, res) => {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// ── MIGRATIONS: criar tabelas se não existirem ──
+async function ensureTables() {
+  const client = await pool.connect();
+  try {
+    const sql = readFileSync(join(__dirname, '../../migrations/001_initial.sql'), 'utf-8');
+    await client.query(sql);
+    console.log('[DB] Tabelas criadas/verificadas com sucesso');
+  } catch (err) {
+    console.error('[DB] Erro ao criar tabelas:', err.message);
+  } finally {
+    client.release();
+  }
+}
 
 // Helper wrappers around pool.query
 const dbRun = (query, params = []) => pool.query(query, params);
@@ -1168,10 +1183,15 @@ app.get(/.*/, (req, res) => {
   res.sendFile(join(distPath, 'index.html'));
 });
 
-// Inicia o Servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+// Inicia o Servidor — cria tabelas, depois popula dados
+async function startServer() {
+  await ensureTables();
+  await seedData().catch(err => console.error('[Seed] Erro:', err.message));
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+}
+startServer();
 
 process.on('SIGTERM', async () => {
   await pool.end();
