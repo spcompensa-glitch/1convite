@@ -3,6 +3,7 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
+import https from 'https';
 import dotenv from 'dotenv';
 import { createChatGPTHandler } from '@opencoredev/loginwithchatgpt-server';
 import pool from './database/pool.js';
@@ -668,9 +669,63 @@ Amém!"`,
       }
     }
   }
-}
 
-seedData().catch(console.error);
+  // Importa Bíblia (se tabela vazia)
+  const bibleCount = await dbGet('SELECT COUNT(*) as count FROM tb_biblia');
+  if (Number(bibleCount.count) === 0) {
+    console.log('[Seed] Importando Bíblia ACF...');
+    try {
+      const bibleData = await new Promise((resolve, reject) => {
+        https.get('https://raw.githubusercontent.com/thiagobodruk/bible/master/json/pt_acf.json', (res) => {
+          let data = '';
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => {
+            try {
+              if (data.charCodeAt(0) === 0xFEFF) data = data.slice(1);
+              resolve(JSON.parse(data));
+            } catch (e) { reject(e); }
+          });
+        }).on('error', reject);
+      });
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        let count = 0;
+        const values = [];
+        const params = [];
+        for (const book of bibleData) {
+          for (let ci = 0; ci < book.chapters.length; ci++) {
+            for (let vi = 0; vi < book.chapters[ci].length; vi++) {
+              const idx = params.length;
+              values.push(`($${idx+1}, $${idx+2}, $${idx+3}, $${idx+4}, $${idx+5})`);
+              params.push(book.name, book.abbrev, ci + 1, vi + 1, book.chapters[ci][vi]);
+              count++;
+              if (params.length >= 5000) {
+                await client.query(`INSERT INTO tb_biblia (livro_nome, livro_abrev, capitulo, versiculo, texto) VALUES ${values.join(',')}`, params);
+                values.length = 0;
+                params.length = 0;
+                console.log(`  [Bíblia] ${count} versículos...`);
+              }
+            }
+          }
+        }
+        if (params.length > 0) {
+          await client.query(`INSERT INTO tb_biblia (livro_nome, livro_abrev, capitulo, versiculo, texto) VALUES ${values.join(',')}`, params);
+        }
+        await client.query('COMMIT');
+        console.log(`[Seed] Bíblia importada: ${count} versículos`);
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.error('[Seed] Erro ao importar Bíblia:', err.message);
+    }
+  }
+}
 
 // ---------------- ROTAS DO CORE ----------------
 
