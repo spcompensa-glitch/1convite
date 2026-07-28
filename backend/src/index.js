@@ -111,11 +111,12 @@ const __dirname = dirname(__filename);
 async function ensureTables() {
   const client = await pool.connect();
   try {
-    const sql = readFileSync(join(__dirname, '../../migrations/001_initial.sql'), 'utf-8');
+    const sql = readFileSync(join(__dirname, '../migrations/001_initial.sql'), 'utf-8');
     await client.query(sql);
     console.log('[DB] Tabelas criadas/verificadas com sucesso');
   } catch (err) {
-    console.error('[DB] Erro ao criar tabelas:', err.message);
+    console.error('[DB] FATAL: Erro ao criar tabelas:', err.message);
+    throw err;
   } finally {
     client.release();
   }
@@ -1172,6 +1173,16 @@ app.post('/api/v1/leads', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Health check
+app.get('/api/v1/health', async (req, res) => {
+  try {
+    const r = await pool.query('SELECT NOW()');
+    res.json({ status: 'ok', db: 'connected', time: r.rows[0].now });
+  } catch (err) {
+    res.status(500).json({ status: 'error', db: err.message });
   }
 });
 
