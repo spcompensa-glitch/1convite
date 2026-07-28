@@ -4,7 +4,7 @@
   "description": "Plataforma de Engajamento do Reino e Desfrute Sabático",
   "icons": [
     {
-      "src": "/LOGO.png",
+      "src": "/favicon.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
