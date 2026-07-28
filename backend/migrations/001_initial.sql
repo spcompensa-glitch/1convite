@@ -69,6 +69,17 @@ CREATE TABLE IF NOT EXISTS tb_biblia (
   texto TEXT NOT NULL
 );
 
+-- ═══════ TABELA: Leads (Landing Page) ═══════
+CREATE TABLE IF NOT EXISTS tb_leads (
+  id SERIAL PRIMARY KEY,
+  telefone TEXT,
+  nome TEXT,
+  email TEXT,
+  origem TEXT,
+  pagina TEXT,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+
 -- ═══════ ÍNDICES ═══════
 CREATE INDEX IF NOT EXISTS idx_biblia_abrev_cap ON tb_biblia (livro_abrev, capitulo);
 CREATE INDEX IF NOT EXISTS idx_biblia_texto_gin ON tb_biblia USING gin(to_tsvector('portuguese', texto));

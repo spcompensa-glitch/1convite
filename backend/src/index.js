@@ -1123,6 +1123,19 @@ app.post('/api/v1/admin/definir-plano', async (req, res) => {
   }
 });
 
+app.post('/api/v1/leads', async (req, res) => {
+  try {
+    const { phone, nome, email, origem, pagina } = req.body;
+    await dbRun(
+      'INSERT INTO tb_leads (telefone, nome, email, origem, pagina) VALUES ($1, $2, $3, $4, $5)',
+      [phone || null, nome || null, email || null, origem || null, pagina || null]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Servir arquivos estáticos do React em produção
 const distPath = join(__dirname, '../../frontend/dist');
 app.use(express.static(distPath));
