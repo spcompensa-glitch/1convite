@@ -1022,7 +1022,7 @@ function App() {
 
   const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
     ? 'http://localhost:3001/api/v1' 
-    : '/api/v1';
+    : `${window.location.protocol}//invigorating-expression-production-d4df.up.railway.app/api/v1`;
 
   // ── TIMERS DOS JOGOS ──────────────────────────────────────
   // Timer do Quiz
