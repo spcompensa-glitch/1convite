@@ -45,20 +45,9 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Copy APK to public
-        run: |
-          mkdir -p frontend/public
-          cp frontend/android/app/build/outputs/apk/debug/app-debug.apk frontend/public/1convite.apk
-
-      - name: Commit and Push APK back to Repository
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add frontend/public/1convite.apk
-          if git diff --cached --quiet; then
-            echo "Nenhuma alteracao detectada no APK."
-          else
-            git commit -m "build: Atualiza arquivo APK nativo do Android [skip ci]"
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-            git push origin main
-          fi
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 1convite-apk
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
