@@ -1,111 +1,282 @@
-# 1Convite - Ecossistema Completo
+# 1Convite — Ecossistema Completo
 
-Bem-vindo ao **1Convite**, um super app cristão que integra a Palavra de Deus, interatividade, ferramentas de IA e criatividade em um só lugar.
+Super app cristão que integra a Palavra de Deus, interatividade, ferramentas de IA e criatividade em um só lugar.
 
-## 🚀 Funcionalidades Atuais
+## Status
 
-- **Bíblia Sagrada:** Leitura completa com sistema de progresso, acompanhamento por marcação, narração em áudio (Web Speech API) e recompensas (moedas ganhas por leitura).
-- **Desafio do Dia:** Tarefas diárias de reflexão e fé. Ao concluir, o usuário ganha moedas.
-- **Conselheiros IA (Novo!):** Um hub interativo onde o usuário pode conversar com grandes nomes bíblicos guiados por Inteligência Artificial (ChatGPT).
-  - Requer conexão de conta simulada via LWC State.
-  - *Jesus Cristo* está desbloqueado por padrão.
-  - Conselheiros Premium (Apóstolo Paulo, Apóstolo Pedro, Rei Davi, Rei Salomão, Rainha Ester) exigem desbloqueio via Moedas do Sistema.
-  - Os conselheiros são apresentados em um grid de blocos 2x2 com badges modernas.
-- **Jogos (Arcade Bíblico):**
-  - **Quiz:** Perguntas e respostas bíblicas com 30 questões (10 por nível), temporizador (30s fácil / 15s médio / 7s avançado) e pontuação dinâmica.
-  - **Quem Sou Eu? (Charadas):** 15 perguntas com dicas progressivas (sem timer no fácil, 15s médio, 7s avançado).
-  - **Caça-Palavras:** Grid interativo com palavras em 8 direções (horizontal, vertical e diagonal), seleção por clique na primeira e última letra, normalização de acentos. Grades: 10×10 fácil, 12×12 médio, 14×14 avançado.
-  - **Forca:** Palavras com dicas, teclado virtual, sistema de erros progressivo (8 vidas fácil, 6 médio, 4 avançado).
-- **Lojinha & Economia Global:** O centro da nossa economia (`userCoins`). Todo esforço no app (como ler a Bíblia e jogar) rende moedas ("⭐"). Estas moedas podem ser gastas para:
-  - Comprar *Stickers*, *Fontes Premium* e *Fundos Exclusivos* para o Studio.
-  - Desbloquear Conselheiros IA Premium.
-- **Studio de Cards (Premium):** Uma ferramenta estilo Canva onde você cria convites ou cartões de bom dia, adicionando fontes lindas e fundos exclusivos (que você comprou na Lojinha!). 
+| Serviço | URL | Status |
+|---|---|---|
+| Frontend | https://1convite.com.br | Ativo |
+| Backend API | https://invigorating-expression-production-d4df.up.railway.app | Ativo |
+| APK Android | GitHub Actions → artifact `1convite-apk` | Automático |
+| Banco de Dados | PostgreSQL (Railway Plugin) | Ativo |
 
-## 🧠 Arquitetura de Estado (Local Storage)
-O App é um monolito React (em `App.jsx`) que persiste seu ecossistema no cache do navegador:
-- `app-coins`: Moedas globais do usuário.
-- `unlocked-counselors`: Array JSON dos conselheiros comprados.
-- `unlocked-items`: Itens da lojinha comprados.
-- `bible-progress`: Progresso de leitura.
-- `1convite_dark_mode`: Preferência de tema (dark/light mode).
-- `app-theme`: Tema de cores selecionado (theme-green, theme-orange, etc.).
+## Funcionalidades
 
-## 🛠️ Tecnologias
-- **React.js + Vite:** Interface rápida e modular.
-- **Vanilla CSS:** Estilização responsiva, bonita e sem bibliotecas pesadas (UI Premium em `index.css`).
-- **SQLite (Servidor Node):** Armazenamento das orações e outros dados, caso habilitado no backend local.
-- **html2canvas:** Para gerar e salvar os convites construídos pelos usuários.
-- **Capacitor:** Empacotamento para iOS/Android.
+- **Bíblia Sagrada:** Leitura completa com pesquisa por texto, áudio, livros, capítulos e versículos. Dados importados do API da Bíblia on-line.
+- **Desafio do Dia:** Reflexão diária com código verbal, meditação guiada (áudio) e progresso em 365 dias.
+- **Conselheiros IA:** Hub interativo com personagens bíblicos guiados por ChatGPT (LWC). Jesus Cristo desbloqueado por padrão; outros conselheiros desbloqueáveis com moedas.
+- **Trilhas de Crescimento:** Séries temáticas (ex: Gratidão, Oração, Perdão) com versículos, reflexões e ações práticas ao longo de vários dias.
+- **Arcade Bíblico:**
+  - **Quiz:** 30 questões (10 por nível), temporizador dinâmico, pontuação progressiva.
+  - **Quem Sou Eu? (Charadas):** 15 perguntas com dicas progressivas.
+  - **Caça-Palavras:** Grid 10×10 / 12×12 / 14×14, palavras em 8 direções (horizontal, vertical e diagonal), normalização de acentos.
+  - **Forca:** Teclado virtual, 8/6/4 vidas por nível, lista filtrada por dificuldade.
+- **Lojinha & Economia:** Moedas ganhas por leitura, jogos e desafios. Compra de stickers, fontes, fundos e desbloqueio de conselheiros IA premium.
+- **Studio de Cards:** Ferramenta estilo Canva para criar convites e cartões com fontes premium e fundos exclusivos.
+- **Landing Page (Techla):** Página de captação de leads com formulário de WhatsApp e webhook integrado.
+- **PWA:** Service Worker registrado, manifesto instalável, modo offline parcial.
 
-### Estrutura Principal
+## Arquitetura
+
+Monorepo com dois serviços independentes deployados no Railway:
+
 ```
-src/
-├── App.jsx              # Componente principal (monolito)
-├── index.css            # Tokens de design, temas, dark mode
-├── App.css              # Estilos adicionais (vazio)
-├── main.jsx             # Entry point do React
-├── data/
-│   └── arcadeData.js    # Dados dos jogos (Quiz, Charadas, Forca, Caça-Palavras)
-└── components/
-    └── LandingPage/     # Landing page Techla (desabilitada)
+1convite/
+├── frontend/                    # React + Vite (SPA)
+│   ├── src/                     # Código-fonte React
+│   │   ├── App.jsx              # Componente principal (monolito ~5700 linhas)
+│   │   ├── index.css            # Tokens de design, temas, dark mode
+│   │   ├── main.jsx             # Entry point
+│   │   ├── components/          # LandingPage, Onboarding
+│   │   ├── data/arcadeData.js   # Dados dos jogos
+│   │   └── services/            # webhookService.js
+│   ├── public/                  # Assets estáticos, áudios, imagens, frames
+│   ├── android/                 # Capacitor Android (APK nativo)
+│   ├── vite.config.js           # Proxy /api → localhost:3001 (dev)
+│   ├── capacitor.config.json    # Configuração Capacitor
+│   ├── Caddyfile                # Proxy /api → backend (produção Railway)
+│   ├── railway.toml             # Config Railway (frontend)
+│   └── package.json             # Deps: React, Vite, html2canvas
+│
+├── backend/                     # Express + PostgreSQL
+│   ├── src/
+│   │   ├── index.js             # Servidor Express (~1159 linhas, todas as rotas)
+│   │   └── database/
+│   │       ├── pool.js          # Conexão PostgreSQL (pg)
+│   │       ├── migrations.js    # Runner de migrations
+│   │       └── seed.js          # Seed do dicionário, trilhas e progresso
+│   ├── migrations/
+│   │   └── 001_initial.sql      # Schema completo (8 tabelas + índices GIN)
+│   ├── import-bible.js          # Importador da Bíblia via API → PostgreSQL
+│   └── package.json             # Deps: Express, pg, cors, dotenv, LWC
+│
+├── .github/workflows/
+│   └── android.yml              # CI: build APK debug + upload artifact
+│
+├── package.json                 # Root: concurrently (dev, build, start)
+├── .gitignore                   # node_modules, dist, .env, *.sqlite
+└── README.md
 ```
 
-## 💾 Instalação e Execução
+## Stack Tecnológica
+
+| Camada | Tecnologia |
+|---|---|
+| Frontend | React 19, Vite 5.4, Vanilla CSS, html2canvas |
+| Backend | Express 5, Node.js >=20 |
+| Banco | PostgreSQL 16 (Railway Plugin) |
+| IA | ChatGPT via `@opencoredev/loginwithchatgpt-server` |
+| Mobile | Capacitor 8 (Android, JDK 21) |
+| Deploy Frontend | Railway (Caddy + static files) |
+| Deploy Backend | Railway (Node.js) |
+| CI/CD | GitHub Actions (APK build automático) |
+| Proxy (dev) | Vite dev server → localhost:3001 |
+| Proxy (prod) | Caddyfile reverse proxy → backend Railway |
+
+## Variáveis de Ambiente
+
+### Backend (Railway)
+
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `DATABASE_URL` | Sim | URL de conexão PostgreSQL (Railway injeta automaticamente) |
+| `FRONTEND_URL` | Sim | URL do frontend (ex: `https://1convite.com.br`) — usada no CORS |
+| `PORT` | Não | Porta do servidor (default: 3001, Railway define automaticamente) |
+| `LWC_SECRET` | Não | Secret para ChatGPT/LWC (tem fallback para dev) |
+
+### Frontend (Railway)
+
+Nenhuma variável necessária. O `Caddyfile` faz proxy de `/api` para o backend automaticamente.
+
+## Instalação e Execução
+
+### Pré-requisitos
+- Node.js >= 20
+- PostgreSQL (local ou Railway plugin)
+
+### Desenvolvimento (local)
 
 ```bash
-# Instalar dependências
+# Clonar o repositório
+git clone https://github.com/spcompensa-glitch/1convite.git
+cd 1convite
+
+# Instalar dependências (root + frontend + backend)
 npm install
+cd frontend && npm install && cd ..
+cd backend && npm install && cd ..
 
-# Rodar em modo de desenvolvimento (Frontend - porta 5173)
+# Criar arquivo .env no backend com DATABASE_URL
+echo "DATABASE_URL=postgres://user:pass@localhost:5432/1convite" > backend/.env
+
+# Rodar migrations e seed
+npm run migrate
+npm run seed
+npm run import-bible
+
+# Iniciar frontend e backend simultaneamente
 npm run dev
-
-# Rodar o backend (porta 3001) - em outro terminal
-node server/index.js
-
-# Fazer build para produção
-npm run build
 ```
 
-> **Nota:** O frontend (Vite) roda na porta 5173 e o backend (Node/SQLite) na porta 3001. Ambos devem estar rodando simultaneamente para o app funcionar corretamente.
+- **Frontend:** http://localhost:5173
+- **Backend:** http://localhost:3001
 
-## 📚 Como contribuir
-1. Realize suas modificações no código local.
-2. Certifique-se de não duplicar componentes globais na UI.
-3. Atualize sempre a documentação.
-4. Faça o push para `https://github.com/spcompensa-glitch/1convite`.
+### Comandos Disponíveis (Root)
 
-*Deus abençoe seu uso e desenvolvimento do 1Convite!*
+| Comando | Descrição |
+|---|---|
+| `npm run dev` | Inicia frontend + backend simultaneamente |
+| `npm run dev:frontend` | Inicia apenas o frontend (Vite) |
+| `npm run dev:backend` | Inicia apenas o backend (Express) |
+| `npm run build` | Build de produção do frontend |
+| `npm run start` | Inicia o backend em produção |
+| `npm run migrate` | Roda migrations do PostgreSQL |
+| `npm run seed` | Popula tabelas iniciais |
+| `npm run import-bible` | Importa Bíblia completa para PostgreSQL |
+| `npm run lint` | Lint do frontend (oxlint) |
 
----
+## Deploy no Railway
 
-## 📋 Changelog
+### Serviço Backend
+1. Criar serviço no Railway conectando ao repositório
+2. **Root Directory:** `backend`
+3. **Start Command:** `node src/index.js`
+4. Adicionar plugin PostgreSQL (cria `DATABASE_URL` automaticamente)
+5. Adicionar env var `FRONTEND_URL` → `https://1convite.com.br`
+6. Após deploy, rodar no console: `npm run migrate && npm run seed && npm run import-bible`
+
+### Serviço Frontend
+1. Criar serviço no Railway conectando ao repositório
+2. **Root Directory:** `frontend`
+3. Nenhuma variável necessária
+4. O `Caddyfile` faz proxy de `/api/*` para o backend automaticamente
+
+## Build do APK (Android)
+
+O workflow `.github/workflows/android.yml` roda automaticamente a cada push no `main`:
+
+1. Instala dependências do frontend
+2. Builda o Vite (`dist/`)
+3. Sincroniza Capacitor (`npx cap sync android`)
+4. Compila o APK com Gradle (JDK 21)
+5. Faz upload como artifact GitHub Actions (download disponível por 30 dias)
+
+Para baixar o APK: Actions → build mais recente → seção Artifacts → `1convite-apk`
+
+## Banco de Dados (PostgreSQL)
+
+### Tabelas
+
+| Tabela | Descrição |
+|---|---|
+| `tb_matriz_diaria` | 365 dias de reflexão, código verbal, versículo, meditação |
+| `tb_usuario_progresso` | Progresso do usuário (dia atual, plano, nome, avatar) |
+| `tb_contatos` | Lista de contatos para compartilhamento |
+| `tb_dicionario` | Dicionário teológico |
+| `tb_trilhas` | Trilhas de crescimento (versículos, reflexões, ações) |
+| `tb_usuario_trilha_progresso` | Progresso do usuário nas trilhas |
+| `tb_biblia` | Bíblia completa (~31 mil versículos) com busca full-text (GIN index) |
+| `tb_leads` | Leads captados pela landing page |
+
+### Migrations e Seed
+
+```bash
+npm run migrate      # Cria tabelas
+npm run seed         # Popula dicionário, trilhas e progresso
+npm run import-bible # Importa Bíblia (~31 mil versículos)
+```
+
+## API (Backend Rotas)
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/api/v1/usuario` | Retorna perfil do usuário |
+| POST | `/api/v1/usuario/perfil` | Atualiza perfil (nome, email, avatar) |
+| POST | `/api/v1/auth/google` | Autenticação Google |
+| GET | `/api/v1/codigo-dia` | Código verbal do dia |
+| POST | `/api/v1/codigo-dia/save` | Salva reflexão do dia |
+| POST | `/api/v1/checkpoint/start` | Inicia checkpoint de 12min |
+| POST | `/api/v1/sync-checkpoint` | Sincroniza progresso |
+| POST | `/api/v1/avancar-dia` | Avança dia (admin) |
+| POST | `/api/v1/reiniciar-jornada` | Reinicia progresso |
+| GET/POST | `/api/v1/contatos` | CRUD de contatos |
+| POST | `/api/v1/contatos/:id/acao` | Registra ação no contato |
+| GET | `/api/v1/historico` | Histórico de ações |
+| GET | `/api/v1/biblia/livros` | Lista livros da Bíblia |
+| GET | `/api/v1/biblia/capitulos/:abrev` | Capítulos de um livro |
+| GET | `/api/v1/biblia/texto/:abrev/:cap` | Versículos de um capítulo |
+| GET | `/api/v1/biblia/busca?q=` | Busca full-text |
+| GET | `/api/v1/biblia/aleatorio` | Versículo aleatório |
+| GET | `/api/v1/biblia/audio/:abrev/:cap` | URL de áudio |
+| GET | `/api/v1/dicionario/termos` | Dicionário teológico |
+| GET | `/api/v1/trilhas/lista` | Lista trilhas disponíveis |
+| GET | `/api/v1/trilhas/ativa` | Trilha ativa do usuário |
+| POST | `/api/v1/trilhas/iniciar` | Inicia uma trilha |
+| POST | `/api/v1/trilhas/completar-dia` | Marca dia como completo |
+| POST | `/api/v1/trilhas/cancelar` | Cancela trilha ativa |
+| POST | `/api/v1/pagamentos/criar-preferencia` | Cria preferência de pagamento |
+| POST | `/api/v1/pagamentos/webhook` | Webhook de pagamento |
+| POST | `/api/v1/admin/definir-plano` | Define plano do usuário |
+| POST | `/api/v1/leads` | Registra lead da landing page |
+| POST | `/api/v1/chatgpt/*` | Rotas ChatGPT/LWC |
+| GET | `*` | SPA fallback (serve index.html) |
+
+## Estrutura de Temas
+
+O app usa CSS custom properties definidas em `index.css` com suporte a dark mode via classe `body.dark-mode`:
+
+- `--bg-app`, `--bg-card`, `--bg-card-hover` — cores de fundo
+- `--text-primary`, `--text-secondary`, `--text-muted` — cores de texto
+- `--orange`, `--green` — cores de destaque
+- Tema padrão: **dark mode**
+- Acento de cor: esmeralda (`#10B981`)
+
+## Changelog
 
 ### 2026-07-27
 
+**Monorepo & Deploy**
+- Estrutura reorganizada em `frontend/` (React + Vite) e `backend/` (Express + PostgreSQL).
+- Migrado de SQLite para PostgreSQL (placeholders `$1,$2,...`, `SERIAL`, JSONB, `ILIKE`, `gin` full-text index).
+- Deploy no Railway: dois serviços (frontend + backend) + plugin PostgreSQL.
+- Frontend servido via Caddy com reverse proxy `/api` → backend.
+- GitHub Actions para build automático de APK Android (Capacitor 8, JDK 21).
+
+**Backend**
+- Criado `pool.js` com conexão PostgreSQL (SSL para Railway).
+- Criado `migrations/001_initial.sql` com 8 tabelas + índices.
+- Criado `seed.js` para popular dicionário, trilhas e progresso.
+- Criado `import-bible.js` para importar Bíblia via API.
+- Adicionada rota `POST /api/v1/leads` para captura de leads.
+- Tabela `tb_leads` criada na migration.
+
+**Frontend**
+- Criado `services/webhookService.js` para envio de leads.
+- `vite.config.js` com proxy `/api` → `localhost:3001` (dev).
+- `Caddyfile` para proxy `/api` → backend Railway (produção).
+- `capacitor.config.json` e projeto Android restaurados.
+
 **Tema & UI**
-- Tema padrão alterado para **dark mode**. Usuário pode alternar para claro nas configurações.
-- Corrigido bug onde `LandingPage.css` sobrescrevia variáveis globais (`:root`, `body`) com cores escuras, causando fundo branco + fonte branca no modo claro.
-- Corrigido `useEffect` da LandingPage que forçava `backgroundColor: '#030303'` via inline style no body.
-- Adicionadas propriedades CSS `color: var(--text-primary)` em `body` e `#root` para garantir contraste correto.
-- Desabilitado redirect automático para LandingPage da Techla (`profileEmail === 'membro@1convite.com'`).
+- Tema padrão: dark mode.
+- Corrigido bug de `LandingPage.css` sobrescrevendo variáveis globais.
+- Cor `--green` atualizada para esmeralda (`#10B981`).
 
-**Arcade Bíblico — Caça-Palavras**
-- Criado arquivo `src/data/arcadeData.js` com dados centralizados dos 4 jogos.
-- Corrigido bug de seleção: agora aceita cliques em **8 direções** (horizontal, vertical e diagonal), não apenas 2.
-- Adicionada normalização de acentos (`GRAÇA` → `GRACA`) para comparação correta com o grid.
-- Aumentado número de tentativas de posicionamento de palavras no grid (100 → 500).
-- Grades expandidas: fácil 10×10 (5 palavras), médio 12×12 (6), avançado 14×14 (8).
-- Grid size dinâmico no CSS (`gridTemplateColumns` baseado no tamanho real do grid).
+**Arcade Bíblico**
+- Caça-Palavras: seleção em 8 direções, normalização de acentos, grades maiores.
+- Forca: corrigido uso de lista filtrada por dificuldade.
+- Quiz e Charadas: timers e listas confirmados corretos.
 
-**Arcade Bíblico — Forca**
-- Corrigido bug crítico: jogo usava `ARCADE_FORCA_WORDS[...]` (array global de 30 palavras) em vez de `arcadeForcaList[...]` (lista filtrada por dificuldade). Palavras de níveis errados apareciam.
-
-**Arcade Bíblico — Quiz & Charadas**
-- Adicionados timers `useEffect` para countdown correto do Quiz e Charadas.
-- Timer do Quiz reseta corretamente ao voltar para o lobby.
-- Quiz e Charadas já usavam listas filtradas — confirmado correto.
-
-**Infraestrutura**
-- `package.json`: `engines.node` alterado de `"20.x"` para `">=20"` para compatibilidade.
-- Vite 5.4.21 instalado via `npm install --include=dev`.
-- Backend (porta 3001) e frontend (porta 5173) documentados para execução simultânea.
+### 2026-07-23
+- Integração Capacitor para APK nativo.
+- Workflow GitHub Actions para build automático.
