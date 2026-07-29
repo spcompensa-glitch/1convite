@@ -5,6 +5,7 @@ import LandingPage from './components/LandingPage/LandingPage';
 import { ARCADE_QUIZ_QUESTIONS, ARCADE_CHARADAS_QUESTIONS, ARCADE_FORCA_WORDS, ARCADE_CACA_PALAVRAS_LIST, generateCacaPalavrasGrid } from './data/arcadeData';
 import KidsLobby from './components/kids/KidsLobby';
 import KidsPuzzle from './components/kids/KidsPuzzle';
+import { startKidsBgm, stopKidsBgm } from './components/kids/kidsSons';
 
 
 
@@ -1343,6 +1344,15 @@ function App() {
   };
 
   useEffect(() => { loadAppData(); loadBibleBooks(); }, []);
+
+  // Kids BGM: iniciar ao entrar, parar ao sair
+  useEffect(() => {
+    if (activeTab === 'kids') {
+      startKidsBgm();
+    } else {
+      stopKidsBgm();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab !== 'biblia') return;

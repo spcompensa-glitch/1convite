@@ -48,3 +48,67 @@ export function playClick() {
 export function playDrag() {
   playTone(440, 0.06, 'triangle', 0.08);
 }
+
+// ═══ MÚSICA DE FUNDO KIDS ═══
+let bgmInterval = null;
+let bgmCtx = null;
+let bgmGain = null;
+
+const KIDS_MELODY = [
+  523, 587, 659, 784, 659, 587, 523, 440,
+  523, 659, 784, 880, 784, 659, 523, 587,
+  659, 523, 440, 523, 587, 659, 523, 440,
+  523, 659, 587, 523, 440, 392, 440, 523,
+];
+
+export function startKidsBgm() {
+  if (bgmInterval) return;
+  bgmCtx = new (window.AudioContext || window.webkitAudioContext)();
+  bgmGain = bgmCtx.createGain();
+  bgmGain.gain.value = 0.04;
+  bgmGain.connect(bgmCtx.destination);
+
+  let noteIndex = 0;
+  const noteLen = 0.28;
+
+  bgmInterval = setInterval(() => {
+    if (bgmCtx.state === 'suspended') bgmCtx.resume();
+    const freq = KIDS_MELODY[noteIndex % KIDS_MELODY.length];
+    const osc = bgmCtx.createOscillator();
+    const g = bgmCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.04, bgmCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, bgmCtx.currentTime + noteLen);
+    osc.connect(g);
+    g.connect(bgmCtx.destination);
+    osc.start();
+    osc.stop(bgmCtx.currentTime + noteLen);
+
+    // Harmônico suave (terça)
+    const osc2 = bgmCtx.createOscillator();
+    const g2 = bgmCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.value = freq * 1.25;
+    g2.gain.setValueAtTime(0.015, bgmCtx.currentTime);
+    g2.gain.exponentialRampToValueAtTime(0.001, bgmCtx.currentTime + noteLen);
+    osc2.connect(g2);
+    g2.connect(bgmCtx.destination);
+    osc2.start();
+    osc2.stop(bgmCtx.currentTime + noteLen);
+
+    noteIndex++;
+  }, noteLen * 1000);
+}
+
+export function stopKidsBgm() {
+  if (bgmInterval) {
+    clearInterval(bgmInterval);
+    bgmInterval = null;
+  }
+  if (bgmCtx) {
+    bgmCtx.close().catch(() => {});
+    bgmCtx = null;
+    bgmGain = null;
+  }
+}
