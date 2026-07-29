@@ -17,6 +17,7 @@ Super app cristão que integra a Palavra de Deus, interatividade, ferramentas de
 - **Desafio do Dia:** Reflexão diária com código verbal, meditação guiada (áudio) e progresso em 365 dias.
 - **Conselheiros IA:** Hub interativo com personagens bíblicos guiados por ChatGPT (LWC). Jesus Cristo desbloqueado por padrão; outros conselheiros desbloqueáveis com moedas.
 - **Trilhas de Crescimento:** Séries temáticas (ex: Gratidão, Oração, Perdão) com versículos, reflexões e ações práticas ao longo de vários dias.
+- **Trilha do Reino:** Plano de leitura bíblica cronológico em 18 ou 12 meses. Streak de dias seguidos, Talentos (moedas), devotionais diários, 1Convite Prático, mapa visual com 9 marcos de fé.
 - **Arcade Bíblico:**
   - **Quiz:** 30 questões (10 por nível), temporizador dinâmico, pontuação progressiva.
   - **Quem Sou Eu? (Charadas):** 15 perguntas com dicas progressivas.
@@ -38,8 +39,9 @@ Monorepo com dois serviços independentes deployados no Railway:
 │   │   ├── App.jsx              # Componente principal (monolito ~5700 linhas)
 │   │   ├── index.css            # Tokens de design, temas, dark mode
 │   │   ├── main.jsx             # Entry point
-│   │   ├── components/          # LandingPage, Onboarding
+│   │   ├── components/          # LandingPage, Onboarding, trail/
 │   │   ├── data/arcadeData.js   # Dados dos jogos
+│   │   ├── data/trailData.js    # Plano bíblico cronológico (540/365 dias)
 │   │   └── services/            # webhookService.js
 │   ├── public/                  # Assets estáticos, áudios, imagens, frames
 │   │   ├── favicon.png          # Favicon (chama sobre livro)
@@ -266,6 +268,18 @@ O app usa CSS custom properties definidas em `index.css` com suporte a dark mode
 - Acento de cor: esmeralda (`#10B981`)
 
 ## Changelog
+
+### 2026-07-29
+
+**Trilha do Reino — Leitura Bíblica Gamificada**
+- Novo componente `TrailHome.jsx` com mapa visual, streak, talentos e devocional diário.
+- Plano cronológico em `trailData.js`: 150 leituras (AT→NT), 120 devotionais, 50 ações rotativas.
+- Suporte a 18 meses (540 dias, ~2.2 cap/dia) e 12 meses (365 dias, ~3.3 cap/dia).
+- 9 marcos de fé: Criação, Patriarcas, Êxodo, Conquista, Reis, Exilo, Evangelhos, Igreja, Apocalipse.
+- Integração com moedas existentes (+10 Talentos por dia concluído).
+- Streak com persistência localStorage (dias seguidos, reset se pular).
+- Efeitos sonoros Web Audio (trailSons.js): click, complete, streak, milestone, coin.
+- Novo card "Trilha do Reino" no dashboard com ícone de chama.
 
 ### 2026-07-28
 
