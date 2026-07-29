@@ -3,9 +3,7 @@ import Onboarding from './components/Onboarding';
 import html2canvas from 'html2canvas';
 import LandingPage from './components/LandingPage/LandingPage';
 import { ARCADE_QUIZ_QUESTIONS, ARCADE_CHARADAS_QUESTIONS, ARCADE_FORCA_WORDS, ARCADE_CACA_PALAVRAS_LIST, generateCacaPalavrasGrid } from './data/arcadeData';
-import KidsLobby from './components/kids/KidsLobby';
-import KidsPuzzle from './components/kids/KidsPuzzle';
-import { startKidsBgm, stopKidsBgm } from './components/kids/kidsSons';
+
 
 
 
@@ -232,7 +230,7 @@ function App() {
   
   // --- RESTORED ARCADE STATES ---
   const [arcadeActiveGame, setArcadeActiveGame] = useState('lobby');
-  const [kidsView, setKidsView] = useState('lobby');
+
   const [arcadeSelectedGame, setArcadeSelectedGame] = useState(null);
   const [arcadeDifficulty, setArcadeDifficulty] = useState('facil');
   const [arcadeQuizList, setArcadeQuizList] = useState([]);
@@ -1345,15 +1343,6 @@ function App() {
 
   useEffect(() => { loadAppData(); loadBibleBooks(); }, []);
 
-  // Kids BGM: iniciar ao entrar, parar ao sair
-  useEffect(() => {
-    if (activeTab === 'kids') {
-      startKidsBgm();
-    } else {
-      stopKidsBgm();
-    }
-  }, [activeTab]);
-
   useEffect(() => {
     if (activeTab !== 'biblia') return;
     const load = async () => {
@@ -2264,7 +2253,6 @@ Importante: O JSON deve ser 100% válido.`;
                   {activeTab === 'conta' && 'Minha Conta'}
                   {activeTab === 'criar-card' && 'Studio de Cards'}
                   {activeTab === 'arcade' && 'Jogos'}
-                  {activeTab === 'kids' && 'Kids do Reino'}
                 </h2>
               )}
             </div>
@@ -2651,15 +2639,6 @@ Importante: O JSON deve ser 100% válido.`;
                   icon: (
                     <ChaminhaCoin size={36} />
                   )
-                },
-                { 
-                  id: 'kids', 
-                  label: 'Kids do Reino', 
-                  icon: (
-                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  )
                 }
               ].map(card => (
                 <div
@@ -2677,9 +2656,7 @@ Importante: O JSON deve ser 100% válido.`;
                       setCardSelectedText('');
                       setCardCategory('bomdia');
                     }
-                    if (card.id === 'kids') {
-                      setKidsView('lobby');
-                    }
+
                   }}
                   className="dashboard-card"
                 >
@@ -5664,23 +5641,6 @@ Importante: O JSON deve ser 100% válido.`;
                 </div>
               );
             })()}
-          </div>
-        )}
-
-        {activeTab === 'kids' && (
-          <div className="page-enter animate-fade-in" style={{ paddingBottom: '100px' }}>
-            {kidsView === 'lobby' && (
-              <KidsLobby
-                onSelectGame={(id) => setKidsView(id)}
-                onBack={() => setActiveTab('dashboard')}
-              />
-            )}
-            {kidsView === 'puzzle' && (
-              <KidsPuzzle
-                onBack={() => setKidsView('lobby')}
-                setUserCoins={setUserCoins}
-              />
-            )}
           </div>
         )}
 
