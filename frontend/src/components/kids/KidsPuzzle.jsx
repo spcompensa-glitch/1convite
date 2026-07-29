@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { PUZZLE_LEVELS } from '../../data/kidsData';
 import { playCorrect, playWrong, playCoin, playLevelComplete, playClick, playDrag } from './kidsSons';
 import KidsBackground from './KidsBackground';
@@ -13,11 +13,35 @@ function shuffleArray(arr) {
   return a;
 }
 
+function svgToDataUrl(svg) {
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+function PieceView({ pieceIdx, cols, rows, imgUrl, size, style, ...props }) {
+  const col = pieceIdx % cols;
+  const row = Math.floor(pieceIdx / cols);
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: `url(${imgUrl})`,
+        backgroundSize: `${cols * 100}% ${rows * 100}%`,
+        backgroundPosition: `${(col / (cols - 1 || 1)) * 100}% ${(row / (rows - 1 || 1)) * 100}%`,
+        borderRadius: 6,
+        ...style,
+      }}
+      {...props}
+    />
+  );
+}
+
 export default function KidsPuzzle({ onBack, setUserCoins }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [pieces, setPieces] = useState([]);
   const [grid, setGrid] = useState([]);
   const [draggedIdx, setDraggedIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
   const [moves, setMoves] = useState(0);
   const [timer, setTimer] = useState(0);
   const [completed, setCompleted] = useState(false);
@@ -33,6 +57,8 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
     setTimer(0);
     setCompleted(false);
     setShowWin(false);
+    setDraggedIdx(null);
+    setDragOverIdx(null);
     setSelectedLevel(level);
   }, []);
 
@@ -49,9 +75,9 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
 
     const newGrid = [...grid];
     const pieceAtTarget = newGrid[targetIdx];
-    const pieceAtDragged = newGrid[draggedIdx];
+    const pieceDragging = pieces[draggedIdx];
 
-    newGrid[targetIdx] = pieceAtDragged !== null ? pieceAtDragged : pieces[draggedIdx];
+    newGrid[targetIdx] = pieceDragging;
     if (pieceAtTarget !== null) {
       newGrid[draggedIdx] = pieceAtTarget;
     } else {
@@ -60,6 +86,7 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
 
     setGrid(newGrid);
     setDraggedIdx(null);
+    setDragOverIdx(null);
     setMoves(m => m + 1);
 
     const isComplete = newGrid.every((v, i) => v === i);
@@ -78,11 +105,10 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
     }
   }, [draggedIdx, grid, pieces, completed, selectedLevel, setUserCoins]);
 
-  const handleDragStart = (idx) => {
-    if (completed) return;
-    playDrag();
-    setDraggedIdx(idx);
-  };
+  const handleTouchDrop = useCallback((targetIdx) => {
+    if (draggedIdx === null || completed) return;
+    handleDrop(targetIdx);
+  }, [handleDrop, completed]);
 
   const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -138,6 +164,8 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
 
   const level = selectedLevel;
   const total = level.cols * level.rows;
+  const imgUrl = useMemo(() => svgToDataUrl(level.svg), [level.svg]);
+  const cellSize = Math.floor((Math.min(window.innerWidth - 56, 340)) / level.cols);
 
   return (
     <KidsBackground>
@@ -152,25 +180,23 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
           </h2>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, fontSize: 14, color: '#5D4037' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 14, color: '#5D4037' }}>
           <span>⏱ {formatTime(timer)}</span>
           <span>🔄 {moves} movimentos</span>
         </div>
 
         {/* Referência da imagem */}
         <div style={{
-          background: level.bgColor,
           borderRadius: 12,
-          padding: 8,
+          overflow: 'hidden',
           marginBottom: 16,
           display: 'flex',
           justifyContent: 'center',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.15)'
+          boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
+          background: 'rgba(255,255,255,0.9)',
+          padding: 4,
         }}>
-          <div
-            style={{ width: '100%', maxWidth: 300 }}
-            dangerouslySetInnerHTML={{ __html: level.svg }}
-          />
+          <div style={{ width: '100%', maxWidth: 300 }} dangerouslySetInnerHTML={{ __html: level.svg }} />
         </div>
 
         {/* Grid do puzzle */}
@@ -178,39 +204,49 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
           className="kids-puzzle-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: `repeat(${level.cols}, 1fr)`,
-            gap: 4,
+            gridTemplateColumns: `repeat(${level.cols}, ${cellSize}px)`,
+            gridTemplateRows: `repeat(${level.rows}, ${cellSize}px)`,
+            gap: 3,
             marginBottom: 16,
+            justifyContent: 'center',
           }}
         >
           {Array.from({ length: total }, (_, idx) => {
             const pieceIdx = grid[idx];
             const isCorrect = pieceIdx === idx;
+            const isTarget = dragOverIdx === idx;
             return (
               <div
                 key={idx}
-                className={`kids-puzzle-cell ${pieceIdx !== null ? 'filled' : ''} ${isCorrect ? 'correct' : ''}`}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
+                onDragLeave={() => setDragOverIdx(null)}
                 onDrop={() => handleDrop(idx)}
                 style={{
-                  aspectRatio: '1',
-                  background: pieceIdx !== null
-                    ? isCorrect ? '#4caf50' : '#FF8F00'
-                    : 'rgba(255,255,255,0.3)',
-                  borderRadius: 8,
+                  width: cellSize,
+                  height: cellSize,
+                  borderRadius: 6,
+                  border: `2px ${isTarget ? 'solid #4caf50' : 'dashed rgba(255,255,255,0.4)'}`,
+                  background: pieceIdx !== null ? 'transparent' : 'rgba(255,255,255,0.15)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 20,
-                  border: `2px dashed ${pieceIdx !== null ? 'transparent' : 'rgba(255,255,255,0.5)'}`,
-                  transition: 'all 0.15s',
-                  cursor: pieceIdx !== null ? 'grab' : 'default',
+                  transition: 'border 0.15s',
+                  overflow: 'hidden',
                 }}
               >
-                {pieceIdx !== null && (
-                  <span style={{ fontSize: 22 }}>
-                    {isCorrect ? '✓' : pieceIdx + 1}
-                  </span>
+                {pieceIdx !== null ? (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    backgroundImage: `url(${imgUrl})`,
+                    backgroundSize: `${level.cols * 100}% ${level.rows * 100}%`,
+                    backgroundPosition: `${(pieceIdx % level.cols) / (level.cols - 1 || 1) * 100}% ${Math.floor(pieceIdx / level.cols) / (level.rows - 1 || 1) * 100}%`,
+                    borderRadius: 4,
+                    boxShadow: isCorrect ? '0 0 8px #4caf50' : 'none',
+                    border: isCorrect ? '2px solid #4caf50' : 'none',
+                  }} />
+                ) : (
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{idx + 1}</span>
                 )}
               </div>
             );
@@ -224,34 +260,43 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
           gap: 6,
           justifyContent: 'center',
           padding: '12px 0',
-          borderTop: '2px solid rgba(255,255,255,0.3)'
+          borderTop: '2px solid rgba(255,255,255,0.3)',
         }}>
           {pieces.map((pieceIdx, i) => {
             const placed = grid.includes(pieceIdx);
+            const col = pieceIdx % level.cols;
+            const row = Math.floor(pieceIdx / level.cols);
             return (
               <div
                 key={i}
                 draggable={!placed && !completed}
-                onDragStart={() => handleDragStart(pieceIdx)}
+                onDragStart={() => { if (!placed) { playDrag(); setDraggedIdx(i); } }}
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  background: placed ? 'rgba(255,255,255,0.2)' : '#FF8F00',
+                  width: 52,
+                  height: 52,
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  cursor: placed ? 'default' : 'grab',
+                  opacity: placed ? 0.25 : 1,
+                  transition: 'all 0.15s',
+                  border: placed ? '2px solid transparent' : '2px solid #E65100',
+                  boxShadow: placed ? 'none' : '0 2px 8px rgba(0,0,0,0.2)',
+                  background: placed ? 'rgba(255,255,255,0.1)' : 'transparent',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: placed ? 'rgba(93,64,55,0.4)' : 'white',
-                  cursor: placed ? 'default' : 'grab',
-                  opacity: placed ? 0.3 : 1,
-                  transition: 'all 0.15s',
-                  border: `2px solid ${placed ? 'transparent' : '#E65100'}`,
-                  boxShadow: placed ? 'none' : '0 2px 8px rgba(0,0,0,0.15)',
                 }}
               >
-                {pieceIdx + 1}
+                {!placed && (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    backgroundImage: `url(${imgUrl})`,
+                    backgroundSize: `${level.cols * 100}% ${level.rows * 100}%`,
+                    backgroundPosition: `${col / (level.cols - 1 || 1) * 100}% ${row / (level.rows - 1 || 1) * 100}%`,
+                    borderRadius: 4,
+                  }} />
+                )}
               </div>
             );
           })}
