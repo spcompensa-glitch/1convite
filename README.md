@@ -238,8 +238,9 @@ npm run import-bible # Importa Bíblia (~31 mil versículos, standalone)
 | GET | `/api/v1/biblia/texto/:abrev/:cap` | Versículos de um capítulo |
 | GET | `/api/v1/biblia/busca?q=` | Busca full-text |
 | GET | `/api/v1/biblia/aleatorio` | Versículo aleatório |
-| GET | `/api/v1/biblia/audio/:abrev/:cap` | URL de áudio (proxy streaming) |
-| GET | `/api/v1/biblia/audio-stream/:book/:chapter.mp3` | Proxy de áudio da Bíblia (streaming) |
+| GET | `/api/v1/biblia/audio/:abrev/:cap` | URL de áudio (LibriVox primário, fallback beblia.bible) |
+| GET | `/api/v1/biblia/audio-stream-librivox/:itemId/:fileName` | Proxy de áudio LibriVox/Internet Archive (streaming) |
+| GET | `/api/v1/biblia/audio-stream/:book/:chapter.mp3` | Proxy de áudio da Bíblia — fallback (streaming) |
 | GET | `/api/v1/health` | Health check (status + DB connection) |
 | GET | `/api/v1/dicionario/termos` | Dicionário teológico |
 | GET | `/api/v1/trilhas/lista` | Lista trilhas disponíveis |
@@ -265,6 +266,17 @@ O app usa CSS custom properties definidas em `index.css` com suporte a dark mode
 - Acento de cor: esmeralda (`#10B981`)
 
 ## Changelog
+
+### 2026-07-28
+
+**Áudio da Bíblia — LibriVox**
+- Integrado LibriVox/Internet Archive como fonte primária de áudio (domínio público).
+- Todos os 66 livros da Bíblia mapeados com IDs do Internet Archive.
+- Fallback automático para beblia.bible se o livro não estiver no LibriVox.
+- Nova rota proxy: `GET /api/v1/biblia/audio-stream-librivox/:itemId/:fileName`.
+- Resposta da API inclui campo `source` ("librivox" ou "fallback") e `license`.
+- Licença: Public Domain (LibriVox — gravações voluntárias).
+- Aguardando API key do Faith Comes By Hearing (Bible Brain) para áudio de maior qualidade.
 
 ### 2026-07-27
 

@@ -1019,53 +1019,204 @@ app.get('/api/v1/biblia/aleatorio', async (req, res) => {
   }
 });
 
-// Obter URL do áudio de um capítulo da Bíblia (WordProject MP3 CDN)
+// ============================================================
+// ÁUDIO DA BÍBLIA — LibriVox (Internet Archive) + fallback
+// ============================================================
+// Fonte primária: LibriVox/Internet Archive (domínio público)
+// Fallback: beblia.bible (fonte original)
+// Licença LibriVox: domínio público (PD) — gravações voluntárias
+// ============================================================
+
+const LIBRIVOX_BIBLE_BOOKS = {
+  // Antigo Testamento
+  gn:  { id: 'biblia_alm_genesis_librivox',        prefix: 'genesis',        chapters: 50 },
+  ex:  { id: 'biblia_alm_exodus_librivox',         prefix: 'exodus',         chapters: 40 },
+  lv:  { id: 'biblia_alm_leviticus_librivox',      prefix: 'leviticus',      chapters: 27 },
+  nm:  { id: 'biblia_alm_numbers_librivox',        prefix: 'numbers',        chapters: 36 },
+  dt:  { id: 'biblia_alm_deuteronomy_librivox',    prefix: 'deuteronomy',    chapters: 34 },
+  js:  { id: 'biblia_alm_joshua_librivox',         prefix: 'joshua',         chapters: 24 },
+  jz:  { id: 'biblia_alm_judges_librivox',         prefix: 'judges',         chapters: 21 },
+  rt:  { id: 'biblia_alm_ruth_librivox',           prefix: 'ruth',           chapters: 4 },
+  '1sm': { id: 'biblia_alm_1samuel_librivox',      prefix: '1samuel',        chapters: 31 },
+  '2sm': { id: 'biblia_alm_2samuel_librivox',      prefix: '2samuel',        chapters: 24 },
+  '1rs': { id: 'biblia_alm_1kings_librivox',       prefix: '1kings',         chapters: 22 },
+  '2rs': { id: 'biblia_alm_2kings_librivox',       prefix: '2kings',         chapters: 25 },
+  '1cr': { id: 'biblia_alm_1chronicles_librivox',  prefix: '1chronicles',    chapters: 29 },
+  '2cr': { id: 'biblia_alm_2chronicles_librivox',  prefix: '2chronicles',    chapters: 36 },
+  ed:  { id: 'biblia_alm_ezra_librivox',           prefix: 'ezra',           chapters: 10 },
+  ne:  { id: 'biblia_alm_nehemiah_librivox',       prefix: 'nehemiah',       chapters: 13 },
+  et:  { id: 'biblia_alm_esther_librivox',         prefix: 'esther',         chapters: 10 },
+  jó:  { id: 'biblia_alm_job_librivox',            prefix: 'job',            chapters: 42 },
+  sl:  { id: 'biblia_alm_psalms_librivox',         prefix: 'psalms',         chapters: 150 },
+  pv:  { id: 'biblia_alm_proverbs_librivox',       prefix: 'proverbs',       chapters: 31 },
+  ec:  { id: 'biblia_alm_ecclesiastes_librivox',   prefix: 'ecclesiastes',   chapters: 12 },
+  ct:  { id: 'biblia_alm_songofsolomon_librivox',  prefix: 'songofsolomon',  chapters: 8 },
+  is:  { id: 'biblia_alm_isaiah_librivox',         prefix: 'isaiah',         chapters: 66 },
+  jr:  { id: 'biblia_alm_jeremiah_librivox',       prefix: 'jeremiah',       chapters: 52 },
+  lm:  { id: 'biblia_alm_lamentations_librivox',   prefix: 'lamentations',   chapters: 5 },
+  ez:  { id: 'biblia_alm_ezekiel_librivox',        prefix: 'ezekiel',        chapters: 48 },
+  dn:  { id: 'biblia_alm_daniel_librivox',         prefix: 'daniel',         chapters: 12 },
+  os:  { id: 'biblia_alm_hosea_librivox',          prefix: 'hosea',          chapters: 14 },
+  jl:  { id: 'biblia_alm_joel_librivox',           prefix: 'joel',           chapters: 3 },
+  am:  { id: 'biblia_alm_amos_librivox',           prefix: 'amos',           chapters: 9 },
+  ob:  { id: 'biblia_alm_obadiah_librivox',        prefix: 'obadiah',        chapters: 1 },
+  jn:  { id: 'biblia_alm_jonah_librivox',          prefix: 'jonah',          chapters: 4 },
+  mq:  { id: 'biblia_alm_micah_librivox',          prefix: 'micah',          chapters: 7 },
+  na:  { id: 'biblia_alm_nahum_librivox',          prefix: 'nahum',          chapters: 3 },
+  hc:  { id: 'biblia_alm_habakkuk_librivox',       prefix: 'habakkuk',       chapters: 3 },
+  sf:  { id: 'biblia_alm_zephaniah_librivox',      prefix: 'zephaniah',      chapters: 3 },
+  ag:  { id: 'biblia_alm_haggai_librivox',         prefix: 'haggai',         chapters: 2 },
+  zc:  { id: 'biblia_alm_zechariah_librivox',      prefix: 'zechariah',      chapters: 14 },
+  ml:  { id: 'biblia_alm_malachi_librivox',        prefix: 'malachi',        chapters: 4 },
+  // Novo Testamento
+  mt:  { id: 'biblia_alm_matthew_librivox',        prefix: 'matthew',        chapters: 28 },
+  mc:  { id: 'biblia_alm_mark_librivox',           prefix: 'mark',           chapters: 16 },
+  lc:  { id: 'biblia_alm_luke_librivox',           prefix: 'luke',           chapters: 24 },
+  jo:  { id: 'biblia_alm_john_librivox',           prefix: 'john',           chapters: 21 },
+  atos:{ id: 'biblia_alm_acts_librivox',           prefix: 'acts',           chapters: 28 },
+  rm:  { id: 'biblia_alm_romans_librivox',         prefix: 'romans',         chapters: 16 },
+  '1co': { id: 'biblia_alm_1corinthians_librivox', prefix: '1corinthians',   chapters: 16 },
+  '2co': { id: 'biblia_alm_2corinthians_librivox', prefix: '2corinthians',   chapters: 13 },
+  gl:  { id: 'biblia_alm_galatians_librivox',      prefix: 'galatians',      chapters: 6 },
+  ef:  { id: 'biblia_alm_ephesians_librivox',      prefix: 'ephesians',      chapters: 6 },
+  fp:  { id: 'biblia_alm_philippians_librivox',    prefix: 'philippians',    chapters: 4 },
+  cl:  { id: 'biblia_alm_colossians_librivox',     prefix: 'colossians',     chapters: 4 },
+  '1ts': { id: 'biblia_alm_1thessalonians_librivox', prefix: '1thessalonians', chapters: 5 },
+  '2ts': { id: 'biblia_alm_2thessalonians_librivox', prefix: '2thessalonians', chapters: 3 },
+  '1tm': { id: 'biblia_alm_1timothy_librivox',     prefix: '1timothy',       chapters: 6 },
+  '2tm': { id: 'biblia_alm_2timothy_librivox',     prefix: '2timothy',       chapters: 4 },
+  tt:  { id: 'biblia_alm_titus_librivox',          prefix: 'titus',          chapters: 3 },
+  fm:  { id: 'biblia_alm_philemon_librivox',       prefix: 'philemon',       chapters: 1 },
+  hb:  { id: 'biblia_alm_hebrews_librivox',        prefix: 'hebrews',        chapters: 13 },
+  tg:  { id: 'biblia_alm_james_librivox',          prefix: 'james',          chapters: 5 },
+  '1pe': { id: 'biblia_alm_1peter_librivox',       prefix: '1peter',         chapters: 5 },
+  '2pe': { id: 'biblia_alm_2peter_librivox',       prefix: '2peter',         chapters: 3 },
+  '1jo': { id: 'biblia_alm_1john_librivox',        prefix: '1john',          chapters: 5 },
+  '2jo': { id: 'biblia_alm_2john_librivox',        prefix: '2john',          chapters: 1 },
+  '3jo': { id: 'biblia_alm_3john_librivox',        prefix: '3john',          chapters: 1 },
+  jd:  { id: 'biblia_alm_jude_librivox',           prefix: 'jude',           chapters: 1 },
+  ap:  { id: 'biblia_alm_revelation_librivox',     prefix: 'revelation',     chapters: 22 },
+};
+
+// Mapeamento de abreviação do frontend → chave do mapa
+const ABREV_MAP = {
+  'at': 'atos', 'jó': 'jó',
+};
+
+function getLibrivoxInfo(abrev) {
+  let key = abrev.toLowerCase();
+  if (ABREV_MAP[key]) key = ABREV_MAP[key];
+  return LIBRIVOX_BIBLE_BOOKS[key] || null;
+}
+
+// Calcula qual arquivo MP3 do LibriVox contém o capítulo desejado
+// Cada arquivo cobre ~5 capítulos (ex: genesis_01 = caps 1-5, genesis_02 = caps 6-10)
+function getLibrivoxFilePath(prefix, chapter) {
+  const fileIndex = Math.ceil(chapter / 5);
+  const padded = String(fileIndex).padStart(2, '0');
+  return `${prefix}_${padded}_almeida_64kb.mp3`;
+}
+
+// Fallback: beblia.bible (fonte original)
+const FALLBACK_BOOKS = [
+  "genesis", "exodus", "leviticus", "numbers", "deuteronomy", "joshua", "judges", "ruth",
+  "1samuel", "2samuel", "1kings", "2kings", "1chronicles", "2chronicles", "ezra", "nehemiah",
+  "esther", "job", "psalms", "proverbs", "ecclesiastes", "songofsolomon", "isaiah", "jeremiah",
+  "lamentations", "ezekiel", "daniel", "hosea", "joel", "amos", "obadiah", "jonah", "micah",
+  "nahum", "habakkuk", "zephaniah", "haggai", "zechariah", "malachi", "matthew", "mark",
+  "luke", "john", "acts", "romans", "1corinthians", "2corinthians", "galatians", "ephesians",
+  "philippians", "colossians", "1thessalonians", "2thessalonians", "1timothy", "2timothy",
+  "titus", "philemon", "hebrews", "james", "1peter", "2peter", "1john", "2john", "3john",
+  "jude", "revelation"
+];
+const FALLBACK_ORDENADOS = [
+  'gn', 'ex', 'lv', 'nm', 'dt', 'js', 'jz', 'rt', '1sm', '2sm',
+  '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'jó', 'sl', 'pv',
+  'ec', 'ct', 'is', 'jr', 'lm', 'ez', 'dn', 'os', 'jl', 'am',
+  'ob', 'jn', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml', 'mt', 'mc',
+  'lc', 'jo', 'atos', 'rm', '1co', '2co', 'gl', 'ef', 'fp', 'cl',
+  '1ts', '2ts', '1tm', '2tm', 'tt', 'fm', 'hb', 'tg', '1pe', '2pe',
+  '1jo', '2jo', '3jo', 'jd', 'ap'
+];
+
+// Obter URL do áudio de um capítulo da Bíblia
+// Fonte primária: LibriVox/Internet Archive (domínio público)
+// Fallback: beblia.bible
 app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
   try {
     const { abrev, capitulo } = req.params;
+    const capNumero = parseInt(capitulo, 10);
 
-    const ordemLivros = [
-      'gn', 'ex', 'lv', 'nm', 'dt', 'js', 'jz', 'rt', '1sm', '2sm',
-      '1rs', '2rs', '1cr', '2cr', 'ed', 'ne', 'et', 'jó', 'sl', 'pv',
-      'ec', 'ct', 'is', 'jr', 'lm', 'ez', 'dn', 'os', 'jl', 'am',
-      'ob', 'jn', 'mq', 'na', 'hc', 'sf', 'ag', 'zc', 'ml', 'mt', 'mc',
-      'lc', 'jo', 'atos', 'rm', '1co', '2co', 'gl', 'ef', 'fp', 'cl',
-      '1ts', '2ts', '1tm', '2tm', 'tt', 'fm', 'hb', 'tg', '1pe', '2pe',
-      '1jo', '2jo', '3jo', 'jd', 'ap'
-    ];
+    // 1. Tentar LibriVox primeiro
+    const livro = getLibrivoxInfo(abrev);
+    if (livro && capNumero >= 1 && capNumero <= livro.chapters) {
+      const filePath = getLibrivoxFilePath(livro.prefix, capNumero);
+      const archiveUrl = `https://archive.org/download/${livro.id}/${filePath}`;
+      const backendUrl = process.env.BACKEND_URL || 'https://invigorating-expression-production-d4df.up.railway.app';
 
-    const englishBooks = [
-      "genesis", "exodus", "leviticus", "numbers", "deuteronomy", "joshua", "judges", "ruth",
-      "1samuel", "2samuel", "1kings", "2kings", "1chronicles", "2chronicles", "ezra", "nehemiah",
-      "esther", "job", "psalms", "proverbs", "ecclesiastes", "songofsolomon", "isaiah", "jeremiah",
-      "lamentations", "ezekiel", "daniel", "hosea", "joel", "amos", "obadiah", "jonah", "micah",
-      "nahum", "habakkuk", "zephaniah", "haggai", "zechariah", "malachi", "matthew", "mark",
-      "luke", "john", "acts", "romans", "1corinthians", "2corinthians", "galatians", "ephesians",
-      "philippians", "colossians", "1thessalonians", "2thessalonians", "1timothy", "2timothy",
-      "titus", "philemon", "hebrews", "james", "1peter", "2peter", "1john", "2john", "3john",
-      "jude", "revelation"
-    ];
+      return res.json({
+        url: archiveUrl,
+        proxy: `${backendUrl}/api/v1/biblia/audio-stream-librivox/${livro.id}/${filePath}`,
+        source: 'librivox',
+        license: 'Public Domain (LibriVox)',
+      });
+    }
 
+    // 2. Fallback: beblia.bible
     let searchAbrev = abrev.toLowerCase();
-    if (searchAbrev === 'job') searchAbrev = 'jó';
-    if (searchAbrev === 'at') searchAbrev = 'atos';
+    if (ABREV_MAP[searchAbrev]) searchAbrev = ABREV_MAP[searchAbrev];
 
-    let index = ordemLivros.indexOf(searchAbrev);
+    let index = FALLBACK_ORDENADOS.indexOf(searchAbrev);
     if (index === -1) {
       return res.status(404).json({ error: 'Livro não suportado para áudio' });
     }
 
-    const bookName = englishBooks[index];
-    const capNumero = String(capitulo).padStart(3, '0');
-    const audioUrl = `https://beblia.bible:81/BibleAudio/portuguese/${bookName}/${capNumero}.mp3`;
-    const backendUrl = `https://invigorating-expression-production-d4df.up.railway.app`;
+    const bookName = FALLBACK_BOOKS[index];
+    const capPad = String(capNumero).padStart(3, '0');
+    const audioUrl = `https://beblia.bible:81/BibleAudio/portuguese/${bookName}/${capPad}.mp3`;
+    const backendUrl = process.env.BACKEND_URL || 'https://invigorating-expression-production-d4df.up.railway.app';
 
-    res.json({ url: audioUrl, proxy: `${backendUrl}/api/v1/biblia/audio-stream/${bookName}/${capNumero}.mp3` });
+    res.json({
+      url: audioUrl,
+      proxy: `${backendUrl}/api/v1/biblia/audio-stream/${bookName}/${capPad}.mp3`,
+      source: 'fallback',
+      license: 'Verificar licença da fonte',
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// Proxy de streaming — LibriVox/Internet Archive
+app.get('/api/v1/biblia/audio-stream-librivox/:itemId/:fileName', async (req, res) => {
+  try {
+    const { itemId, fileName } = req.params;
+    const upstream = `https://archive.org/download/${itemId}/${fileName}`;
+    const response = await fetch(upstream, { signal: AbortSignal.timeout(60000) });
+    if (!response.ok) return res.status(response.status).json({ error: 'Áudio não encontrado no LibriVox' });
+
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Accept-Ranges', 'bytes');
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=86400');
+
+    if (response.body) {
+      const reader = response.body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) { res.end(); break; }
+        res.write(value);
+      }
+    } else {
+      const buffer = Buffer.from(await response.arrayBuffer());
+      res.send(buffer);
+    }
+  } catch (err) {
+    res.status(502).json({ error: 'Falha ao buscar áudio do LibriVox: ' + err.message });
+  }
+});
+
+// Proxy de streaming — fallback (beblia.bible)
 app.get('/api/v1/biblia/audio-stream/:book/:chapter.mp3', async (req, res) => {
   try {
     const { book, chapter } = req.params;
