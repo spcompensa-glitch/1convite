@@ -3,6 +3,7 @@ import Onboarding from './components/Onboarding';
 import html2canvas from 'html2canvas';
 import LandingPage from './components/LandingPage/LandingPage';
 import { ARCADE_QUIZ_QUESTIONS, ARCADE_CHARADAS_QUESTIONS, ARCADE_FORCA_WORDS, ARCADE_CACA_PALAVRAS_LIST, generateCacaPalavrasGrid } from './data/arcadeData';
+import TrailHome from './components/trail/TrailHome';
 
 
 
@@ -2253,6 +2254,7 @@ Importante: O JSON deve ser 100% válido.`;
                   {activeTab === 'conta' && 'Minha Conta'}
                   {activeTab === 'criar-card' && 'Studio de Cards'}
                   {activeTab === 'arcade' && 'Jogos'}
+                  {activeTab === 'trail' && 'Trilha do Reino'}
                 </h2>
               )}
             </div>
@@ -2638,6 +2640,16 @@ Importante: O JSON deve ser 100% válido.`;
                   label: 'Lojinha 🛒', 
                   icon: (
                     <ChaminhaCoin size={36} />
+                  )
+                },
+                { 
+                  id: 'trail', 
+                  label: 'Trilha do Reino', 
+                  icon: (
+                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+                    </svg>
                   )
                 }
               ].map(card => (
@@ -5641,6 +5653,16 @@ Importante: O JSON deve ser 100% válido.`;
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {activeTab === 'trail' && (
+          <div className="page-enter animate-fade-in" style={{ paddingBottom: '100px' }}>
+            <TrailHome
+              onBack={() => setActiveTab('dashboard')}
+              userCoins={userCoins}
+              setUserCoins={setUserCoins}
+            />
           </div>
         )}
 
