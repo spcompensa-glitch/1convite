@@ -112,6 +112,11 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
 
   const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
+  const imgUrl = useMemo(() => selectedLevel ? svgToDataUrl(selectedLevel.svg) : '', [selectedLevel]);
+  const level = selectedLevel;
+  const total = level ? level.cols * level.rows : 0;
+  const cellSize = level ? Math.floor((Math.min(window.innerWidth - 56, 340)) / level.cols) : 0;
+
   if (!selectedLevel) {
     return (
       <KidsBackground>
@@ -161,11 +166,6 @@ export default function KidsPuzzle({ onBack, setUserCoins }) {
       </KidsBackground>
     );
   }
-
-  const level = selectedLevel;
-  const total = level.cols * level.rows;
-  const imgUrl = useMemo(() => svgToDataUrl(level.svg), [level.svg]);
-  const cellSize = Math.floor((Math.min(window.innerWidth - 56, 340)) / level.cols);
 
   return (
     <KidsBackground>
