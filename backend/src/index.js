@@ -1020,11 +1020,10 @@ app.get('/api/v1/biblia/aleatorio', async (req, res) => {
 });
 
 // ============================================================
-// ÁUDIO DA BÍBLIA — LibriVox (Internet Archive) + fallback
+// ÁUDIO DA BÍBLIA — beblia.bible (primário) + LibriVox (fallback)
 // ============================================================
-// Fonte primária: LibriVox/Internet Archive (domínio público)
-// Fallback: beblia.bible (fonte original)
-// Licença LibriVox: domínio público (PD) — gravações voluntárias
+// Fonte primária: beblia.bible (narração original)
+// Fallback: LibriVox/Internet Archive (domínio público)
 // ============================================================
 
 const LIBRIVOX_BIBLE_BOOKS = {
@@ -1140,19 +1139,37 @@ const FALLBACK_ORDENADOS = [
 ];
 
 // Obter URL do áudio de um capítulo da Bíblia
-// Fonte primária: LibriVox/Internet Archive (domínio público)
-// Fallback: beblia.bible
+// Fonte primária: beblia.bible (narração original)
+// Fallback: LibriVox/Internet Archive (domínio público)
 app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
   try {
     const { abrev, capitulo } = req.params;
     const capNumero = parseInt(capitulo, 10);
+    const backendUrl = process.env.BACKEND_URL || 'https://invigorating-expression-production-d4df.up.railway.app';
 
-    // 1. Tentar LibriVox primeiro
+    // 1. Fonte primária: beblia.bible
+    let searchAbrev = abrev.toLowerCase();
+    if (ABREV_MAP[searchAbrev]) searchAbrev = ABREV_MAP[searchAbrev];
+
+    let index = FALLBACK_ORDENADOS.indexOf(searchAbrev);
+    if (index !== -1) {
+      const bookName = FALLBACK_BOOKS[index];
+      const capPad = String(capNumero).padStart(3, '0');
+      const audioUrl = `https://beblia.bible:81/BibleAudio/portuguese/${bookName}/${capPad}.mp3`;
+
+      return res.json({
+        url: audioUrl,
+        proxy: `${backendUrl}/api/v1/biblia/audio-stream/${bookName}/${capPad}.mp3`,
+        source: 'primary',
+        license: 'Verificar licença da fonte',
+      });
+    }
+
+    // 2. Fallback: LibriVox/Internet Archive
     const livro = getLibrivoxInfo(abrev);
     if (livro && capNumero >= 1 && capNumero <= livro.chapters) {
       const filePath = getLibrivoxFilePath(livro.prefix, capNumero);
       const archiveUrl = `https://archive.org/download/${livro.id}/${filePath}`;
-      const backendUrl = process.env.BACKEND_URL || 'https://invigorating-expression-production-d4df.up.railway.app';
 
       return res.json({
         url: archiveUrl,
@@ -1162,26 +1179,7 @@ app.get('/api/v1/biblia/audio/:abrev/:capitulo', async (req, res) => {
       });
     }
 
-    // 2. Fallback: beblia.bible
-    let searchAbrev = abrev.toLowerCase();
-    if (ABREV_MAP[searchAbrev]) searchAbrev = ABREV_MAP[searchAbrev];
-
-    let index = FALLBACK_ORDENADOS.indexOf(searchAbrev);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Livro não suportado para áudio' });
-    }
-
-    const bookName = FALLBACK_BOOKS[index];
-    const capPad = String(capNumero).padStart(3, '0');
-    const audioUrl = `https://beblia.bible:81/BibleAudio/portuguese/${bookName}/${capPad}.mp3`;
-    const backendUrl = process.env.BACKEND_URL || 'https://invigorating-expression-production-d4df.up.railway.app';
-
-    res.json({
-      url: audioUrl,
-      proxy: `${backendUrl}/api/v1/biblia/audio-stream/${bookName}/${capPad}.mp3`,
-      source: 'fallback',
-      license: 'Verificar licença da fonte',
-    });
+    return res.status(404).json({ error: 'Livro não suportado para áudio' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
