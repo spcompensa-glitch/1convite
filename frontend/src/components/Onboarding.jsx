@@ -11,7 +11,7 @@ function ChaminhaVideo({ size = 100 }) {
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     let animationFrameId;
 
     const processFrame = () => {

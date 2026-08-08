@@ -451,22 +451,115 @@ function App() {
     ],
   };
 
+  const triggerDownload = (blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `1convite-card-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleGenerateCard = async (mode) => {
     if (!cardPreviewRef.current) return;
     setCardGenerating(true);
     try {
-      const canvas = await html2canvas(cardPreviewRef.current, { useCORS: true, allowTaint: true, scale: 2, logging: false });
+      const width = 1080;
+      const height = cardFormat === 'square' ? 1080 : 1920;
+
+      // Container offscreen em resolução nativa 1080p sem borderRadius (elimina bordas brancas)
+      const offscreenDiv = document.createElement('div');
+      offscreenDiv.style.position = 'fixed';
+      offscreenDiv.style.left = '-9999px';
+      offscreenDiv.style.top = '0';
+      offscreenDiv.style.width = `${width}px`;
+      offscreenDiv.style.height = `${height}px`;
+      offscreenDiv.style.borderRadius = '0px';
+      offscreenDiv.style.overflow = 'hidden';
+      offscreenDiv.style.boxSizing = 'border-box';
+      offscreenDiv.style.margin = '0';
+      offscreenDiv.style.padding = '0';
+
+      const clone = cardPreviewRef.current.cloneNode(true);
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.paddingTop = '0';
+      clone.style.borderRadius = '0px';
+      clone.style.boxShadow = 'none';
+
+      // Font size escalado para 1080px
+      const baseFontSizeMap = { sm: 38, md: 52, lg: 66, xl: 82 };
+      const targetFontSize = baseFontSizeMap[cardFontSize] || 52;
+
+      const textP = clone.querySelector('p');
+      if (textP) {
+        textP.style.fontSize = `${targetFontSize}px`;
+        textP.style.lineHeight = '1.6';
+      }
+
+      const refSpan = clone.querySelector('span');
+      if (refSpan) {
+        refSpan.style.fontSize = `${Math.round(targetFontSize * 0.42)}px`;
+        refSpan.style.marginTop = '24px';
+      }
+
+      const textContainer = clone.children[1];
+      if (textContainer) {
+        textContainer.style.padding = '60px 50px';
+      }
+
+      const footerDiv = textContainer ? textContainer.children[textContainer.children.length - 1] : null;
+      if (footerDiv) {
+        footerDiv.style.marginTop = '32px';
+        const footerSvg = footerDiv.querySelector('svg');
+        if (footerSvg) {
+          footerSvg.setAttribute('width', '24');
+          footerSvg.setAttribute('height', '24');
+        }
+        const footerSpan = footerDiv.querySelector('span');
+        if (footerSpan) {
+          footerSpan.style.fontSize = '20px';
+        }
+      }
+
+      offscreenDiv.appendChild(clone);
+      document.body.appendChild(offscreenDiv);
+
+      const canvas = await html2canvas(offscreenDiv, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 1,
+        width: width,
+        height: height,
+        windowWidth: width,
+        windowHeight: height,
+        backgroundColor: '#000000',
+        logging: false
+      });
+
+      document.body.removeChild(offscreenDiv);
+
       canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        if (mode === 'share' && navigator.canShare && navigator.canShare({ files: [new File([blob], 'card.png', { type: 'image/png' })] })) {
-          await navigator.share({ files: [new File([blob], '1convite-card.png', { type: 'image/png' })] });
+        if (!blob) {
+          setCardGenerating(false);
+          return;
+        }
+        const file = new File([blob], '1convite-card.png', { type: 'image/png' });
+
+        if (mode === 'share' && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: '1Convite Card',
+              text: 'Confira este cartão do 1Convite!',
+              files: [file]
+            });
+          } catch (shareErr) {
+            triggerDownload(blob);
+          }
         } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = '1convite-card.png';
-          a.click();
-          URL.revokeObjectURL(url);
+          triggerDownload(blob);
         }
         setCardGenerating(false);
       }, 'image/png');
@@ -1023,9 +1116,17 @@ function App() {
     */
   }, [activeTab, profileEmail, loginMethod]);
 
-  const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+  const isCapacitor = Boolean(
+    window.Capacitor || 
+    window.location.protocol === 'capacitor:' || 
+    window.location.protocol === 'file:' ||
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.includes('Capacitor'))
+  );
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+  const API_BASE = (isLocalhost && !isCapacitor)
     ? 'http://localhost:3001/api/v1' 
-    : `${window.location.protocol}//invigorating-expression-production-d4df.up.railway.app/api/v1`;
+    : 'https://invigorating-expression-production-d4df.up.railway.app/api/v1';
 
   // ── TIMERS DOS JOGOS ──────────────────────────────────────
   // Timer do Quiz
@@ -1291,12 +1392,24 @@ function App() {
     return () => clearInterval(t);
   }, []);
 
+  // ── Helper de Requisição Segura ──────────────────────────────────
+  const fetchJson = async (url, options) => {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) return null;
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  };
+
   // ── Dados iniciais ──────────────────────────────────────────
   const loadAppData = async () => {
     try {
-      const rU = await fetch(`${API_BASE}/codigo-dia`);
-      if (rU.ok) {
-        const d = await rU.json(); 
+      const d = await fetchJson(`${API_BASE}/codigo-dia`);
+      if (d) {
         setUser(d.user); 
         setCodigoDia(d.code);
         if (d.user) {
@@ -1309,8 +1422,11 @@ function App() {
           if (activeTab === 'pedagio') setActiveTab('sabado');
         }
       }
-      const rC = await fetch(`${API_BASE}/contatos`); if (rC.ok) setContatos(await rC.json());
-      const rH = await fetch(`${API_BASE}/historico`); if (rH.ok) { const dH = await rH.json(); setHistorico(dH.rows || []); }
+      const contatosData = await fetchJson(`${API_BASE}/contatos`);
+      if (contatosData) setContatos(contatosData);
+      
+      const historicoData = await fetchJson(`${API_BASE}/historico`);
+      if (historicoData) setHistorico(historicoData.rows || []);
       
       await loadTrilhaStatus();
       await loadDicionario();
@@ -1319,27 +1435,26 @@ function App() {
 
   const loadDicionario = async () => {
     try {
-      const res = await fetch(`${API_BASE}/dicionario/termos`);
-      if (res.ok) setDicionario(await res.json());
+      const data = await fetchJson(`${API_BASE}/dicionario/termos`);
+      if (data) setDicionario(data);
     } catch (e) { console.error(e); }
   };
 
   const loadTrilhaStatus = async () => {
     try {
-      const rList = await fetch(`${API_BASE}/trilhas/lista`);
-      if (rList.ok) setListaTrilhas(await rList.json());
+      const listData = await fetchJson(`${API_BASE}/trilhas/lista`);
+      if (listData) setListaTrilhas(listData);
       
-      const rAtiva = await fetch(`${API_BASE}/trilhas/ativa`);
-      if (rAtiva.ok) {
-        const data = await rAtiva.json();
-        setTrilhaAtiva(data.ativa ? data : null);
-      }
+      const dataAtiva = await fetchJson(`${API_BASE}/trilhas/ativa`);
+      if (dataAtiva) setTrilhaAtiva(dataAtiva.ativa ? dataAtiva : null);
     } catch (e) { console.error(e); }
   };
 
   const loadBibleBooks = async () => {
-    try { const r = await fetch(`${API_BASE}/biblia/livros`); if (r.ok) setBibleBooks(await r.json()); }
-    catch (e) { console.error(e); }
+    try {
+      const books = await fetchJson(`${API_BASE}/biblia/livros`);
+      if (books) setBibleBooks(books);
+    } catch (e) { console.error(e); }
   };
 
   useEffect(() => { loadAppData(); loadBibleBooks(); }, []);
@@ -1352,16 +1467,18 @@ function App() {
         setBibleAudioPlaying(false);
         setBibleAudioUrl('');
         
-        const rc = await fetch(`${API_BASE}/biblia/capitulos/${bibleSelectedBook.livro_abrev}`);
-        if (rc.ok) { const dc = await rc.json(); setBibleChaptersCount(dc.total || 50); }
-        const rv = await fetch(`${API_BASE}/biblia/texto/${bibleSelectedBook.livro_abrev}/${bibleSelectedChapter}`);
-        if (rv.ok) setBibleVerses(await rv.json());
+        const dc = await fetchJson(`${API_BASE}/biblia/capitulos/${bibleSelectedBook.livro_abrev}`);
+        if (dc) setBibleChaptersCount(dc.total || 50);
+        
+        const verses = await fetchJson(`${API_BASE}/biblia/texto/${bibleSelectedBook.livro_abrev}/${bibleSelectedChapter}`);
+        if (verses) setBibleVerses(verses);
 
-        // Carrega o áudio
-        const ra = await fetch(`${API_BASE}/biblia/audio/${bibleSelectedBook.livro_abrev}/${bibleSelectedChapter}`);
-        if (ra.ok) {
-          const dataAudio = await ra.json();
-          setBibleAudioUrl(dataAudio.proxy || dataAudio.url);
+        // Carrega o áudio com fallback
+        const dataAudio = await fetchJson(`${API_BASE}/biblia/audio/${bibleSelectedBook.livro_abrev}/${bibleSelectedChapter}`);
+        if (dataAudio) {
+          setBibleAudioUrl(dataAudio.proxy || dataAudio.url || '/piano.mp3');
+        } else {
+          setBibleAudioUrl('/piano.mp3');
         }
       } catch (e) { console.error(e); } finally { setBibleLoading(false); }
     };
@@ -1385,9 +1502,18 @@ function App() {
     try {
       const res = await fetch(`${API_BASE}/sync-checkpoint`, { method: 'POST' });
       const data = await res.json();
-      if (res.ok) { setPedagioIniciado(false); setPedagioErro(''); loadAppData(); }
-      else setPedagioErro(data.error || 'Erro ao destravar');
-    } catch { setPedagioErro('Erro de comunicação.'); }
+      if (res.ok && data.success) {
+        setPedagioIniciado(false);
+        setPedagioErro('');
+        setUser(prev => prev ? { ...prev, checkpoint_completado: true } : { ...data.user, checkpoint_completado: true });
+        setActiveTab('sabado');
+        loadAppData();
+      } else {
+        setPedagioErro(data.error || 'Erro ao destravar');
+      }
+    } catch {
+      setPedagioErro('Erro de comunicação.');
+    }
   };
 
   // ── Contatos ────────────────────────────────────────────────
@@ -1556,7 +1682,7 @@ function App() {
 
   const onAudioTimeUpdate = () => { if (audioRef.current) setAudioCurrentTime(audioRef.current.currentTime); };
   const onAudioLoadedMetadata = () => { if (audioRef.current) setAudioDuration(audioRef.current.duration); };
-  const formatTime = (s) => { if (isNaN(s)) return '0:00'; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; };
+  const formatTime = (s) => { if (s === null || s === undefined || isNaN(s) || !isFinite(s)) return '0:00'; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; };
   const handleProgressBarClick = (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     if (audioRef.current) { audioRef.current.currentTime = ((e.clientX - r.left) / r.width) * audioDuration; setAudioCurrentTime(audioRef.current.currentTime); }
@@ -3581,9 +3707,9 @@ Importante: O JSON deve ser 100% válido.`;
                       const comment = bibleComments[key];
                       return (
                         <div
-                          key={v.id}
-                          className={`bible-verse-row${bibleSelectedVerse?.id === v.id ? ' selected' : ''}`}
-                          onClick={() => setBibleSelectedVerse(bibleSelectedVerse?.id === v.id ? null : v)}
+                          key={v.id || v.versiculo}
+                          className={`bible-verse-row${(bibleSelectedVerse?.id === v.id || bibleSelectedVerse?.versiculo === v.versiculo) ? ' selected' : ''}`}
+                          onClick={() => setBibleSelectedVerse((bibleSelectedVerse?.id === v.id || bibleSelectedVerse?.versiculo === v.versiculo) ? null : v)}
                           style={{
                             backgroundColor: highlightColor || undefined,
                             borderRadius: highlightColor ? '8px' : '0',
